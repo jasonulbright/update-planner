@@ -17,11 +17,13 @@
       - .NET Framework 4.7.2+
       - MahApps.Metro DLLs in .\Lib\
       - UpdatePlannerCommon module under .\Module\
-      - WinRM/CIM access to the SMS Provider computer
+      - Configuration Manager console on this computer (it provides the
+        ConfigurationManager PowerShell module)
+      - Access to the SMS Provider computer
 
 .NOTES
     ScriptName : start-updateplanner.ps1
-    Version    : 2026.11.06.0002
+    Version    : 2026.11.06.0003
     Updated    : 2026-11-06
 #>
 
@@ -59,6 +61,16 @@ Get-ChildItem -LiteralPath $libDir -File -ErrorAction SilentlyContinue | Unblock
 $__modulePath = Join-Path $PSScriptRoot 'Module\UpdatePlannerCommon.psd1'
 if (-not (Test-Path -LiteralPath $__modulePath)) { throw "Shared module not found at: $__modulePath" }
 Import-Module -Name $__modulePath -Force -DisableNameChecking
+
+# The site is read with the ConfigurationManager module, which comes only with the
+# Configuration Manager console. Without it the tool stops here with a plain message.
+$__console = Test-UpConsoleModule
+if (-not $__console.Available) {
+    Write-Warning -Message $__console.Message
+    [void][System.Windows.MessageBox]::Show($__console.Message, 'Update Planner', [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+    try { Stop-Transcript | Out-Null } catch { $null = $_ }
+    exit 2
+}
 
 $global:PrefsPath = Join-Path $PSScriptRoot 'UpdatePlanner.prefs.json'
 function Get-UpPreferences {
@@ -281,7 +293,7 @@ function Update-StatusBarSummary {
     $parts = @()
     if (-not $global:Prefs.SMSProvider) { $parts += 'Open Options to set the SMS provider' }
     else {
-        $site = if ($global:Prefs.SiteCode) { $global:Prefs.SiteCode } else { 'site code from the provider' }
+        $site = if ($global:Prefs.SiteCode) { $global:Prefs.SiteCode } else { 'no site code' }
         $parts += ('Provider {0} ({1})' -f $global:Prefs.SMSProvider, $site)
     }
     $parts += ('{0} wave collections' -f $script:WaveList.Count)
@@ -435,9 +447,9 @@ function Start-BackgroundWork {
 $btnLoadCollections.Add_Click({ Invoke-LoadCollections -Pick $false })
 function Invoke-LoadCollections {
     param([bool]$Pick)
-    if (-not $global:Prefs.SMSProvider) {
-        Add-LogLine 'Load collections: set the SMS provider in Options first.'
-        Set-StatusText 'Open Options to set the SMS provider.'
+    if (-not $global:Prefs.SMSProvider -or -not $global:Prefs.SiteCode) {
+        Add-LogLine 'Load collections: set the SMS provider and the site code in Options first.'
+        Set-StatusText 'Open Options to set the SMS provider and the site code.'
         return
     }
     $script:PickAfterLoad = $Pick
@@ -445,9 +457,7 @@ function Invoke-LoadCollections {
     $args1 = @{ Provider = [string]$global:Prefs.SMSProvider; SiteCode = [string]$global:Prefs.SiteCode }
     Start-BackgroundWork -Title 'Loading collections' -Step 'Reading device collections and console folders...' -Arguments $args1 -Work {
         param($A, $S)
-        $p = @{ ComputerName = $A.Provider }
-        if ($A.SiteCode) { $p['SiteCode'] = $A.SiteCode }
-        Get-UpdatePlannerCollection @p
+        Get-UpdatePlannerCollection -ComputerName $A.Provider -SiteCode $A.SiteCode
     } -OnDone {
         param($r)
         $script:CollectionData = $r
@@ -470,9 +480,9 @@ function Show-WavePicker {
 }
 
 $btnAddWave.Add_Click({
-    if (-not $global:Prefs.SMSProvider) {
-        Set-StatusText 'Open Options to set the SMS provider.'
-        Add-LogLine 'Add: set the SMS provider in Options first.'
+    if (-not $global:Prefs.SMSProvider -or -not $global:Prefs.SiteCode) {
+        Set-StatusText 'Open Options to set the SMS provider and the site code.'
+        Add-LogLine 'Add: set the SMS provider and the site code in Options first.'
         return
     }
     if (-not $script:CollectionData) { Invoke-LoadCollections -Pick $true; return }
@@ -498,7 +508,7 @@ function Show-Plan {
 
 $btnBuildPlan.Add_Click({
     $setting = Resolve-UpdatePlannerSetting `
-        -ComputerName ([string]$global:Prefs.SMSProvider) `
+        -ComputerName ([string]$global:Prefs.SMSProvider) -SiteCode ([string]$global:Prefs.SiteCode) `
         -StartDateText $(if ($dpStartDate.SelectedDate) { ([datetime]$dpStartDate.SelectedDate).ToString('yyyy-MM-dd') } else { '' }) `
         -WaveSpacingText ([string]$txtSpacing.Text) -DeadlineText ([string]$txtDeadline.Text) `
         -SeverityName (Get-SeverityName) -MaxUpdatesText ([string]$txtMaxUpdates.Text) `
@@ -519,8 +529,7 @@ $btnBuildPlan.Add_Click({
     }
     Start-BackgroundWork -Title 'Building the plan' -Step 'Connecting to the SMS Provider...' -Arguments $args2 -Work {
         param($A, $S)
-        $p = @{ ComputerName = $A.Provider; TargetCollection = $A.Target; IncludeWsus = $A.Wsus }
-        if ($A.SiteCode) { $p['SiteCode'] = $A.SiteCode }
+        $p = @{ ComputerName = $A.Provider; SiteCode = $A.SiteCode; TargetCollection = $A.Target; IncludeWsus = $A.Wsus }
         $S.Step = 'Reading updates, collections and deployments...'
         $state = Get-UpdatePlannerState @p
         $S.Step = 'Building the waves...'
@@ -630,10 +639,10 @@ $btnApply.Add_Click({
     }
     $preview = @(Get-UpdatePlanDeploymentPreview -Plan $script:Plan)
     $lines = @($preview | ForEach-Object { '{0}: {1} updates, {2} to {3}' -f $_.Collection, $_.UpdateCount, $_.Start, $_.Deadline })
-    $message = ('Create {0} software update deployments on site {1} (provider {2})?' -f $preview.Count, $script:Plan.SiteCode, $global:Prefs.SMSProvider) +
+    $message = ('Create {0} software update groups and {0} deployments on site {1} (provider {2})?' -f $preview.Count, $script:Plan.SiteCode, $global:Prefs.SMSProvider) +
         [Environment]::NewLine + [Environment]::NewLine + ($lines -join [Environment]::NewLine) +
         [Environment]::NewLine + [Environment]::NewLine +
-        ('This changes the site. To undo, delete the deployments whose name holds the plan ID {0}. Update Planner never edits or deletes an existing deployment.' -f $script:Plan.PlanId)
+        ('This changes the site. To undo, delete the deployments and the software update groups whose name holds the plan ID {0}. Update Planner never edits or deletes an existing deployment or group.' -f $script:Plan.PlanId)
     if (-not (Show-ConfirmDialog -Title 'Create deployments' -Message $message -Owner $window)) {
         Add-LogLine 'Deploy cancelled.'
         return
@@ -711,10 +720,10 @@ function Show-OptionsDialog {
                 <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,4,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
-                <TextBlock Text="Site Code (optional)" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+                <TextBlock Text="Site Code" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. MCM. Empty reads it from the provider." Width="240" HorizontalAlignment="Left"/>
-                <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. Building a plan needs read access to the site (the Read-only Analyst role is enough). The Deploy step needs the right to create software update deployments."
+                         Controls:TextBoxHelper.Watermark="e.g. MCM. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
+                <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             </StackPanel>

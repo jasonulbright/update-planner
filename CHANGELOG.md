@@ -2,6 +2,23 @@
 
 All notable changes to Update Planner are documented in this file.
 
+## [2026.11.06.0003] - 2026-11-06
+
+## 1 data access that uses the supported ConfigurationManager cmdlets
+
+### Changed
+
+- Read the site with the ConfigurationManager cmdlets (Get-CMSoftwareUpdate, Get-CMCollection, Get-CMCollectionMember, Get-CMMaintenanceWindow, Get-CMSoftwareUpdateDeployment, Get-CMSoftwareUpdateSyncStatus, Get-CMDeviceCollection, Get-CMFolder). The tool needs the Configuration Manager console on the computer.
+- Read the update status of each device and the folder of each collection with Invoke-CMWmiQuery, because no cmdlet returns them.
+- Create a software update group and a deployment of that group for each wave. The tool created one deployment without a group before.
+- Require the site code in Options and in the command line script. The tool no longer asks the SMS Provider for it.
+- Write the plan file as a Suite ring plan that Deployment Helper loads (docs/plan-format.md).
+
+### Added
+
+- Stop with a plain message at start when the console is not installed.
+- Add ConvertFrom-UpdatePlanJson and Test-UpConsoleModule.
+
 ## [2026.11.06.0002] - 2026-11-06
 
 ## 5 defects fixed that the user guide found

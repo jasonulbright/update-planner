@@ -15,7 +15,7 @@ Plan software update rollouts for a Configuration Manager site. Pick the wave co
 - Set the start date of wave 1, the days between waves, the days to the deadline, the lowest severity and the most updates in a wave.
 - Build the plan without changing the site. The plan reads the update catalog, the update need of each collection, the maintenance windows and the existing deployments.
 - Review the plan in a grid, in the Markdown review text or in an HTML report. A second grid lists each skipped update and the reason.
-- Export the plan as JSON, Markdown or HTML.
+- Export the plan as JSON, Markdown or HTML. The JSON file is a ring plan that Deployment Helper loads (see [docs/plan-format.md](docs/plan-format.md)).
 - Deploy behind an **Enable actions** switch. A dry run runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation that lists every deployment before it creates one.
 - Built-in collections (an ID that starts with `SMS`) are blocked as a deploy target.
 - Every dry run and every deploy writes one record to `Logs\update-planner-actions.jsonl`.
@@ -26,9 +26,9 @@ Plan software update rollouts for a Configuration Manager site. Pick the wave co
 - Windows 10 / 11 or Server 2016+
 - PowerShell 5.1 (PowerShell 7 also works)
 - .NET Framework 4.7.2+
-- Network access to the SMS Provider computer (WinRM, CIM)
-- The Windows account that runs the tool needs read access to the site (the Read-only Analyst role is enough to build a plan). The Deploy step needs the right to create software update deployments.
-- The Configuration Manager console is not needed.
+- The Configuration Manager console on the computer that runs the tool. The tool reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Without the console the tool shows a message and stops.
+- Network access to the SMS Provider computer.
+- A domain admin account that is also a local administrator of the SMS Provider computer. It needs no Configuration Manager security role (a new site has no roles). An account with fewer rights is not tested. Do not rely on one.
 
 The tool connects with the Windows account that runs it. It stores no password and has no credential field.
 
@@ -40,7 +40,7 @@ The tool connects with the Windows account that runs it. It stores no password a
    ```powershell
    powershell -ExecutionPolicy Bypass -File start-updateplanner.ps1
    ```
-3. Click **Options** and set the SMS Provider FQDN. The site code is optional; the tool reads it from the provider when it is empty.
+3. Click **Options** and set the SMS Provider FQDN and the site code. Both are required.
 4. On the **Plan** view, click **Add...**. The first click loads the device collections. Pick each wave collection in rollout order.
 5. Set the dates and click **Build plan**.
 
@@ -69,9 +69,9 @@ The shell has a sidebar with three views and an Options dialog:
 Update Planner only reads the site until **Enable actions** is on. With the switch on, **Dry run** and **Deploy...** work.
 
 - **Dry run** runs the deploy step with `-WhatIf`. The grid shows each deployment that the step would create. Nothing is created.
-- **Deploy...** shows a confirmation with the number of deployments, the site, the provider and each wave. After **Yes**, the tool creates one software update deployment for each wave that holds updates. Each deployment is named `UpdatePlanner <PlanId> <wave name>`.
-- To undo a run, delete the deployments whose name holds the plan ID. The tool never edits or deletes an existing deployment.
-- The tool does not create software update groups or deployment packages and does not download content. Review a created deployment in the console before a real rollout. See [docs/plan-rules.md](docs/plan-rules.md).
+- **Deploy...** shows a confirmation with the number of deployments, the site, the provider and each wave. After **Yes**, the tool creates one software update group and one deployment of that group for each wave that holds updates. Each is named `UpdatePlanner <PlanId> <wave name>`.
+- To undo a run, delete the deployments and the groups whose name holds the plan ID. The tool never edits or deletes an existing deployment or group.
+- The tool does not create deployment packages and does not download content. Review a created deployment in the console before a real rollout. See [docs/plan-rules.md](docs/plan-rules.md).
 
 ![Dry run](screenshots/deploy-dry-run.png)
 
@@ -82,8 +82,8 @@ Update Planner only reads the site until **Enable actions** is on. With the swit
 The window wraps the same module as the script `Invoke-UpdatePlanner.ps1`. The script writes `update-plan.json` and `update-plan.md` and supports `-Apply`, `-WhatIf` and `-Confirm`:
 
 ```powershell
-.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -TargetCollection 'Pilot', 'Broad' -StartDate 2026-11-09
-.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -TargetCollection 'Pilot', 'Broad' -Apply -WhatIf
+.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -StartDate 2026-11-09
+.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -Apply -WhatIf
 ```
 
 ## Files written on disk
@@ -118,7 +118,9 @@ update-planner/
 |  +- UpdatePlannerCommon.psd1      # Module manifest
 |  \- UpdatePlannerCommon.psm1      # Plan logic and window support
 +- Tests/                           # Pester 5 tests
-+- docs/plan-rules.md               # Plan rules and limits
++- docs/plan-rules.md               # Plan rules, cmdlets and limits
++- docs/plan-format.md              # Plan file format (Suite ring plan)
++- docs/schema/ring-plan.schema.json # JSON schema of the plan file
 ```
 
 ## License

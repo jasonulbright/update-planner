@@ -395,7 +395,7 @@
                     <Border Grid.Row="0" Padding="8,0,8,10">
                         <StackPanel>
                             <TextBlock FontSize="12" TextWrapping="Wrap"
-                                       Text="Update Planner only reads the site until you turn on Enable actions. Dry run shows what Deploy would create and changes nothing. Deploy creates one software update deployment for each wave that holds updates, after you confirm."/>
+                                       Text="Update Planner only reads the site until you turn on Enable actions. Dry run shows what Deploy would create and changes nothing. Deploy creates one software update group and one deployment of that group for each wave that holds updates, after you confirm."/>
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                 <Controls:ToggleSwitch x:Name="toggleActions" IsOn="False"
                                                        Header="Enable actions"

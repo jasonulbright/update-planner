@@ -1,4 +1,4 @@
-﻿[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingComputerNameHardcoded', '', Justification = 'Test inputs are fake computer names.')]
+[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingComputerNameHardcoded', '', Justification = 'Test inputs are fake computer names.')]
 param ()
 
 BeforeAll {
@@ -6,6 +6,7 @@ BeforeAll {
     $script:strRepositoryRoot = Split-Path -Path $strTestsFolder -Parent
     $script:strManifestPath = Join-Path -Path (Join-Path -Path $script:strRepositoryRoot -ChildPath 'Module') -ChildPath 'UpdatePlannerCommon.psd1'
     Import-Module -Name $script:strManifestPath -Force
+    . (Join-Path -Path $strTestsFolder -ChildPath 'CMStubs.ps1')
 
     function New-WindowTestPlan {
         $objState = [pscustomobject]@{
@@ -30,6 +31,7 @@ BeforeAll {
 
 AfterAll {
     Remove-Module -Name UpdatePlannerCommon -Force -ErrorAction SilentlyContinue
+    Remove-CMTestStub
 }
 
 Describe 'Resolve-UpdatePlannerSetting' {
@@ -51,6 +53,15 @@ Describe 'Resolve-UpdatePlannerSetting' {
         foreach ($strName in $hashtableExpected.Keys) {
             (Resolve-UpdatePlannerSetting -ComputerName 'cm01' -StartDateText '2026-12-01' -SeverityName $strName -TargetCollection 'ABC00001').MinimumSeverity | Should -Be $hashtableExpected[$strName]
         }
+    }
+
+    It 'checks the site code only when it is passed' {
+        $objGood = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode ' abc ' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
+        $objGood.IsValid | Should -BeTrue
+        $objBad = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode '' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
+        $objBad.IsValid | Should -BeFalse
+        $objBad.Errors | Should -Contain 'Enter the site code in Options. It is three letters or digits.'
+        (Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode 'ABCD' -StartDateText '2026-12-01' -TargetCollection 'ABC00001').IsValid | Should -BeFalse
     }
 
     It 'reports one message for each wrong value' {
@@ -135,8 +146,8 @@ Describe 'Plan reports' {
 
     It 'returns JSON that reads back to the same plan' {
         $objBack = ConvertTo-UpdatePlanJson -Plan $script:objPlan | ConvertFrom-Json
-        $objBack.PlanId | Should -Be $script:objPlan.PlanId
-        @($objBack.Waves).Count | Should -Be 2
+        $objBack.UpdatePlanner.PlanId | Should -Be $script:objPlan.PlanId
+        @($objBack.Rings).Count | Should -Be 2
     }
 
     It 'returns an HTML page with encoded values, no script and no external resource' {
@@ -196,12 +207,16 @@ Describe 'ConvertTo-UpdatePlanResultRow' {
 }
 Describe 'Invoke-UpdatePlan built-in collection block' {
     It 'refuses a real apply to a built-in collection and creates nothing' {
-        Mock -ModuleName UpdatePlannerCommon New-CimSession { }
-        Mock -ModuleName UpdatePlannerCommon New-CimInstance { }
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
+        Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup { }
+        Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { }
         $objPlan = New-WindowTestPlan
         $objPlan.Waves[0].CollectionId = 'SMS00001'
         { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -Confirm:$false } | Should -Throw '*built in*'
-        Should -Invoke -ModuleName UpdatePlannerCommon New-CimInstance -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon Connect-UpSite -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment -Times 0 -Exactly
     }
 
     It 'still previews with -WhatIf for a built-in collection' {
@@ -233,17 +248,16 @@ Describe 'Test-UpdatePlanApplyAllowed' {
     }
 }
 Describe 'Get-UpdatePlannerCollection' {
-    It 'returns collections with their folder and the folder tree, from SELECT queries only' {
-        Mock -ModuleName UpdatePlannerCommon New-CimSession { [System.Runtime.Serialization.FormatterServices]::GetUninitializedObject([Microsoft.Management.Infrastructure.CimSession]) }
-        Mock -ModuleName UpdatePlannerCommon Remove-CimSession { }
-        Mock -ModuleName UpdatePlannerCommon Invoke-UpCimQuery -ParameterFilter { $Query -like '*SMS_ProviderLocation*' } { [pscustomobject]@{ SiteCode = 'ABC' } }
-        Mock -ModuleName UpdatePlannerCommon Invoke-UpCimQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { [pscustomobject]@{ InstanceKey = 'ABC00010'; ContainerNodeID = 5 } }
-        Mock -ModuleName UpdatePlannerCommon Invoke-UpCimQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerNode*' } { [pscustomobject]@{ ContainerNodeID = 5; Name = 'Pilot rings'; ParentContainerNodeID = 0 } }
-        Mock -ModuleName UpdatePlannerCommon Invoke-UpCimQuery -ParameterFilter { $Query -like '*FROM SMS_Collection*' } {
+    It 'returns collections with their folder and the folder tree, from cmdlets and one SELECT' {
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { [pscustomobject]@{ InstanceKey = 'ABC00010'; ContainerNodeID = 5 } }
+        Mock -ModuleName UpdatePlannerCommon Get-CMFolder { [pscustomobject]@{ ContainerNodeID = 5; Name = 'Pilot rings'; ParentContainerNodeID = 0 } }
+        Mock -ModuleName UpdatePlannerCommon Get-CMDeviceCollection {
             [pscustomobject]@{ CollectionID = 'SMS00001'; Name = 'All Systems'; MemberCount = 12 }
             [pscustomobject]@{ CollectionID = 'ABC00010'; Name = 'Ring 0'; MemberCount = 3 }
         }
-        $objList = Get-UpdatePlannerCollection -ComputerName 'cm01'
+        $objList = Get-UpdatePlannerCollection -ComputerName 'cm01' -SiteCode 'ABC'
         $objList.SiteCode | Should -Be 'ABC'
         @($objList.Collections).Count | Should -Be 2
         $objRing = @($objList.Collections | Where-Object { $_.CollectionID -eq 'ABC00010' })[0]
@@ -251,11 +265,11 @@ Describe 'Get-UpdatePlannerCollection' {
         $objRing.IsBuiltIn | Should -BeFalse
         @($objList.Collections | Where-Object { $_.CollectionID -eq 'SMS00001' })[0].IsBuiltIn | Should -BeTrue
         @($objList.Folders)[0].Name | Should -Be 'Pilot rings'
-        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpCimQuery -ParameterFilter { $Query -notlike 'SELECT *' } -Times 0 -Exactly
-        Should -Invoke -ModuleName UpdatePlannerCommon Remove-CimSession -Times 1 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon Get-CMFolder -Times 1 -Exactly -ParameterFilter { $TypeName -eq 'SMS_Collection_Device' }
+        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -Times 1 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon Disconnect-UpSite -Times 1 -Exactly
     }
 }
-
 Describe 'Window files' {
     BeforeAll {
         $script:strXamlPath = Join-Path -Path $script:strRepositoryRoot -ChildPath 'MainWindow.xaml'
@@ -316,6 +330,20 @@ Describe 'Window files' {
         $arrError.Count | Should -Be 0
     }
 
+    It 'checks for the console module before it builds the window, and stops with a message' {
+        $strText = Get-Content -LiteralPath $script:strStartPath -Raw
+        $intCheck = $strText.IndexOf('Test-UpConsoleModule')
+        $intWindow = $strText.IndexOf('XamlReader]::Load')
+        $intCheck | Should -BeGreaterThan 0
+        $intCheck | Should -BeLessThan $intWindow
+        $strText | Should -Match '(?s)if \(-not \$__console\.Available\) \{.*?MessageBox.*?exit 2'
+    }
+
+    It 'checks for the console module in the command line script' {
+        $strText = Get-Content -LiteralPath (Join-Path -Path $script:strRepositoryRoot -ChildPath 'Invoke-UpdatePlanner.ps1') -Raw
+        $strText | Should -Match '(?s)Test-UpConsoleModule.*exit 2'
+    }
+
     It 'keeps the version equal in the manifest, the start script and the changelog' {
         $strManifestVersion = (Import-PowerShellDataFile -LiteralPath $script:strManifestPath).ModuleVersion
         (Get-Content -LiteralPath $script:strStartPath -Raw) | Should -Match ('(?m)^\s*Version\s*:\s*{0}\s*$' -f [regex]::Escape($strManifestVersion))
@@ -327,10 +355,10 @@ Describe 'Module surface' {
     It 'exports the documented public functions' {
         $arrExported = @((Get-Module -Name UpdatePlannerCommon).ExportedFunctions.Keys | Sort-Object)
         $arrExported | Should -Be @(
-            'ConvertTo-UpdatePlanHtml', 'ConvertTo-UpdatePlanJson', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanRow',
+            'ConvertFrom-UpdatePlanJson', 'ConvertTo-UpdatePlanHtml', 'ConvertTo-UpdatePlanJson', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanRow',
             'ConvertTo-UpdatePlanSkippedRow', 'Export-UpdatePlan', 'Get-UpdatePlanDeploymentPreview', 'Get-UpdatePlannerCollection',
             'Get-UpdatePlannerState', 'Invoke-UpdatePlan', 'New-UpdatePlan', 'Resolve-UpdatePlannerSetting',
-            'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
+            'Test-UpConsoleModule', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
         )
     }
 
