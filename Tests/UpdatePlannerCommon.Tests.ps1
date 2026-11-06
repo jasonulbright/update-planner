@@ -571,8 +571,17 @@ Describe 'Plan JSON and the shared ring plan format' {
         { ConvertFrom-UpdatePlanJson -Json 'not json' } | Should -Throw '*not valid JSON*'
     }
 
-    It 'loads the shared fixture (the same file as in Deployment Helper)' {
-        $objDocument = Get-Content -LiteralPath $script:strFixturePath -Raw | ConvertFrom-Json
+    It 'keeps the same fixture and schema as Deployment Helper' {
+        foreach ($objItem in @(
+                @{ Path = $script:strFixturePath; Hash = 'd2ea422e6b647ed1c90e619ba6ddd7330ae9826e2e87d5dab1e3e16bf1f85964' }
+                @{ Path = $script:strSchemaPath; Hash = 'f608375a66b2767e956e1c8260578ea19013347ae43aaf8c7c5187f78644a414' })) {
+            $strText = [System.IO.File]::ReadAllText($objItem.Path).Replace("`r`n", "`n")
+            $strHash = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($strText))).Replace('-', '').ToLowerInvariant()
+            $strHash | Should -Be $objItem.Hash -Because $objItem.Path
+        }
+    }
+
+    It 'loads the shared fixture (the same file as in Deployment Helper)' {        $objDocument = Get-Content -LiteralPath $script:strFixturePath -Raw | ConvertFrom-Json
         $objDocument.Format | Should -Be 'SuiteRingPlan'
         $objDocument.SchemaVersion | Should -Be 1
         $objPlan = ConvertFrom-UpdatePlanJson -Json (Get-Content -LiteralPath $script:strFixturePath -Raw)

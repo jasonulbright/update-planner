@@ -480,9 +480,9 @@ function Show-WavePicker {
 }
 
 $btnAddWave.Add_Click({
-    if (-not $global:Prefs.SMSProvider) {
-        Set-StatusText 'Open Options to set the SMS provider.'
-        Add-LogLine 'Add: set the SMS provider in Options first.'
+    if (-not $global:Prefs.SMSProvider -or -not $global:Prefs.SiteCode) {
+        Set-StatusText 'Open Options to set the SMS provider and the site code.'
+        Add-LogLine 'Add: set the SMS provider and the site code in Options first.'
         return
     }
     if (-not $script:CollectionData) { Invoke-LoadCollections -Pick $true; return }
@@ -639,7 +639,7 @@ $btnApply.Add_Click({
     }
     $preview = @(Get-UpdatePlanDeploymentPreview -Plan $script:Plan)
     $lines = @($preview | ForEach-Object { '{0}: {1} updates, {2} to {3}' -f $_.Collection, $_.UpdateCount, $_.Start, $_.Deadline })
-    $message = ('Create {0} software update deployments on site {1} (provider {2})?' -f $preview.Count, $script:Plan.SiteCode, $global:Prefs.SMSProvider) +
+    $message = ('Create {0} software update groups and {0} deployments on site {1} (provider {2})?' -f $preview.Count, $script:Plan.SiteCode, $global:Prefs.SMSProvider) +
         [Environment]::NewLine + [Environment]::NewLine + ($lines -join [Environment]::NewLine) +
         [Environment]::NewLine + [Environment]::NewLine +
         ('This changes the site. To undo, delete the deployments and the software update groups whose name holds the plan ID {0}. Update Planner never edits or deletes an existing deployment or group.' -f $script:Plan.PlanId)
@@ -720,10 +720,10 @@ function Show-OptionsDialog {
                 <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,4,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
-                <TextBlock Text="Site Code (optional)" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+                <TextBlock Text="Site Code" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. MCM. Empty reads it from the provider." Width="240" HorizontalAlignment="Left"/>
-                <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. Building a plan needs read access to the site (the Read-only Analyst role is enough). The Deploy step needs the right to create software update deployments."
+                         Controls:TextBoxHelper.Watermark="e.g. MCM. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
+                <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             </StackPanel>
