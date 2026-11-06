@@ -245,7 +245,8 @@ function ConvertTo-UpMarkdown {
         foreach ($objWave in $Plan.Waves) {
             $listLine.Add(('## Wave {0}: {1}' -f $objWave.Order, $objWave.Name))
             $listLine.Add('')
-            $listLine.Add(('- Collection: {0} ({1}), {2} devices' -f $objWave.CollectionName, $objWave.CollectionId, $objWave.MemberCount))
+            $strDeviceNoun = if ([int]$objWave.MemberCount -eq 1) { 'device' } else { 'devices' }
+            $listLine.Add(('- Collection: {0} ({1}), {2} {3}' -f $objWave.CollectionName, $objWave.CollectionId, $objWave.MemberCount, $strDeviceNoun))
             $listLine.Add(('- Start: {0}' -f $objWave.StartDate))
             $listLine.Add(('- Deadline: {0}' -f $objWave.DeadlineDate))
             $listLine.Add(('- Maintenance windows on the collection: {0}' -f $objWave.MaintenanceWindowCount))
@@ -1489,7 +1490,8 @@ function ConvertTo-UpdatePlanHtml {
         $listLine.Add('</table>')
         foreach ($objWave in @($Plan.Waves)) {
             $listLine.Add(('<h2>Wave {0}: {1}</h2>' -f (& $scriptBlockEncode $objWave.Order), (& $scriptBlockEncode $objWave.Name)))
-            $listLine.Add(('<p class="meta">Collection {0} ({1}), {2} devices. Start {3}. Deadline {4}. Maintenance windows: {5}.</p>' -f (& $scriptBlockEncode $objWave.CollectionName), (& $scriptBlockEncode $objWave.CollectionId), (& $scriptBlockEncode $objWave.MemberCount), (& $scriptBlockEncode $objWave.StartDate), (& $scriptBlockEncode $objWave.DeadlineDate), (& $scriptBlockEncode $objWave.MaintenanceWindowCount)))
+            $strDeviceNoun = if ([int]$objWave.MemberCount -eq 1) { 'device' } else { 'devices' }
+            $listLine.Add(('<p class="meta">Collection {0} ({1}), {2} {6}. Start {3}. Deadline {4}. Maintenance windows: {5}.</p>' -f (& $scriptBlockEncode $objWave.CollectionName), (& $scriptBlockEncode $objWave.CollectionId), (& $scriptBlockEncode $objWave.MemberCount), (& $scriptBlockEncode $objWave.StartDate), (& $scriptBlockEncode $objWave.DeadlineDate), (& $scriptBlockEncode $objWave.MaintenanceWindowCount), $strDeviceNoun))
             if (@($objWave.Updates).Count -gt 0) {
                 $listLine.Add('<table><tr><th>Seq</th><th>Article</th><th>Severity</th><th>Devices that need it</th><th>Title</th></tr>')
                 foreach ($objUpdate in @($objWave.Updates)) {

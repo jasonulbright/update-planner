@@ -21,7 +21,7 @@
 
 .NOTES
     ScriptName : start-updateplanner.ps1
-    Version    : 2026.11.06.0001
+    Version    : 2026.11.06.0002
     Updated    : 2026-11-06
 #>
 
@@ -775,6 +775,7 @@ function Show-OptionsDialog {
             $script:CollectionData = $null
             $script:Plan = $null
             $gridPlan.ItemsSource = $null; $gridSkipped.ItemsSource = $null; $gridPreview.ItemsSource = $null; $gridResults.ItemsSource = $null
+            $tabSkipped.Header = 'Skipped updates'
             $txtPlanSummary.Text = 'No plan yet.'
             Update-ReportText
             Update-ControlState
