@@ -122,6 +122,17 @@ Describe 'Plan reports' {
         $strText | Should -BeLike '*KB5001*'
     }
 
+    It 'writes device in the singular for a collection of one device, in Markdown and in HTML' {
+        $objOne = New-WindowTestPlan
+        $objOne.Waves[0].MemberCount = 1
+        $objOne.Waves[1].MemberCount = 9
+        (ConvertTo-UpdatePlanMarkdown -Plan $objOne) | Should -BeLike '*(ABC00001), 1 device*'
+        (ConvertTo-UpdatePlanMarkdown -Plan $objOne) | Should -Not -BeLike '*1 devices*'
+        (ConvertTo-UpdatePlanMarkdown -Plan $objOne) | Should -BeLike '*(ABC00002), 9 devices*'
+        (ConvertTo-UpdatePlanHtml -Plan $objOne) | Should -BeLike '*(ABC00001), 1 device.*'
+        (ConvertTo-UpdatePlanHtml -Plan $objOne) | Should -Not -BeLike '*1 devices*'
+    }
+
     It 'returns JSON that reads back to the same plan' {
         $objBack = ConvertTo-UpdatePlanJson -Plan $script:objPlan | ConvertFrom-Json
         $objBack.PlanId | Should -Be $script:objPlan.PlanId
@@ -268,6 +279,35 @@ Describe 'Window files' {
         $strXaml = Get-Content -LiteralPath $script:strXamlPath -Raw
         $arrDeclared = @([regex]::Matches($strXaml, 'x:Name="([A-Za-z0-9_]+)"') | ForEach-Object { $_.Groups[1].Value })
         @($arrDeclared | Group-Object | Where-Object { $_.Count -gt 1 }) | Should -BeNullOrEmpty
+    }
+
+    It 'trims a long update title with an ellipsis and shows the full title as a tooltip in both grids' {
+        $strXaml = Get-Content -LiteralPath $script:strXamlPath -Raw
+        $strXaml | Should -Match 'x:Key="TrimmedTextStyle"[\s\S]*?TextTrimming" Value="CharacterEllipsis"[\s\S]*?ToolTip"'
+        @([regex]::Matches($strXaml, 'Header="Title"[^>]*ElementStyle="\{StaticResource TrimmedTextStyle\}"')).Count | Should -Be 2
+    }
+
+    It 'declares the export buttons in the order that the window shows them, so that Tab follows the layout' {
+        $strXaml = Get-Content -LiteralPath $script:strXamlPath -Raw
+        $arrPosition = foreach ($strName in 'btnBuildPlan', 'btnLoadCollections', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml') {
+            $strXaml.IndexOf(('x:Name="{0}"' -f $strName))
+        }
+        $arrPosition | Should -Not -Contain -1
+        $arrPosition | Should -Be @($arrPosition | Sort-Object)
+        $strXaml | Should -Not -Match 'btnExport\w+" DockPanel.Dock="Right"'
+    }
+
+    It 'shows the same subtitle on the Plan view at start as after a switch of view' {
+        $strXaml = Get-Content -LiteralPath $script:strXamlPath -Raw
+        $strStart = Get-Content -LiteralPath $script:strStartPath -Raw
+        $strMeta = [regex]::Match($strStart, "'Plan'\s*=\s*@\{ Title = 'Plan';\s*Subtitle = '([^']+)'").Groups[1].Value
+        $strMeta | Should -Not -BeNullOrEmpty
+        $strXaml | Should -BeLike ('*Text="{0}"*' -f $strMeta)
+    }
+
+    It 'resets the Skipped updates tab header when a change of the connection clears the plan' {
+        $strStart = Get-Content -LiteralPath $script:strStartPath -Raw
+        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$tabSkipped\.Header = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
     }
 
     It 'parses the start script without error' {

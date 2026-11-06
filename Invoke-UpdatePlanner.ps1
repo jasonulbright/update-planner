@@ -104,7 +104,7 @@ param (
 # .NOTES
 # This script does not support positional parameters.
 #
-# Version: 2026.11.06.0001
+# Version: 2026.11.06.0002
 
 Set-StrictMode -Version Latest
 $strModulePath = Join-Path -Path (Split-Path -Path $PSCommandPath -Parent) -ChildPath 'Module'

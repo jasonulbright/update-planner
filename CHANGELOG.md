@@ -2,6 +2,18 @@
 
 All notable changes to Update Planner are documented in this file.
 
+## [2026.11.06.0002] - 2026-11-06
+
+## 5 defects fixed that the user guide found
+
+### Fixed
+
+- Show the full Plan subtitle when the window opens, not only after a change of view.
+- Cut a long update title with an ellipsis in both grids and show the full title as a tooltip.
+- Tab through Export JSON, Export Markdown and Export HTML in the order that the window shows them.
+- Write "1 device" in the Markdown and HTML report for a collection of one device.
+- Reset the Skipped updates tab header to "Skipped updates" when a change of the connection clears the plan.
+
 ## [2026.11.06.0001] - 2026-11-06
 
 ## 1 window app that plans update waves

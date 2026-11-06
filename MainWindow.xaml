@@ -113,6 +113,11 @@
                 <Setter Property="Padding" Value="6,0,6,0"/>
             </Style>
 
+            <Style x:Key="TrimmedTextStyle" TargetType="TextBlock">
+                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}"/>
+            </Style>
+
             <Style x:Key="GridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MahApps.Styles.DataGridColumnHeader}">
                 <Setter Property="Padding" Value="6,0,6,0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -201,7 +206,7 @@
                 <StackPanel>
                     <TextBlock x:Name="txtModuleTitle" Text="Plan" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
-                               Text="Add the wave collections in the order of the rollout, set the dates, then click Build plan."
+                               Text="Add the wave collections in the order of the rollout, set the dates, then click Build plan. Building a plan changes nothing on the site."
                                FontSize="11"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource MahApps.Brushes.Gray1}"
@@ -217,15 +222,17 @@
                     <Button x:Name="btnLoadCollections" DockPanel.Dock="Left" Content="Load collections"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="140"
                             ToolTip="Read the device collections and console folders from the site"/>
-                    <Button x:Name="btnExportHtml" DockPanel.Dock="Right" Content="Export HTML"
-                            Style="{StaticResource SquareInlineButtonStyle}" Margin="0"
-                            ToolTip="Save the plan as an HTML report"/>
-                    <Button x:Name="btnExportMarkdown" DockPanel.Dock="Right" Content="Export Markdown"
-                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
-                            ToolTip="Save the plan as a Markdown review file"/>
-                    <Button x:Name="btnExportJson" DockPanel.Dock="Right" Content="Export JSON"
-                            Style="{StaticResource SquareInlineButtonStyle}"
-                            ToolTip="Save the plan as a JSON file"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="btnExportJson" Content="Export JSON"
+                                Style="{StaticResource SquareInlineButtonStyle}"
+                                ToolTip="Save the plan as a JSON file"/>
+                        <Button x:Name="btnExportMarkdown" Content="Export Markdown"
+                                Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
+                                ToolTip="Save the plan as a Markdown review file"/>
+                        <Button x:Name="btnExportHtml" Content="Export HTML"
+                                Style="{StaticResource SquareInlineButtonStyle}" Margin="0"
+                                ToolTip="Save the plan as an HTML report"/>
+                    </StackPanel>
                 </DockPanel>
             </Border>
 
@@ -333,7 +340,7 @@
                                     <DataGridTextColumn Header="Article"   Width="90"  Binding="{Binding Article}"/>
                                     <DataGridTextColumn Header="Severity"  Width="90"  Binding="{Binding Severity}"/>
                                     <DataGridTextColumn Header="Devices"   Width="72"  Binding="{Binding Devices}"/>
-                                    <DataGridTextColumn Header="Title"     Width="4*"  Binding="{Binding Title}"/>
+                                    <DataGridTextColumn Header="Title"     Width="4*"  Binding="{Binding Title}" ElementStyle="{StaticResource TrimmedTextStyle}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
@@ -346,7 +353,7 @@
                                     <DataGridTextColumn Header="Reason"  Width="140" Binding="{Binding Reason}"/>
                                     <DataGridTextColumn Header="Wave"    Width="2*"  Binding="{Binding Wave}"/>
                                     <DataGridTextColumn Header="Article" Width="90"  Binding="{Binding Article}"/>
-                                    <DataGridTextColumn Header="Title"   Width="4*"  Binding="{Binding Title}"/>
+                                    <DataGridTextColumn Header="Title"   Width="4*"  Binding="{Binding Title}" ElementStyle="{StaticResource TrimmedTextStyle}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
