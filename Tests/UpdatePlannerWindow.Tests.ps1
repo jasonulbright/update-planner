@@ -31,6 +31,7 @@ BeforeAll {
 
 AfterAll {
     Remove-Module -Name UpdatePlannerCommon -Force -ErrorAction SilentlyContinue
+    Remove-CMTestStub
 }
 
 Describe 'Resolve-UpdatePlannerSetting' {
@@ -206,12 +207,16 @@ Describe 'ConvertTo-UpdatePlanResultRow' {
 }
 Describe 'Invoke-UpdatePlan built-in collection block' {
     It 'refuses a real apply to a built-in collection and creates nothing' {
-        Mock -ModuleName UpdatePlannerCommon New-CimSession { }
-        Mock -ModuleName UpdatePlannerCommon New-CimInstance { }
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
+        Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup { }
+        Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { }
         $objPlan = New-WindowTestPlan
         $objPlan.Waves[0].CollectionId = 'SMS00001'
         { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -Confirm:$false } | Should -Throw '*built in*'
-        Should -Invoke -ModuleName UpdatePlannerCommon New-CimInstance -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon Connect-UpSite -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup -Times 0 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment -Times 0 -Exactly
     }
 
     It 'still previews with -WhatIf for a built-in collection' {

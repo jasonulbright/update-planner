@@ -88,6 +88,10 @@ BeforeAll {
     }
 }
 
+AfterAll {
+    Remove-CMTestStub
+}
+
 Describe 'New-UpdatePlan' {
     BeforeAll {
         $script:objState = New-TestState
@@ -202,8 +206,10 @@ Describe 'Export-UpdatePlan' {
         $arrByte = [System.IO.File]::ReadAllBytes($objFile.JsonPath)
         $arrByte[0] | Should -Not -Be 0xEF
         $objRead = [System.IO.File]::ReadAllText($objFile.JsonPath) | ConvertFrom-Json
-        $objRead.PlanId | Should -Be $script:objPlan.PlanId
-        @($objRead.Waves).Count | Should -Be 2
+        $objRead.Format | Should -Be 'SuiteRingPlan'
+        $objRead.UpdatePlanner.PlanId | Should -Be $script:objPlan.PlanId
+        @($objRead.Rings).Count | Should -Be 2
+        (ConvertFrom-UpdatePlanJson -Json ([System.IO.File]::ReadAllText($objFile.JsonPath))).PlanId | Should -Be $script:objPlan.PlanId
     }
 
     It 'writes Markdown that states plan only mode and lists the waves' {
@@ -496,6 +502,14 @@ Describe 'Invoke-UpdatePlan' {
         $objBuiltIn.Waves[0].CollectionId = 'SMS00001'
         { Invoke-UpdatePlan -Plan $objBuiltIn -Apply -Confirm:$false } | Should -Throw '*built in*'
         Should -Invoke -ModuleName UpdatePlannerCommon Connect-UpSite -Times 0 -Scope It
+    }
+
+    It 'names the group that stays behind when the deployment fails' {
+        Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { throw 'deployment refused' }
+        $arrResult = @(Invoke-UpdatePlan -Plan $script:objPlan -Apply -Confirm:$false)
+        $arrResult[0].Status | Should -Be 'Failed'
+        $arrResult[0].Message | Should -BeLike '*deployment refused*'
+        $arrResult[0].Message | Should -BeLike '*software update group UpdatePlanner * (CI_ID 777) was created and still exists*'
     }
 
     It 'reports a failure and continues with the next wave' {

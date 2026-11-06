@@ -1002,7 +1002,7 @@ function Export-UpdatePlan {
             return
         }
         try {
-            $strJson = $Plan | ConvertTo-Json -Depth 8
+            $strJson = ConvertTo-UpdatePlanJson -Plan $Plan
             [void](Write-UpTextFile -Path $strJsonPath -Text $strJson)
             [void](Write-UpTextFile -Path $strMarkdownPath -Text (ConvertTo-UpMarkdown -Plan $Plan))
         } catch {
@@ -1130,6 +1130,7 @@ function Invoke-UpdatePlan {
                     $datetimeStart = [datetime]::ParseExact([string]$objWave.StartDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
                     $datetimeDeadline = [datetime]::ParseExact([string]$objWave.DeadlineDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
                     [string[]]$arrCIId = @($arrUpdate | ForEach-Object { [string][int]$_.CIId })
+                    $objGroup = $null
                     $objGroup = New-CMSoftwareUpdateGroup -Name $strName -Description ('Created by Update Planner plan {0}' -f $Plan.PlanId) -SoftwareUpdateId $arrCIId -ErrorAction Stop
                     $hashtableDeployment = @{
                         SoftwareUpdateGroupId = [string]$objGroup.CI_ID
@@ -1157,13 +1158,17 @@ function Invoke-UpdatePlan {
                     }
                 } catch {
                     Write-Debug -Message ('Deployment failed: {0}' -f $_.Exception.Message)
+                    $strFailure = $_.Exception.Message
+                    if ($null -ne $objGroup) {
+                        $strFailure = '{0} The software update group {1} (CI_ID {2}) was created and still exists. Delete it in the console or by name.' -f $strFailure, $strName, $objGroup.CI_ID
+                    }
                     [pscustomobject]@{
                         Wave = $objWave.Name
                         CollectionId = $objWave.CollectionId
                         UpdateCount = $arrUpdate.Count
                         Status = 'Failed'
                         AssignmentId = $null
-                        Message = $_.Exception.Message
+                        Message = $strFailure
                     }
                 }
             }
@@ -1552,7 +1557,7 @@ function ConvertTo-UpdatePlanJson {
     # Returns the JSON text of a plan, the format that Export-UpdatePlan writes.
     #
     # .DESCRIPTION
-    # The text is a Suite ring plan (docs/reference/plan-format.md). Deployment Helper
+    # The text is a Suite ring plan (docs/plan-format.md). Deployment Helper
     # loads it as a ring plan: Name, Description, HoldLaterRings, TimeBasedOn and Rings
     # hold the fields of a Deployment Helper plan. One ring is one wave. The fields
     # Format, SchemaVersion, UpdatePlanner and the Updates list of each ring are
