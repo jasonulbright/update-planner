@@ -9,33 +9,212 @@ Set-StrictMode -Version Latest
 
 #region Private helpers
 
-function Invoke-UpCimQuery {
+function Test-UpConsoleModule {
     # .SYNOPSIS
-    # Runs one WQL query against the ConfigMgr SMS Provider and streams the results.
+    # Checks that the ConfigurationManager PowerShell module is installed on this computer.
     #
     # .DESCRIPTION
-    # Thin wrapper around Get-CimInstance. It exists so that tests can replace the
-    # only point where the module reads from the site.
-    #
-    # .PARAMETER CimSession
-    # The open CIM session to the SMS Provider computer.
-    #
-    # .PARAMETER Namespace
-    # The WMI namespace, for example root\sms\site_ABC.
-    #
-    # .PARAMETER Query
-    # The WQL query text.
+    # The module comes only with the Configuration Manager console. The function finds
+    # ConfigurationManager.psd1 with Resolve-ConfigurationManagerModulePath (SuiteCommon)
+    # and returns a plain message when the console is not installed. It changes nothing.
     #
     # .EXAMPLE
-    # $arrRows = @(Invoke-UpCimQuery -CimSession $objSession -Namespace 'root\sms\site_ABC' -Query 'SELECT * FROM SMS_Collection')
+    # $objCheck = Test-UpConsoleModule
     #
-    # # Returns zero or more CIM instances.
+    # # $objCheck.Available = $true when the console is installed.
     #
     # .INPUTS
     # None. You can't pipe objects to this function.
     #
     # .OUTPUTS
-    # [Microsoft.Management.Infrastructure.CimInstance] One object for each row.
+    # [pscustomobject] Properties: Available, Path, Message.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261106.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    param ()
+
+    process {
+        $strPath = Resolve-ConfigurationManagerModulePath
+        if ([string]::IsNullOrEmpty($strPath)) {
+            return [pscustomobject]@{
+                Available = $false
+                Path = ''
+                Message = 'The Configuration Manager console is not installed on this computer. Update Planner reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Install the console, then start Update Planner again.'
+            }
+        }
+        [pscustomobject]@{
+            Available = $true
+            Path = $strPath
+            Message = ''
+        }
+    }
+}
+
+function Connect-UpSite {
+    # .SYNOPSIS
+    # Imports the ConfigurationManager module and opens the site drive.
+    #
+    # .DESCRIPTION
+    # Imports ConfigurationManager.psd1, creates a CMSite PSDrive named after the site
+    # code with the SMS Provider computer as root, and sets the location to the drive.
+    # The ConfigurationManager cmdlets work only from the site drive. The function
+    # throws a plain message when the module is missing or the site is not reachable.
+    # Pass the returned object to Disconnect-UpSite.
+    #
+    # .PARAMETER ComputerName
+    # The computer that runs the SMS Provider.
+    #
+    # .PARAMETER SiteCode
+    # The three character site code.
+    #
+    # .PARAMETER Credential
+    # An optional credential for the site drive.
+    #
+    # .EXAMPLE
+    # $objConnection = Connect-UpSite -ComputerName 'CM01' -SiteCode 'ABC'
+    #
+    # # The current location is now ABC:
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [pscustomobject] Properties: SiteCode, ComputerName, PreviousLocation, CreatedDrive.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261106.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ComputerName,
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[A-Za-z0-9]{3}$')]
+        [string]$SiteCode,
+
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.PSCredential]$Credential
+    )
+
+    process {
+        $objCheck = Test-UpConsoleModule
+        if (-not $objCheck.Available) {
+            throw $objCheck.Message
+        }
+        $objPrevious = Get-Location
+        $strSiteDrive = '{0}:' -f $SiteCode
+        try {
+            if (-not (Get-Module -Name 'ConfigurationManager')) {
+                Import-Module -Name $objCheck.Path -DisableNameChecking -ErrorAction Stop
+            }
+            $objDrive = Get-PSDrive -Name $SiteCode -PSProvider 'CMSite' -ErrorAction SilentlyContinue
+            $boolCreated = $false
+            if ($null -ne $objDrive -and (($objDrive.Root -ne $ComputerName) -or $PSBoundParameters.ContainsKey('Credential'))) {
+                Set-Location -LiteralPath $env:SystemDrive
+                Remove-PSDrive -Name $SiteCode -PSProvider 'CMSite' -Force -ErrorAction SilentlyContinue
+                $objDrive = $null
+            }
+            if ($null -eq $objDrive) {
+                $hashtableDrive = @{ Name = $SiteCode; PSProvider = 'CMSite'; Root = $ComputerName; Scope = 'Global'; ErrorAction = 'Stop' }
+                if ($PSBoundParameters.ContainsKey('Credential')) {
+                    $hashtableDrive['Credential'] = $Credential
+                }
+                [void](New-PSDrive @hashtableDrive)
+                $boolCreated = $true
+            }
+            Set-Location -LiteralPath $strSiteDrive -ErrorAction Stop
+            [void](Get-CMSite -SiteCode $SiteCode -ErrorAction Stop)
+        } catch {
+            Write-Debug -Message ('Connect-UpSite failed: {0}' -f $_.Exception.Message)
+            Set-Location -LiteralPath $objPrevious.Path -ErrorAction SilentlyContinue
+            throw ('Cannot open site {0} on {1}. Check the site code and the SMS Provider name in Options, and the account rights. {2}' -f $SiteCode, $ComputerName, $_.Exception.Message)
+        }
+        [pscustomobject]@{
+            SiteCode = $SiteCode
+            ComputerName = $ComputerName
+            PreviousLocation = $objPrevious.Path
+            CreatedDrive = $boolCreated
+        }
+    }
+}
+
+function Disconnect-UpSite {
+    # .SYNOPSIS
+    # Leaves the site drive that Connect-UpSite opened.
+    #
+    # .DESCRIPTION
+    # Sets the location back to the folder it had before Connect-UpSite and removes
+    # the site drive when Connect-UpSite created it. It never throws.
+    #
+    # .PARAMETER Connection
+    # The object that Connect-UpSite returns. A null value is ignored.
+    #
+    # .EXAMPLE
+    # Disconnect-UpSite -Connection $objConnection
+    #
+    # # The location is the folder from before.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # None.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261106.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([void])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        [pscustomobject]$Connection
+    )
+
+    process {
+        if ($null -eq $Connection) {
+            return
+        }
+        Set-Location -LiteralPath $Connection.PreviousLocation -ErrorAction SilentlyContinue
+        if ($Connection.CreatedDrive) {
+            Remove-PSDrive -Name $Connection.SiteCode -PSProvider 'CMSite' -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Invoke-UpSiteQuery {
+    # .SYNOPSIS
+    # Runs one WQL query on the site with Invoke-CMWmiQuery. Read only.
+    #
+    # .DESCRIPTION
+    # Used only where no ConfigurationManager cmdlet returns the data: the update
+    # compliance rows of SMS_UpdateComplianceStatus and the folder rows of
+    # SMS_ObjectContainerItem. Invoke-CMWmiQuery is a ConfigurationManager cmdlet.
+    # It uses the open site drive and the role based access of the account. It exists
+    # as a function so that tests can replace the only point of this kind.
+    #
+    # .PARAMETER Query
+    # The WQL query. It must be a SELECT.
+    #
+    # .EXAMPLE
+    # $arrRow = @(Invoke-UpSiteQuery -Query 'SELECT MachineID, CI_ID FROM SMS_UpdateComplianceStatus WHERE Status = 2')
+    #
+    # # One object for each row.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [object] One object for each row.
     #
     # .NOTES
     # PRIVATE/INTERNAL HELPER. This function is not part of the public API surface.
@@ -43,30 +222,17 @@ function Invoke-UpCimQuery {
     #
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261105.0
+    # Version: 1.0.20261106.0
     [CmdletBinding(PositionalBinding = $false)]
-    [OutputType([Microsoft.Management.Infrastructure.CimInstance])]
+    [OutputType([object])]
     param (
         [Parameter(Mandatory = $true)]
-        [object]$CimSession,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Namespace,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^\s*SELECT\s')]
         [string]$Query
     )
 
     process {
-        Write-Debug -Message ('WQL: {0}' -f $Query)
-        try {
-            Get-CimInstance -CimSession $CimSession -Namespace $Namespace -Query $Query -ErrorAction Stop
-        } catch {
-            Write-Debug -Message ('WQL failed: {0}' -f $_.Exception.Message)
-            throw
-        }
+        Invoke-CMWmiQuery -Query $Query -Option 'Lazy' -ErrorAction Stop
     }
 }
 
@@ -75,22 +241,15 @@ function Get-UpCollectionWindow {
     # Reads the maintenance windows that apply to software updates on one collection.
     #
     # .DESCRIPTION
-    # Reads SMS_CollectionSettings for the collection and then reads the object again
-    # with Get-CimInstance -InputObject, because the ServiceWindows property is a lazy
-    # property that the first query does not return. Only windows of type 1 (all
-    # deployments) and type 4 (software updates) are returned.
-    #
-    # .PARAMETER CimSession
-    # The open CIM session to the SMS Provider computer.
-    #
-    # .PARAMETER Namespace
-    # The WMI namespace, for example root\sms\site_ABC.
+    # Calls Get-CMMaintenanceWindow for the collection. Only windows of type 1 (all
+    # deployments) and type 4 (software updates) are returned. The site drive must be
+    # open (Connect-UpSite).
     #
     # .PARAMETER CollectionId
     # The collection ID.
     #
     # .EXAMPLE
-    # $arrWindow = @(Get-UpCollectionWindow -CimSession $objSession -Namespace 'root\sms\site_ABC' -CollectionId 'ABC00001')
+    # $arrWindow = @(Get-UpCollectionWindow -CollectionId 'ABC00001')
     #
     # # $arrWindow[0].Description = 'Occurs every 1 weeks on Saturday effective 8/15/2026 6:00 AM'
     #
@@ -106,32 +265,21 @@ function Get-UpCollectionWindow {
     #
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261105.0
+    # Version: 1.0.20261106.0
     [CmdletBinding(PositionalBinding = $false)]
     [OutputType([pscustomobject])]
     param (
-        [Parameter(Mandatory = $true)]
-        [object]$CimSession,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Namespace,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$CollectionId
     )
 
     process {
-        $strQuery = 'SELECT * FROM SMS_CollectionSettings WHERE CollectionID = ''{0}''' -f $CollectionId
-        foreach ($objSetting in (Invoke-UpCimQuery -CimSession $CimSession -Namespace $Namespace -Query $strQuery)) {
-            $objFull = Get-CimInstance -InputObject $objSetting -ErrorAction Stop
-            foreach ($objWindow in @($objFull.ServiceWindows)) {
-                if ($null -ne $objWindow -and ([int]$objWindow.ServiceWindowType -eq 1 -or [int]$objWindow.ServiceWindowType -eq 4)) {
-                    [pscustomobject]@{
-                        Description = [string]$objWindow.Description
-                        WindowType = [int]$objWindow.ServiceWindowType
-                    }
+        foreach ($objWindow in @(Get-CMMaintenanceWindow -CollectionId $CollectionId -ErrorAction Stop)) {
+            if ($null -ne $objWindow -and ([int]$objWindow.ServiceWindowType -eq 1 -or [int]$objWindow.ServiceWindowType -eq 4)) {
+                [pscustomobject]@{
+                    Description = [string]$objWindow.Description
+                    WindowType = [int]$objWindow.ServiceWindowType
                 }
             }
         }
@@ -349,21 +497,27 @@ function Get-UpdatePlannerState {
     # Reads the software update state of a ConfigMgr site. Read only.
     #
     # .DESCRIPTION
-    # Connects to the SMS Provider with a CIM session and reads: the update catalog
-    # (needed, installed, superseded and expired counts), the last WSUS synchronization,
-    # the target device collections with their members and maintenance windows, the
-    # devices that need each update in each target collection, and the existing
-    # update deployments. With -IncludeWsus it also reads update counts from the
-    # WSUS server through PowerShell remoting. The function changes nothing.
+    # Opens the site drive with the ConfigurationManager module and reads: the update
+    # catalog (needed, installed, superseded and expired counts), the last WSUS
+    # synchronization, the target device collections with their members and
+    # maintenance windows, the devices that need each update in each target
+    # collection, and the existing update deployments. With -IncludeWsus it also
+    # reads update counts from the WSUS server through PowerShell remoting. The
+    # function changes nothing.
+    #
+    # Cmdlets: Get-CMSoftwareUpdateSyncStatus, Get-CMSoftwareUpdate, Get-CMCollection,
+    # Get-CMCollectionMember, Get-CMMaintenanceWindow, Get-CMSoftwareUpdateDeployment.
+    # The per device update status has no cmdlet. It comes from Invoke-CMWmiQuery on
+    # SMS_UpdateComplianceStatus (documented fallback).
     #
     # .PARAMETER ComputerName
     # The computer that runs the SMS Provider. The default is the local computer.
     #
     # .PARAMETER Credential
-    # An optional credential for the CIM session and for WSUS remoting.
+    # An optional credential for the site drive and for WSUS remoting.
     #
     # .PARAMETER SiteCode
-    # The site code. When omitted, the function reads it from the SMS Provider.
+    # The three character site code.
     #
     # .PARAMETER TargetCollection
     # The device collections that receive updates, as names or collection IDs.
@@ -374,7 +528,7 @@ function Get-UpdatePlannerState {
     # provider computer. A failure here is a warning, not an error.
     #
     # .EXAMPLE
-    # $objState = Get-UpdatePlannerState -ComputerName 'CM01' -Credential $objCredential -TargetCollection 'Pilot','Broad'
+    # $objState = Get-UpdatePlannerState -ComputerName 'CM01' -SiteCode 'ABC' -TargetCollection 'Pilot','Broad'
     #
     # # $objState.Summary.NeededUpdates = 5
     #
@@ -388,7 +542,7 @@ function Get-UpdatePlannerState {
     # .NOTES
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261105.0
+    # Version: 2.0.20261106.0
     [CmdletBinding(PositionalBinding = $false)]
     [OutputType([pscustomobject])]
     param (
@@ -399,7 +553,7 @@ function Get-UpdatePlannerState {
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$Credential,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidatePattern('^[A-Za-z0-9]{3}$')]
         [string]$SiteCode,
 
@@ -412,25 +566,16 @@ function Get-UpdatePlannerState {
     )
 
     process {
-        $objSession = $null
+        $objConnection = $null
         try {
-            $hashtableSession = @{ ComputerName = $ComputerName; ErrorAction = 'Stop' }
+            $hashtableConnect = @{ ComputerName = $ComputerName; SiteCode = $SiteCode }
             if ($PSBoundParameters.ContainsKey('Credential')) {
-                $hashtableSession['Credential'] = $Credential
+                $hashtableConnect['Credential'] = $Credential
             }
-            Write-Verbose -Message ('Opening CIM session to {0}' -f $ComputerName)
-            $objSession = New-CimSession @hashtableSession
+            Write-Verbose -Message ('Opening site drive {0}: on {1}' -f $SiteCode, $ComputerName)
+            $objConnection = Connect-UpSite @hashtableConnect
 
-            if ([string]::IsNullOrEmpty($SiteCode)) {
-                $arrLocation = @(Invoke-UpCimQuery -CimSession $objSession -Namespace 'root\sms' -Query 'SELECT SiteCode FROM SMS_ProviderLocation WHERE ProviderForLocalSite = TRUE')
-                if ($arrLocation.Count -lt 1) {
-                    throw 'The SMS Provider reports no local site code.'
-                }
-                $SiteCode = [string]$arrLocation[0].SiteCode
-            }
-            $strNamespace = 'root\sms\site_{0}' -f $SiteCode
-
-            $objSyncRow = Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT * FROM SMS_SUPSyncStatus' | Select-Object -First 1
+            $objSyncRow = Get-CMSoftwareUpdateSyncStatus -ErrorAction Stop | Select-Object -First 1
             $objSync = $null
             if ($null -ne $objSyncRow) {
                 $objSync = [pscustomobject]@{
@@ -442,8 +587,7 @@ function Get-UpdatePlannerState {
             }
 
             $listUpdate = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            $strUpdateQuery = 'SELECT CI_ID, ArticleID, LocalizedDisplayName, Severity, IsExpired, IsSuperseded, IsDeployed, NumMissing, NumPresent, NumTotal, DateRevised FROM SMS_SoftwareUpdate'
-            foreach ($objRow in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query $strUpdateQuery)) {
+            foreach ($objRow in (Get-CMSoftwareUpdate -Fast -ErrorAction Stop)) {
                 $listUpdate.Add([pscustomobject]@{
                         CIId = [int]$objRow.CI_ID
                         ArticleId = [string]$objRow.ArticleID
@@ -459,9 +603,10 @@ function Get-UpdatePlannerState {
                     })
             }
 
-            # Status 2 means "update is required" on a device.
+            # Status 2 means "update is required" on a device. No cmdlet returns this per
+            # device status, so this is the one documented fallback (Invoke-CMWmiQuery).
             $hashtableRequired = @{}
-            foreach ($objRow in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT MachineID, CI_ID FROM SMS_UpdateComplianceStatus WHERE Status = 2')) {
+            foreach ($objRow in (Invoke-UpSiteQuery -Query 'SELECT MachineID, CI_ID FROM SMS_UpdateComplianceStatus WHERE Status = 2')) {
                 $strKey = [string]$objRow.CI_ID
                 if (-not $hashtableRequired.ContainsKey($strKey)) {
                     $hashtableRequired[$strKey] = New-Object -TypeName 'System.Collections.Generic.HashSet[int]'
@@ -471,13 +616,12 @@ function Get-UpdatePlannerState {
 
             $listCollection = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
             foreach ($strTarget in $TargetCollection) {
-                $strEscaped = $strTarget.Replace('\', '\\').Replace("'", "''")
                 $arrFound = @()
                 if ($strTarget -match '^[A-Za-z0-9]{8}$') {
-                    $arrFound = @(Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ("SELECT CollectionID, Name, CollectionType, MemberCount FROM SMS_Collection WHERE CollectionID = '{0}'" -f $strEscaped))
+                    $arrFound = @(Get-CMCollection -Id $strTarget -ErrorAction SilentlyContinue)
                 }
                 if ($arrFound.Count -eq 0) {
-                    $arrFound = @(Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ("SELECT CollectionID, Name, CollectionType, MemberCount FROM SMS_Collection WHERE Name = '{0}'" -f $strEscaped))
+                    $arrFound = @(Get-CMCollection -Name $strTarget -DisableWildcardHandling -WarningAction SilentlyContinue -ErrorAction Stop)
                 }
                 if ($arrFound.Count -ne 1) {
                     throw ('Target collection "{0}" matched {1} collections. It must match exactly one.' -f $strTarget, $arrFound.Count)
@@ -488,7 +632,7 @@ function Get-UpdatePlannerState {
                 }
                 $strCollectionId = [string]$objFound.CollectionID
                 $hashtableMember = New-Object -TypeName 'System.Collections.Generic.HashSet[int]'
-                foreach ($objMember in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ('SELECT ResourceID FROM SMS_FullCollectionMembership WHERE CollectionID = ''{0}''' -f $strCollectionId))) {
+                foreach ($objMember in (Get-CMCollectionMember -CollectionId $strCollectionId -ErrorAction Stop)) {
                     [void]$hashtableMember.Add([int]$objMember.ResourceID)
                 }
                 $hashtableNeeded = @{}
@@ -503,7 +647,7 @@ function Get-UpdatePlannerState {
                         $hashtableNeeded[$strKey] = $intCount
                     }
                 }
-                $arrWindow = @(Get-UpCollectionWindow -CimSession $objSession -Namespace $strNamespace -CollectionId $strCollectionId)
+                $arrWindow = @(Get-UpCollectionWindow -CollectionId $strCollectionId)
                 $listCollection.Add([pscustomobject]@{
                         CollectionId = $strCollectionId
                         Name = [string]$objFound.Name
@@ -515,7 +659,7 @@ function Get-UpdatePlannerState {
             }
 
             $listDeployment = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objRow in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT AssignmentID, AssignmentName, TargetCollectionID, AssignedCIs, EnforcementDeadline FROM SMS_UpdatesAssignment')) {
+            foreach ($objRow in (Get-CMSoftwareUpdateDeployment -ErrorAction Stop)) {
                 $listDeployment.Add([pscustomobject]@{
                         AssignmentId = [int]$objRow.AssignmentID
                         Name = [string]$objRow.AssignmentName
@@ -579,9 +723,7 @@ function Get-UpdatePlannerState {
             Write-Debug -Message ('Get-UpdatePlannerState failed: {0}' -f $_.Exception.Message)
             throw
         } finally {
-            if ($null -ne $objSession) {
-                Remove-CimSession -CimSession $objSession -ErrorAction SilentlyContinue
-            }
+            Disconnect-UpSite -Connection $objConnection
         }
     }
 }
@@ -880,21 +1022,24 @@ function Invoke-UpdatePlan {
     #
     # .DESCRIPTION
     # Without -Apply the function changes nothing and writes a warning. With -Apply
-    # it creates one software update deployment (SMS_UpdatesAssignment) for each
-    # wave that holds updates, targeted at the wave collection, with the planned
-    # start time and deadline. Each deployment is named "UpdatePlanner <PlanId>
-    # <wave name>". The function supports -WhatIf and asks for confirmation before
-    # each deployment (ConfirmImpact is High). It never deletes or edits an existing
-    # deployment. To undo a run, delete the deployments that carry the plan ID.
+    # it creates, for each wave that holds updates, one software update group
+    # (New-CMSoftwareUpdateGroup) and one software update deployment
+    # (New-CMSoftwareUpdateDeployment) of that group, targeted at the wave
+    # collection, with the planned start time and deadline. The group and the
+    # deployment are named "UpdatePlanner <PlanId> <wave name>". The deployment does
+    # not distribute content (DeployWithNoPackage). The function supports -WhatIf and
+    # asks for confirmation before each wave (ConfirmImpact is High). It never deletes
+    # or edits an existing group or deployment. To undo a run, delete the deployments
+    # and the groups that carry the plan ID.
     #
     # .PARAMETER Plan
-    # The plan that New-UpdatePlan returns, or the object read from the JSON file.
+    # The plan that New-UpdatePlan returns, or the object that ConvertFrom-UpdatePlanJson returns.
     #
     # .PARAMETER ComputerName
     # The computer that runs the SMS Provider. The default is the plan computer.
     #
     # .PARAMETER Credential
-    # An optional credential for the CIM session.
+    # An optional credential for the site drive.
     #
     # .PARAMETER Apply
     # Required to change anything on the site.
@@ -919,7 +1064,7 @@ function Invoke-UpdatePlan {
     # .NOTES
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261105.0
+    # Version: 2.0.20261106.0
     [CmdletBinding(PositionalBinding = $false, SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     [OutputType([pscustomobject])]
     param (
@@ -952,17 +1097,16 @@ function Invoke-UpdatePlan {
                 }
             }
         }
-        $strNamespace = 'root\sms\site_{0}' -f $Plan.SiteCode
-        $objSession = $null
+        $objConnection = $null
         try {
             if ($WhatIfPreference) {
-                Write-Verbose -Message 'WhatIf: no CIM session is opened.'
+                Write-Verbose -Message 'WhatIf: the site drive is not opened.'
             } else {
-                $hashtableSession = @{ ComputerName = $ComputerName; ErrorAction = 'Stop' }
+                $hashtableConnect = @{ ComputerName = $ComputerName; SiteCode = [string]$Plan.SiteCode }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
-                    $hashtableSession['Credential'] = $Credential
+                    $hashtableConnect['Credential'] = $Credential
                 }
-                $objSession = New-CimSession @hashtableSession
+                $objConnection = Connect-UpSite @hashtableConnect
             }
             foreach ($objWave in $Plan.Waves) {
                 $arrUpdate = @($objWave.Updates)
@@ -971,7 +1115,7 @@ function Invoke-UpdatePlan {
                 }
                 $strName = 'UpdatePlanner {0} {1}' -f $Plan.PlanId, $objWave.Name
                 $strTarget = '{0} ({1} updates to {2})' -f $strName, $arrUpdate.Count, $objWave.CollectionId
-                if (-not $PSCmdlet.ShouldProcess($strTarget, 'Create software update deployment')) {
+                if (-not $PSCmdlet.ShouldProcess($strTarget, 'Create software update group and deployment')) {
                     [pscustomobject]@{
                         Wave = $objWave.Name
                         CollectionId = $objWave.CollectionId
@@ -985,26 +1129,24 @@ function Invoke-UpdatePlan {
                 try {
                     $datetimeStart = [datetime]::ParseExact([string]$objWave.StartDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
                     $datetimeDeadline = [datetime]::ParseExact([string]$objWave.DeadlineDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
-                    [uint32[]]$arrCIId = @($arrUpdate | ForEach-Object { [uint32]$_.CIId })
-                    $hashtableProperty = @{
-                        AssignmentName = $strName
-                        AssignmentDescription = 'Created by Update Planner plan {0}' -f $Plan.PlanId
-                        AssignedCIs = $arrCIId
-                        TargetCollectionID = [string]$objWave.CollectionId
-                        StartTime = $datetimeStart
-                        EnforcementDeadline = $datetimeDeadline
-                        AssignmentType = [uint32]1
-                        DesiredConfigType = [uint32]1
-                        ApplyToSubTargets = $false
-                        UseGMTTimes = $false
-                        NotifyUser = $true
-                        OverrideServiceWindows = $false
-                        RebootOutsideOfServiceWindows = $false
-                        SuppressReboot = [uint32]0
-                        WoLEnabled = $false
-                        LocaleID = [uint32]1033
+                    [string[]]$arrCIId = @($arrUpdate | ForEach-Object { [string][int]$_.CIId })
+                    $objGroup = New-CMSoftwareUpdateGroup -Name $strName -Description ('Created by Update Planner plan {0}' -f $Plan.PlanId) -SoftwareUpdateId $arrCIId -ErrorAction Stop
+                    $hashtableDeployment = @{
+                        SoftwareUpdateGroupId = [string]$objGroup.CI_ID
+                        CollectionId = [string]$objWave.CollectionId
+                        DeploymentName = $strName
+                        Comment = 'Created by Update Planner plan {0}' -f $Plan.PlanId
+                        DeploymentType = 'Required'
+                        AvailableDateTime = $datetimeStart
+                        DeadlineDateTime = $datetimeDeadline
+                        TimeBasedOn = 'LocalTime'
+                        UserNotification = 'DisplayAll'
+                        SoftwareInstallation = $false
+                        AllowRestart = $false
+                        DeployWithNoPackage = $true
+                        ErrorAction = 'Stop'
                     }
-                    $objCreated = New-CimInstance -CimSession $objSession -Namespace $strNamespace -ClassName 'SMS_UpdatesAssignment' -Property $hashtableProperty -ErrorAction Stop
+                    $objCreated = New-CMSoftwareUpdateDeployment @hashtableDeployment
                     [pscustomobject]@{
                         Wave = $objWave.Name
                         CollectionId = $objWave.CollectionId
@@ -1026,9 +1168,7 @@ function Invoke-UpdatePlan {
                 }
             }
         } finally {
-            if ($null -ne $objSession) {
-                Remove-CimSession -CimSession $objSession -ErrorAction SilentlyContinue
-            }
+            Disconnect-UpSite -Connection $objConnection
         }
     }
 }
@@ -1042,21 +1182,24 @@ function Get-UpdatePlannerCollection {
     # Reads the device collections and the console folders of a site. Read only.
     #
     # .DESCRIPTION
-    # Runs three SELECT queries against the SMS Provider and returns the data in the
-    # shape that the collection picker of the window needs: collections with a
-    # folder ID, and the folder tree.
+    # Opens the site drive and returns the data in the shape that the collection
+    # picker of the window needs: collections with a folder ID, and the folder tree.
+    # Collections come from Get-CMDeviceCollection. Folders come from Get-CMFolder
+    # (TypeName SMS_Collection_Device). No cmdlet returns which folder holds a
+    # collection, so that link comes from Invoke-CMWmiQuery on SMS_ObjectContainerItem
+    # (documented fallback).
     #
     # .PARAMETER ComputerName
     # The computer that runs the SMS Provider.
     #
     # .PARAMETER Credential
-    # An optional credential for the CIM session.
+    # An optional credential for the site drive.
     #
     # .PARAMETER SiteCode
-    # The site code. When omitted, the function reads it from the SMS Provider.
+    # The three character site code.
     #
     # .EXAMPLE
-    # $objList = Get-UpdatePlannerCollection -ComputerName 'cm01.contoso.com'
+    # $objList = Get-UpdatePlannerCollection -ComputerName 'cm01.contoso.com' -SiteCode 'ABC'
     #
     # # $objList.Collections holds one object for each device collection.
     #
@@ -1070,7 +1213,7 @@ function Get-UpdatePlannerCollection {
     # .NOTES
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261106.0
+    # Version: 2.0.20261106.0
     [CmdletBinding(PositionalBinding = $false)]
     [OutputType([pscustomobject])]
     param (
@@ -1081,34 +1224,26 @@ function Get-UpdatePlannerCollection {
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]$Credential,
 
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true)]
         [ValidatePattern('^[A-Za-z0-9]{3}$')]
         [string]$SiteCode
     )
 
     process {
-        $objSession = $null
+        $objConnection = $null
         try {
-            $hashtableSession = @{ ComputerName = $ComputerName; ErrorAction = 'Stop' }
+            $hashtableConnect = @{ ComputerName = $ComputerName; SiteCode = $SiteCode }
             if ($PSBoundParameters.ContainsKey('Credential')) {
-                $hashtableSession['Credential'] = $Credential
+                $hashtableConnect['Credential'] = $Credential
             }
-            $objSession = New-CimSession @hashtableSession
-            if ([string]::IsNullOrEmpty($SiteCode)) {
-                $arrLocation = @(Invoke-UpCimQuery -CimSession $objSession -Namespace 'root\sms' -Query 'SELECT SiteCode FROM SMS_ProviderLocation WHERE ProviderForLocalSite = TRUE')
-                if ($arrLocation.Count -lt 1) {
-                    throw 'The SMS Provider reports no local site code.'
-                }
-                $SiteCode = [string]$arrLocation[0].SiteCode
-            }
-            $strNamespace = 'root\sms\site_{0}' -f $SiteCode
+            $objConnection = Connect-UpSite @hashtableConnect
 
             $hashtableFolderOf = @{}
-            foreach ($objItem in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT InstanceKey, ContainerNodeID FROM SMS_ObjectContainerItem WHERE ObjectType = 5000')) {
+            foreach ($objItem in (Invoke-UpSiteQuery -Query 'SELECT InstanceKey, ContainerNodeID FROM SMS_ObjectContainerItem WHERE ObjectType = 5000')) {
                 $hashtableFolderOf[[string]$objItem.InstanceKey] = [int]$objItem.ContainerNodeID
             }
             $listFolder = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objNode in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT ContainerNodeID, Name, ParentContainerNodeID FROM SMS_ObjectContainerNode WHERE ObjectType = 5000')) {
+            foreach ($objNode in (Get-CMFolder -TypeName 'SMS_Collection_Device' -ErrorAction Stop)) {
                 $listFolder.Add([pscustomobject]@{
                         FolderID = [int]$objNode.ContainerNodeID
                         ParentID = [int]$objNode.ParentContainerNodeID
@@ -1116,7 +1251,7 @@ function Get-UpdatePlannerCollection {
                     })
             }
             $listCollection = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objRow in (Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query 'SELECT CollectionID, Name, MemberCount FROM SMS_Collection WHERE CollectionType = 2')) {
+            foreach ($objRow in (Get-CMDeviceCollection -ErrorAction Stop)) {
                 $strId = [string]$objRow.CollectionID
                 $intFolder = 0
                 if ($hashtableFolderOf.ContainsKey($strId)) {
@@ -1139,9 +1274,7 @@ function Get-UpdatePlannerCollection {
             Write-Debug -Message ('Get-UpdatePlannerCollection failed: {0}' -f $_.Exception.Message)
             throw
         } finally {
-            if ($null -ne $objSession) {
-                Remove-CimSession -CimSession $objSession -ErrorAction SilentlyContinue
-            }
+            Disconnect-UpSite -Connection $objConnection
         }
     }
 }
@@ -1153,6 +1286,9 @@ function Resolve-UpdatePlannerSetting {
     # .DESCRIPTION
     # Converts the text of each setting to its typed value and collects one message
     # for each wrong value. The function reads nothing and changes nothing.
+    #
+    # .PARAMETER SiteCode
+    # The site code as typed. When the parameter is not passed, it is not checked.
     #
     # .PARAMETER ComputerName
     # The SMS Provider computer name as typed.
@@ -1199,6 +1335,10 @@ function Resolve-UpdatePlannerSetting {
 
         [Parameter(Mandatory = $false)]
         [AllowEmptyString()]
+        [string]$SiteCode = '',
+
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyString()]
         [string]$StartDateText = '',
 
         [Parameter(Mandatory = $false)]
@@ -1227,6 +1367,9 @@ function Resolve-UpdatePlannerSetting {
         $strComputer = $ComputerName.Trim()
         if ($strComputer -notmatch '^[A-Za-z0-9_.-]{1,255}$') {
             $listError.Add('Enter the SMS Provider computer name in Options.')
+        }
+        if ($PSBoundParameters.ContainsKey('SiteCode') -and $SiteCode.Trim() -notmatch '^[A-Za-z0-9]{3}$') {
+            $listError.Add('Enter the site code in Options. It is three letters or digits.')
         }
         $datetimeStart = [datetime]::MinValue
         if (-not [datetime]::TryParse($StartDateText.Trim(), [System.Globalization.CultureInfo]::CurrentCulture, [System.Globalization.DateTimeStyles]::None, [ref]$datetimeStart)) {
@@ -1408,6 +1551,14 @@ function ConvertTo-UpdatePlanJson {
     # .SYNOPSIS
     # Returns the JSON text of a plan, the format that Export-UpdatePlan writes.
     #
+    # .DESCRIPTION
+    # The text is a Suite ring plan (docs/reference/plan-format.md). Deployment Helper
+    # loads it as a ring plan: Name, Description, HoldLaterRings, TimeBasedOn and Rings
+    # hold the fields of a Deployment Helper plan. One ring is one wave. The fields
+    # Format, SchemaVersion, UpdatePlanner and the Updates list of each ring are
+    # extra. Deployment Helper ignores them. ConvertFrom-UpdatePlanJson reads the
+    # text back into a plan.
+    #
     # .PARAMETER Plan
     # The plan that New-UpdatePlan returns.
     #
@@ -1425,7 +1576,7 @@ function ConvertTo-UpdatePlanJson {
     # .NOTES
     # This function does not support positional parameters.
     #
-    # Version: 1.0.20261106.0
+    # Version: 2.0.20261106.0
     [CmdletBinding(PositionalBinding = $false)]
     [OutputType([string])]
     param (
@@ -1434,7 +1585,161 @@ function ConvertTo-UpdatePlanJson {
     )
 
     process {
-        $Plan | ConvertTo-Json -Depth 8
+        $datetimeBase = [datetime]::ParseExact([string]$Plan.Parameters.StartDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+        $listRing = New-Object -TypeName 'System.Collections.Generic.List[object]'
+        foreach ($objWave in @($Plan.Waves)) {
+            $intAvailable = [int]([datetime]::ParseExact([string]$objWave.StartDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture) - $datetimeBase).TotalDays
+            $intDeadline = [int]([datetime]::ParseExact([string]$objWave.DeadlineDate, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture) - $datetimeBase).TotalDays
+            $listRing.Add([ordered]@{
+                    Name = [string]$objWave.Name
+                    CollectionID = [string]$objWave.CollectionId
+                    CollectionName = [string]$objWave.CollectionName
+                    Purpose = 'Required'
+                    AvailableOffsetDays = $intAvailable
+                    DeadlineOffsetDays = $intDeadline
+                    UserNotification = 'DisplayAll'
+                    OverrideServiceWindow = $false
+                    RebootOutsideServiceWindow = $false
+                    AllowMeteredConnection = $false
+                    DPGroup = ''
+                    SuccessThresholdPercent = $null
+                    MemberCount = [int]$objWave.MemberCount
+                    MaintenanceWindows = @($objWave.MaintenanceWindows | ForEach-Object { [string]$_ })
+                    StartDate = [string]$objWave.StartDate
+                    DeadlineDate = [string]$objWave.DeadlineDate
+                    Updates = @($objWave.Updates | ForEach-Object {
+                            [ordered]@{
+                                Sequence = [int]$_.Sequence
+                                CIId = [int]$_.CIId
+                                ArticleId = [string]$_.ArticleId
+                                Title = [string]$_.Title
+                                Severity = [int]$_.Severity
+                                SeverityName = [string]$_.SeverityName
+                                NeededDevices = [int]$_.NeededDevices
+                            }
+                        })
+                })
+        }
+        $objDocument = [ordered]@{
+            Format = 'SuiteRingPlan'
+            SchemaVersion = 1
+            Name = 'UpdatePlanner-{0}' -f $Plan.PlanId
+            Description = 'Update Planner plan {0}, {1} waves, start {2}.' -f $Plan.PlanId, $listRing.Count, $Plan.Parameters.StartDate
+            HoldLaterRings = $false
+            TimeBasedOn = 'LocalTime'
+            Rings = $listRing.ToArray()
+            UpdatePlanner = [ordered]@{
+                PlanId = [string]$Plan.PlanId
+                GeneratedAt = [string]$Plan.GeneratedAt
+                ComputerName = [string]$Plan.ComputerName
+                SiteCode = [string]$Plan.SiteCode
+                Parameters = $Plan.Parameters
+                Summary = $Plan.Summary
+                Sync = $Plan.Sync
+                Wsus = $Plan.Wsus
+                Skipped = @($Plan.Skipped)
+            }
+        }
+        $objDocument | ConvertTo-Json -Depth 8
+    }
+}
+
+function ConvertFrom-UpdatePlanJson {
+    # .SYNOPSIS
+    # Reads the JSON text of a Suite ring plan into an update plan.
+    #
+    # .DESCRIPTION
+    # The reverse of ConvertTo-UpdatePlanJson. It accepts a plan that carries the
+    # Updates list in each ring (an Update Planner plan) and rebuilds the waves.
+    # It throws a plain message when Format is not SuiteRingPlan, when SchemaVersion
+    # is not 1, or when the UpdatePlanner block is missing.
+    #
+    # .PARAMETER Json
+    # The JSON text.
+    #
+    # .EXAMPLE
+    # $objPlan = ConvertFrom-UpdatePlanJson -Json (Get-Content -LiteralPath 'plan.json' -Raw)
+    #
+    # # $objPlan.Waves[0].Name = 'Wave 1 - Pilot'
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [pscustomobject] The plan, in the shape that New-UpdatePlan returns.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261106.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Json
+    )
+
+    process {
+        try {
+            $objDocument = $Json | ConvertFrom-Json -ErrorAction Stop
+        } catch {
+            throw ('The plan file is not valid JSON. {0}' -f $_.Exception.Message)
+        }
+        $strFormat = ''
+        if ($null -ne $objDocument.PSObject.Properties['Format']) { $strFormat = [string]$objDocument.Format }
+        if ($strFormat -ne 'SuiteRingPlan') {
+            throw 'The file is not a Suite ring plan (Format must be SuiteRingPlan).'
+        }
+        $strVersion = ''
+        if ($null -ne $objDocument.PSObject.Properties['SchemaVersion']) { $strVersion = [string]$objDocument.SchemaVersion }
+        if ($strVersion -ne '1') {
+            throw ('Schema version {0} is not supported. This version reads version 1.' -f $strVersion)
+        }
+        if ($null -eq $objDocument.PSObject.Properties['UpdatePlanner'] -or $null -eq $objDocument.UpdatePlanner) {
+            throw 'The ring plan has no UpdatePlanner block. It was not written by Update Planner.'
+        }
+        $listWave = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
+        $intOrder = 0
+        foreach ($objRing in @($objDocument.Rings)) {
+            $intOrder++
+            $arrWindow = @($objRing.MaintenanceWindows | Where-Object { $null -ne $_ } | ForEach-Object { [string]$_ })
+            $listWave.Add([pscustomobject]@{
+                    Order = $intOrder
+                    Name = [string]$objRing.Name
+                    CollectionId = [string]$objRing.CollectionID
+                    CollectionName = [string]$objRing.CollectionName
+                    MemberCount = [int]$objRing.MemberCount
+                    MaintenanceWindowCount = $arrWindow.Count
+                    MaintenanceWindows = $arrWindow
+                    StartDate = [string]$objRing.StartDate
+                    DeadlineDate = [string]$objRing.DeadlineDate
+                    Updates = @($objRing.Updates | Where-Object { $null -ne $_ } | ForEach-Object {
+                            [pscustomobject]@{
+                                Sequence = [int]$_.Sequence
+                                CIId = [int]$_.CIId
+                                ArticleId = [string]$_.ArticleId
+                                Title = [string]$_.Title
+                                Severity = [int]$_.Severity
+                                SeverityName = [string]$_.SeverityName
+                                NeededDevices = [int]$_.NeededDevices
+                            }
+                        })
+                })
+        }
+        $objMeta = $objDocument.UpdatePlanner
+        [pscustomobject]@{
+            PlanId = [string]$objMeta.PlanId
+            GeneratedAt = [string]$objMeta.GeneratedAt
+            ComputerName = [string]$objMeta.ComputerName
+            SiteCode = [string]$objMeta.SiteCode
+            Parameters = $objMeta.Parameters
+            Summary = $objMeta.Summary
+            Sync = $objMeta.Sync
+            Wsus = $objMeta.Wsus
+            Waves = $listWave.ToArray()
+            Skipped = @($objMeta.Skipped | Where-Object { $null -ne $_ })
+        }
     }
 }
 
@@ -1777,4 +2082,4 @@ function Write-UpdatePlanAudit {
 
 #endregion Window support
 
-Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit'
+Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertFrom-UpdatePlanJson', 'Test-UpConsoleModule', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit'

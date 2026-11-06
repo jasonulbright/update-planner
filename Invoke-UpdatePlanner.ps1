@@ -8,7 +8,7 @@ param (
     [Parameter(Mandatory = $false)]
     [System.Management.Automation.PSCredential]$Credential,
 
-    [Parameter(Mandatory = $false)]
+    [Parameter(Mandatory = $true)]
     [ValidatePattern('^[A-Za-z0-9]{3}$')]
     [string]$SiteCode,
 
@@ -55,10 +55,10 @@ param (
 # The SMS Provider computer. The default is the local computer.
 #
 # .PARAMETER Credential
-# Optional credential for the connection.
+# Optional credential for the site drive.
 #
 # .PARAMETER SiteCode
-# Optional site code. The script reads it from the provider when omitted.
+# The three character site code.
 #
 # .PARAMETER TargetCollection
 # Device collections, as names or IDs. The order is the order of the waves.
@@ -104,19 +104,22 @@ param (
 # .NOTES
 # This script does not support positional parameters.
 #
-# Version: 2026.11.06.0002
+# Version: 2026.11.06.0003
 
 Set-StrictMode -Version Latest
 $strModulePath = Join-Path -Path (Split-Path -Path $PSCommandPath -Parent) -ChildPath 'Module'
 $strModulePath = Join-Path -Path $strModulePath -ChildPath 'UpdatePlannerCommon.psd1'
 Import-Module -Name $strModulePath -Force -ErrorAction Stop
 
-$hashtableConnection = @{ ComputerName = $ComputerName }
+$objConsole = Test-UpConsoleModule
+if (-not $objConsole.Available) {
+    Write-Warning -Message $objConsole.Message
+    exit 2
+}
+
+$hashtableConnection = @{ ComputerName = $ComputerName; SiteCode = $SiteCode }
 if ($PSBoundParameters.ContainsKey('Credential')) {
     $hashtableConnection['Credential'] = $Credential
-}
-if ($PSBoundParameters.ContainsKey('SiteCode')) {
-    $hashtableConnection['SiteCode'] = $SiteCode
 }
 
 $objState = Get-UpdatePlannerState @hashtableConnection -TargetCollection $TargetCollection -IncludeWsus:$IncludeWsus
