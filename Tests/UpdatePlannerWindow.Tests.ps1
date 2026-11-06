@@ -183,6 +183,22 @@ Describe 'ConvertTo-UpdatePlanResultRow' {
         @(ConvertTo-UpdatePlanResultRow -Result @()).Count | Should -Be 0
     }
 }
+Describe 'Invoke-UpdatePlan built-in collection block' {
+    It 'refuses a real apply to a built-in collection and creates nothing' {
+        Mock -ModuleName UpdatePlannerCommon New-CimSession { }
+        Mock -ModuleName UpdatePlannerCommon New-CimInstance { }
+        $objPlan = New-WindowTestPlan
+        $objPlan.Waves[0].CollectionId = 'SMS00001'
+        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -Confirm:$false } | Should -Throw '*built in*'
+        Should -Invoke -ModuleName UpdatePlannerCommon New-CimInstance -Times 0 -Exactly
+    }
+
+    It 'still previews with -WhatIf for a built-in collection' {
+        $objPlan = New-WindowTestPlan
+        $objPlan.Waves[0].CollectionId = 'SMS00001'
+        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -WhatIf 6>$null } | Should -Not -Throw
+    }
+}
 Describe 'Test-UpdatePlanApplyAllowed' {
     It 'allows a plan with updates for non built-in collections' {
         $objCheck = Test-UpdatePlanApplyAllowed -Plan (New-WindowTestPlan)

@@ -470,9 +470,14 @@ function Get-UpdatePlannerState {
 
             $listCollection = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
             foreach ($strTarget in $TargetCollection) {
-                $strEscaped = $strTarget.Replace("'", "''")
-                $strFilter = if ($strTarget -match '^[A-Za-z0-9]{8}$') { "CollectionID = '{0}'" -f $strEscaped } else { "Name = '{0}'" -f $strEscaped }
-                $arrFound = @(Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ('SELECT CollectionID, Name, CollectionType, MemberCount FROM SMS_Collection WHERE {0}' -f $strFilter))
+                $strEscaped = $strTarget.Replace('\', '\\').Replace("'", "''")
+                $arrFound = @()
+                if ($strTarget -match '^[A-Za-z0-9]{8}$') {
+                    $arrFound = @(Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ("SELECT CollectionID, Name, CollectionType, MemberCount FROM SMS_Collection WHERE CollectionID = '{0}'" -f $strEscaped))
+                }
+                if ($arrFound.Count -eq 0) {
+                    $arrFound = @(Invoke-UpCimQuery -CimSession $objSession -Namespace $strNamespace -Query ("SELECT CollectionID, Name, CollectionType, MemberCount FROM SMS_Collection WHERE Name = '{0}'" -f $strEscaped))
+                }
                 if ($arrFound.Count -ne 1) {
                     throw ('Target collection "{0}" matched {1} collections. It must match exactly one.' -f $strTarget, $arrFound.Count)
                 }
@@ -938,6 +943,13 @@ function Invoke-UpdatePlan {
         }
         if ([string]::IsNullOrEmpty($ComputerName)) {
             $ComputerName = [string]$Plan.ComputerName
+        }
+        if (-not $WhatIfPreference) {
+            foreach ($objCheckWave in @($Plan.Waves)) {
+                if (@($objCheckWave.Updates).Count -gt 0 -and ([string]$objCheckWave.CollectionId).StartsWith('SMS', [System.StringComparison]::OrdinalIgnoreCase)) {
+                    throw ('{0}: the collection {1} is built in. Deployments to built-in collections are blocked.' -f $objCheckWave.Name, $objCheckWave.CollectionId)
+                }
+            }
         }
         $strNamespace = 'root\sms\site_{0}' -f $Plan.SiteCode
         $objSession = $null

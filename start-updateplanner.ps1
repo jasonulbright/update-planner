@@ -237,6 +237,7 @@ function Update-ControlState {
     $actionsOn = [bool]$toggleActions.IsOn
     $idle = -not $script:IsBusy
     $btnBuildPlan.IsEnabled       = $idle
+    $btnOptions.IsEnabled         = $idle
     $btnLoadCollections.IsEnabled = $idle
     $btnAddWave.IsEnabled         = $idle
     $btnExportJson.IsEnabled      = $hasPlan
@@ -247,9 +248,9 @@ function Update-ControlState {
     $btnDryRun.IsEnabled          = $idle -and $hasPlan -and $actionsOn
     $btnApply.IsEnabled           = $idle -and $hasPlan -and $actionsOn
     $hasSel = $lstWaves.SelectedIndex -ge 0
-    $btnRemoveWave.IsEnabled      = $hasSel
-    $btnWaveUp.IsEnabled          = $hasSel -and $lstWaves.SelectedIndex -gt 0
-    $btnWaveDown.IsEnabled        = $hasSel -and $lstWaves.SelectedIndex -lt ($script:WaveList.Count - 1)
+    $btnRemoveWave.IsEnabled      = $idle -and $hasSel
+    $btnWaveUp.IsEnabled          = $idle -and $hasSel -and $lstWaves.SelectedIndex -gt 0
+    $btnWaveDown.IsEnabled        = $idle -and $hasSel -and $lstWaves.SelectedIndex -lt ($script:WaveList.Count - 1)
 }
 
 # === View switching ===
