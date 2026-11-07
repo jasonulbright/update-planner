@@ -1,4 +1,18 @@
-# Plan rules and limits
+# Plan rules
+
+This page lists what Update Planner reads, the rules that build a plan, what the deploy step creates, and what the tool does not do.
+
+## What it does
+
+The page states the rules of the plan and of the deploy step. The window and the command line use the same rules.
+
+## When to use it
+
+Use this page to find out why an update is, or is not, in a wave.
+
+## Requirements
+
+None.
 
 ## What the tool reads
 
@@ -65,3 +79,8 @@ The JSON export is a Suite ring plan. Deployment Helper loads it as a ring plan.
 - Tested on one lab site with one primary site and one SMS Provider. A hierarchy or a remote provider is not tested.
 - The Deploy step needs update content that the site has downloaded, or clients that can download it. Review a created deployment in the console before a real rollout.
 - The tool needs the Configuration Manager console on the computer that runs it. The ConfigurationManager module comes only with the console.
+
+## Links
+
+- [Introduction to software updates in Configuration Manager](https://learn.microsoft.com/intune/configmgr/sum/understand/software-updates-introduction): Explains the software update workflow.
+- [Monitor software updates](https://learn.microsoft.com/intune/configmgr/sum/deploy-use/monitor-software-updates): Describes how the site reports the state of an update.
