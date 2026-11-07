@@ -30,7 +30,7 @@ If the site code has the wrong form, a message shows "The site code is three let
 
 ![The message for a wrong site code](../images/options-bad-site-code.png)
 
-The message boxes of the dialog carry the title **Options**, the same title as the dialog. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again.
+The message boxes of the dialog carry the title **Options**, the same title as the dialog. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
 
 ### Read the version
 
@@ -50,7 +50,7 @@ The message boxes of the dialog carry the title **Options**, the same title as t
 | **SMS Provider FQDN** | Empty, or the value that the suite launcher hands over | The computer that runs the SMS Provider. Saved when you select **OK**. |
 | **Site Code** | Empty, or the value that the suite launcher hands over | A three-character site code. Required. The tool no longer asks the provider for it. |
 
-The text on the page says that the tool needs the Configuration Manager console on this computer, and that a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested.
+The text on the page says that the tool needs the Configuration Manager console on this computer, and that a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. This is the text of the dialog. It was tested on the lab only. An account with other rights is not tested. Check the roles and the scopes of the account in your site.
 
 ## Limits
 

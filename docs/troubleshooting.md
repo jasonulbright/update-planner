@@ -41,7 +41,7 @@ None. Some fixes need rights on the site.
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | The plan has 0 planned assignments. | No device in the wave collections needs an update, or **Lowest severity** is too high. | Read **Skipped updates** and the site totals in the summary. |
-| An update that you expect is missing. | The update is superseded, expired, below the severity, already deployed to the collection, or over the wave limit. | Find the update in **Skipped updates**. See [Plan grids](core/plan-grids.md). |
+| An update that you expect is missing. | The update is superseded, expired, below the severity, already deployed to the collection, or over the wave limit. | Find the update in **Skipped updates**. To check whether an update is expired, find it with `Get-CMSoftwareUpdate -Fast` on the site drive and read `IsExpired`. See [Plan grids](core/plan-grids.md). |
 | The report has no WSUS line. | **Include WSUS counts** is cleared, or the provider computer refused the WSUS query. | Select **Include WSUS counts** and build the plan again. Check the right to run `Get-WsusServer` on the provider. |
 | A wave shows fewer updates than the site has. | The wave collection needs only part of them. | None. A wave holds only the updates that its devices need. |
 
@@ -58,7 +58,7 @@ None. Some fixes need rights on the site.
 
 | Message or symptom | Cause | Fix |
 |---|---|---|
-| The window opens in the wrong place. | The saved window state holds an old position. | Delete `UpdatePlanner.windowstate.json`. |
+| The window opens in the wrong place. | The saved window state holds an old position. | Close the tool. Delete `UpdatePlanner.windowstate.json`. Start the tool. |
 | The tool does not start. | The folder is blocked, or the PowerShell version is wrong. | Extract the zip again. Start with Windows PowerShell 5.1. The start script unblocks the files in `Lib`. |
 
 ## Links

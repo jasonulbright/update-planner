@@ -124,7 +124,7 @@ The Options dialog clears the plan when you change the provider or the site code
 
 ### Saved choices
 
-The tool saves the settings, the connection and the wave list when you build a plan and when you close the window. It does not save the plan. [Settings](../reference/settings.md) lists the keys.
+The tool saves the settings, the connection and the wave list when you build a plan and when you close the window. It does not save the plan or the wave 1 start date. The start date is tomorrow at each start. A plan that you build again can have another date. [Settings](../reference/settings.md) lists the keys.
 
 ### Light theme
 

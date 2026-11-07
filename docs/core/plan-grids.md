@@ -62,7 +62,7 @@ In the light theme, the grids use the same columns.
 | **Devices** | How many devices of the wave collection need the update. |
 | **Title** | The update title. |
 
-The order inside a wave is severity (high to low), then devices (high to low), then article ID, then CI ID.
+The order inside a wave is severity (high to low), then the number of devices across the site that need the update (high to low), then article ID, then CI ID. The **Devices** column shows the devices of the wave collection.
 
 ### Columns of Skipped updates
 

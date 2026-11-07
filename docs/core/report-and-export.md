@@ -45,7 +45,7 @@ The text is the text of the format that is selected.
 
 ![The HTML report in the browser](../images/report-html-browser.png)
 
-The page has no script and no external resource. It changes nothing on the site.
+The tool overwrites the file of the same plan ID without a question. Save an edited report under another name. The page has no script and no external resource. It changes nothing on the site.
 
 ### Export a plan
 

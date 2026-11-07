@@ -26,7 +26,7 @@ The script reads the site, writes `update-plan.json` and `update-plan.md`, and c
 2. Run the script with the provider and the wave collections:
 
    ```powershell
-   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014', 'MCM00016' -StartDate 2026-11-09
+   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014', 'MCM00016'
    ```
 
 3. Read the output. It shows the path of the two files.
@@ -37,23 +37,23 @@ JsonPath                             MarkdownPath
 C:\Plans\update-plan.json            C:\Plans\update-plan.md
 ```
 
-The script writes the files to the current folder unless you set `-OutputPath`. The Markdown file has the same name as the JSON file.
+The script writes the files to the current folder unless you set `-OutputPath`. The Markdown file has the same name as the JSON file with the extension `.md`. The script overwrites existing files with those names. Set `-OutputPath` to a new JSON path to keep earlier plan files. Omit `-StartDate` to start wave 1 tomorrow. A fixed past date gives a deadline in the past.
 
 ### Show the deployments without creating them
 
 1. Add `-Apply -WhatIf`:
 
    ```powershell
-   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014' -StartDate 2026-11-09 -Apply -WhatIf
+   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014' -Apply -WhatIf
    ```
 
 2. Read the lines that begin with `What if: Performing the operation "Create software update group and deployment" on target`.
 
-The script still writes the plan files. It creates no deployment.
+The script still writes the plan files and overwrites earlier files with the same names. It creates no deployment.
 
 ### Create the deployments
 
-1. Add `-Apply`. The script asks for a confirmation before each deployment.
+1. Add `-Apply`. The script reads the site again and builds a new plan. It does not apply the plan of an earlier run. The script asks for a confirmation before each deployment.
 2. Add `-Confirm:$false` to skip the question.
 
 A built-in collection is refused for a real run. `-Apply -WhatIf` shows the deployment for it.
@@ -70,7 +70,7 @@ A built-in collection is refused for a real run. `-Apply -WhatIf` shows the depl
 | `-WaveSpacingDays` | 7 | 0 to 365. |
 | `-DeadlineDays` | 3 | 0 to 365. |
 | `-MinimumSeverity` | 0 | One of 0 (All), 2 (Low), 6 (Moderate), 8 (Important), 10 (Critical). |
-| `-OutputPath` | `update-plan.json` in the current folder | The JSON file. The Markdown file uses the same name. |
+| `-OutputPath` | `update-plan.json` in the current folder | The JSON file (use the extension `.json`). The Markdown file uses the same name with the extension `.md`. |
 | `-IncludeWsus` | Off | Also reads update counts from the WSUS server. |
 | `-Apply` | Off | Creates the deployments. |
 
@@ -82,6 +82,8 @@ The script has no parameter for the most updates in a wave. It uses 1000.
 |---|---|
 | 0 | The script finished. |
 | 1 | A step failed. The message is on the error stream. |
+
+With `-Apply`, read the `Status` and the `Message` of each result object. A failed wave has `Status` `Failed`. The script exit code does not show this. To report a failed wave to a scheduled task, call the script from a wrapper that checks the results and exits with a code other than 0.
 
 ## Limits
 

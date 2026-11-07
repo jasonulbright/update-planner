@@ -63,7 +63,7 @@ The file is read at start. A change to the file while the tool runs is overwritt
 
 | Message | Cause | Fix |
 |---|---|---|
-| The window opens on the wrong page or in the wrong place. | `UpdatePlanner.windowstate.json` holds an old state. | Delete the file. |
+| The window opens on the wrong page or in the wrong place. | `UpdatePlanner.windowstate.json` holds an old state. | Close the tool. Delete the file. Start the tool. |
 | The provider is filled when you did not enter it. | `SUITE_CM_PROVIDER` is set. | Enter a provider in **Options**, or clear the variable. |
 
 ## Links

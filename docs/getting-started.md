@@ -15,7 +15,7 @@ Use this page on a new installation, or when you connect the tool to a different
 - Windows 10, Windows 11 or Windows Server 2016 or later.
 - Windows PowerShell 5.1. PowerShell 7 also works for the command-line script.
 - .NET Framework 4.7.2 or later.
-- Network access from this computer to the SMS Provider computer (WinRM and CIM).
+- Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. WinRM to that computer is also necessary for WSUS counts (**Include WSUS counts**).
 - A Windows account that is a local administrator of the SMS Provider computer. A domain admin account of that kind needs no Configuration Manager role. An account with fewer rights is not tested.
 - The Configuration Manager console on this computer. The tool reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Without the console, the tool stops at start with a message (see below).
 - A window of at least 1024 by 640 pixels. The window opens at 1320 by 820.
@@ -78,7 +78,7 @@ The tool checks for the console at start. When the ConfigurationManager module i
 
 ### Start the tool again
 
-The tool keeps the connection, the settings and the wave list. It does not keep the plan. Build the plan again after a restart. The window opens on the page that was open when you closed it.
+The tool keeps the connection, the settings and the wave list. It does not keep the plan or the wave 1 start date. The start date is tomorrow at each start. Build the plan again after a restart and check the start date. The window opens on the page that was open when you closed it.
 
 ![The window after a restart: the Deploy page opens, the wave list is kept and the plan is empty](images/start-reopen-saved-state.png)
 

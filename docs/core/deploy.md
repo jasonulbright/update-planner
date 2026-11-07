@@ -87,7 +87,7 @@ A wave that targets a built-in collection (an ID that starts with `SMS`) blocks 
 | **Dry run** | - | Runs the deploy step with `-WhatIf`. Creates nothing. |
 | **Deploy...** | - | Asks for a confirmation, then creates the deployments. |
 
-A group holds the update IDs of the wave. The deployment of the group sets the collection, the start time, the deadline (required), notification on and local time. Every other property keeps the site default. See [Plan rules](../reference/plan-rules.md).
+A group holds the update IDs of the wave. The deployment of the group sets the collection, the start time, the deadline (required), notification on and local time. The deployment does not allow installation or restart outside the maintenance window after the deadline. See [Plan rules](../reference/plan-rules.md). See [Plan rules](../reference/plan-rules.md).
 
 The status bar shows "actions enabled" or "read only".
 
@@ -103,7 +103,7 @@ The status bar shows "actions enabled" or "read only".
 |---|---|---|
 | Dry run and Deploy... are off. | **Enable actions** is off, or no plan exists. | Build a plan and turn on **Enable actions**. |
 | Deploy blocked: Wave 4 All Systems: the collection SMS00001 is built in. Deployments to built-in collections are blocked. | A wave targets a built-in collection. | Remove the wave and build the plan again. |
-| Failed ... in the **Result** column | The site refused a deployment. The **Message** column shows the reason. | Fix the cause on the site. Build the plan again. Deploy again. |
+| Failed ... in the **Result** column | The site refused a deployment. The **Message** column shows the reason. | Note the plan ID and read every result. A software update group of that wave can exist without a deployment: check the console and delete the unused group. Fix the cause. Build the plan again. Review every wave before you deploy again. |
 
 ## Links
 

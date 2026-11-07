@@ -58,8 +58,8 @@ None.
 
 | Message | Cause | Fix |
 |---|---|---|
-| Target collection "<name>" matched <n> collections. It must match exactly one. | A name has no match, or more than one match. | Use the collection ID. |
-| Target collection "<name>" is not a device collection. | The name is a user collection. | Use a device collection. |
+| Target collection "`<name>`" matched `<n>` collections. It must match exactly one. | A name has no match, or more than one match. | Use the collection ID. |
+| Target collection "`<name>`" is not a device collection. | The name is a user collection. | Use a device collection. |
 | The SMS Provider reports no local site code. | The provider has no local site. | Set `-SiteCode`. |
 | Plan only. No change was made. Add -Apply to create the deployments. | A warning at the end of a plan without `-Apply`. | None. |
 
