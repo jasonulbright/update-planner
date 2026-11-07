@@ -7,7 +7,11 @@
 
 Plan software update rollouts for a Configuration Manager site. Pick the wave collections, set the dates, and get a plan: which updates go to which collection, in which order, in which wave, and on which dates. Review the plan as a grid or as a report, export it, and create the deployments only when you choose to.
 
-![Update Planner](screenshots/plan.png)
+![Update Planner](docs/images/plan-planned.png)
+
+## User guide
+
+The user guide is in [docs/index.md](docs/index.md). It has one page for each part of the window, a settings page, the command line, reference pages and troubleshooting. Every image in it is a capture of the running window.
 
 ## Features
 
@@ -15,7 +19,7 @@ Plan software update rollouts for a Configuration Manager site. Pick the wave co
 - Set the start date of wave 1, the days between waves, the days to the deadline, the lowest severity and the most updates in a wave.
 - Build the plan without changing the site. The plan reads the update catalog, the update need of each collection, the maintenance windows and the existing deployments.
 - Review the plan in a grid, in the Markdown review text or in an HTML report. A second grid lists each skipped update and the reason.
-- Export the plan as JSON, Markdown or HTML. The JSON file is a ring plan that Deployment Helper loads (see [docs/plan-format.md](docs/plan-format.md)).
+- Export the plan as JSON, Markdown or HTML. The JSON file is a ring plan that Deployment Helper loads (see [docs/reference/plan-format.md](docs/reference/plan-format.md)).
 - Deploy behind an **Enable actions** switch. A dry run runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation that lists every deployment before it creates one.
 - Built-in collections (an ID that starts with `SMS`) are blocked as a deploy target.
 - Every dry run and every deploy writes one record to `Logs\update-planner-actions.jsonl`.
@@ -54,15 +58,15 @@ The shell has a sidebar with three views and an Options dialog:
 - **Report** -- the plan as Markdown or HTML source. **Open HTML report** writes the page to `Reports\` and opens it in the default browser. **Copy** copies the text.
 - **Deploy** -- the Enable actions switch, **Dry run**, **Deploy...**, the deployments that the plan would create, and the result of the last run.
 
-![Skipped updates](screenshots/skipped.png)
+![Skipped updates](docs/images/plan-skipped.png)
 
-![Report](screenshots/report.png)
+![Report](docs/images/report-markdown.png)
 
 ## Collection picker
 
 **Add...** opens the same collection picker as the other suite tools. Folders are not selectable. The filter box narrows the tree by name or ID.
 
-![Collection picker](screenshots/collection-picker.png)
+![Collection picker](docs/images/plan-picker.png)
 
 ## Deploy
 
@@ -71,11 +75,11 @@ Update Planner only reads the site until **Enable actions** is on. With the swit
 - **Dry run** runs the deploy step with `-WhatIf`. The grid shows each deployment that the step would create. Nothing is created.
 - **Deploy...** shows a confirmation with the number of deployments, the site, the provider and each wave. After **Yes**, the tool creates one software update group and one deployment of that group for each wave that holds updates. Each is named `UpdatePlanner <PlanId> <wave name>`.
 - To undo a run, delete the deployments and the groups whose name holds the plan ID. The tool never edits or deletes an existing deployment or group.
-- The tool does not create deployment packages and does not download content. Review a created deployment in the console before a real rollout. See [docs/plan-rules.md](docs/plan-rules.md).
+- The tool does not create deployment packages and does not download content. Review a created deployment in the console before a real rollout. See [docs/reference/plan-rules.md](docs/reference/plan-rules.md).
 
-![Dry run](screenshots/deploy-dry-run.png)
+![Dry run](docs/images/deploy-dry-run.png)
 
-![Confirmation](screenshots/deploy-confirm.png)
+![Confirmation](docs/images/deploy-confirm.png)
 
 ## Command line
 
@@ -118,8 +122,8 @@ update-planner/
 |  +- UpdatePlannerCommon.psd1      # Module manifest
 |  \- UpdatePlannerCommon.psm1      # Plan logic and window support
 +- Tests/                           # Pester 5 tests
-+- docs/plan-rules.md               # Plan rules, cmdlets and limits
-+- docs/plan-format.md              # Plan file format (Suite ring plan)
++- docs/reference/plan-rules.md               # Plan rules, cmdlets and limits
++- docs/reference/plan-format.md              # Plan file format (Suite ring plan)
 +- docs/schema/ring-plan.schema.json # JSON schema of the plan file
 ```
 

@@ -1,6 +1,20 @@
-# Plan file format (Suite ring plan)
+# Plan format
 
-Update Planner writes its plan as a Suite ring plan, version 1. The file has the fields of a Deployment Helper ring plan (`Rings\<name>.json`) and some extra fields. Deployment Helper loads the file as a ring plan and ignores the extra fields. The schema is [schema/ring-plan.schema.json](schema/ring-plan.schema.json). The same schema and the same test file are in the Deployment Helper repository.
+This page describes the JSON file that Export JSON writes.
+
+## What it does
+
+The page lists the fields of the Suite ring plan.
+
+## When to use it
+
+Use this page to read the plan file in a script or to load it in Deployment Helper.
+
+## Requirements
+
+None.
+
+Update Planner writes its plan as a Suite ring plan, version 1. The file has the fields of a Deployment Helper ring plan (`Rings\<name>.json`) and some extra fields. Deployment Helper loads the file as a ring plan and ignores the extra fields. The schema is [schema/ring-plan.schema.json](../schema/ring-plan.schema.json). The same schema and the same test file are in the Deployment Helper repository.
 
 ## Fields
 
@@ -25,3 +39,7 @@ Deployment Helper refuses a plan when a ring deadline is not later than its star
 ## Compatibility
 
 A reader must ignore fields that it does not know. A change that removes or renames a field raises `SchemaVersion`. Update Planner reads only version 1.
+
+## Links
+
+None.
