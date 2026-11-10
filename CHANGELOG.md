@@ -2,6 +2,27 @@
 
 All notable changes to Update Planner are documented in this file.
 
+## [2026.11.10.0005] - 2026-11-10
+
+## 44 user guide images retaken
+
+### Fixed
+
+- Show the app name, not Options, in the title of each Options message box.
+- Meet 4.5:1 text and 3:1 border contrast on disabled buttons and tab headers.
+- Meet 4.5:1 text and 3:1 border contrast in the light theme and the dark theme.
+- Use the signed-in account for an SMS Provider on the same computer, not a credential.
+
+### Added
+
+- Add window tests for titles, centering, contrast and clipping. CI runs them.
+- Add capture scripts in tools/guide-capture. One command retakes all guide images.
+
+### Changed
+
+- Correct the user guide against the code.
+- Retake all 44 user guide images.
+
 ## [2026.11.07.0004] - 2026-11-07
 
 ## 1 user guide ships with the release
