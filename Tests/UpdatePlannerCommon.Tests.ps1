@@ -601,7 +601,7 @@ Describe 'Plan JSON and the shared ring plan format' {
         $objPlan = ConvertFrom-UpdatePlanJson -Json (Get-Content -LiteralPath $script:strFixturePath -Raw)
         $objPlan.PlanId | Should -Be 'a1b2c3d4'
         @($objPlan.Waves).Count | Should -Be 3
-        $objPlan.Waves[0].CollectionId | Should -Be 'ABC00346'
+        $objPlan.Waves[0].CollectionId | Should -Be 'MCM00346'
         @($objPlan.Waves[0].Updates).Count | Should -Be 2
         $objPlan.Waves[2].DeadlineDate | Should -Be '2026-12-18'
         @($objPlan.Skipped).Count | Should -Be 1
