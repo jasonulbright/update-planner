@@ -45,8 +45,8 @@ Inside the AppPackager Suite, the launcher starts the tool and hands over its si
 ### Set the connection
 
 1. Select **Options** in the sidebar.
-2. In **SMS Provider FQDN**, enter the computer name or the FQDN of the SMS Provider, for example `cm01.contoso.com`.
-3. In **Site Code**, enter the three letters or digits of the site code, for example `MCM`. The tool needs both values and no longer asks the provider for the site code.
+2. In **SMS Provider FQDN**, enter the computer name or the FQDN of the SMS Provider, for example `sms01.example.com`.
+3. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The tool needs both values and no longer asks the provider for the site code.
 4. Select **OK**.
 
 ![The Options dialog with the SMS Provider entered](images/options-connection.png)
@@ -61,7 +61,7 @@ A provider with no site code gives the same message.
 
 ### Build the first plan
 
-1. On the **Plan** page, select **Load collections**. The tool reads the device collections and the console folders. The log shows "Loaded 26 device collections in 1 folders (site MCM)." with the numbers of your site.
+1. On the **Plan** page, select **Load collections**. The tool reads the device collections and the console folders. The log shows "Loaded 26 device collections in 1 folders (site ABC)." with the numbers of your site.
 2. Select **Add...**. Select a collection in the picker and select **OK**. Repeat for each wave. The first collection is wave 1.
 3. Select **Build plan**.
 4. Read the plan in the **Planned updates** grid.

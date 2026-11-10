@@ -20,8 +20,8 @@ None. The dialog does not connect to the site.
 
 1. Select **Options** in the sidebar. The button is off while a step runs.
 2. Select **Connection**.
-3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `e.g. cm01.contoso.com`.
-4. In **Site Code**, enter the three letters or digits of the site code, for example `MCM`. The site code is required.
+3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `e.g. sms01.example.com`.
+4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The site code is required.
 5. Select **OK**. Select **Cancel** to discard the change. Press Esc to cancel.
 
 ![The Connection section of the Options dialog](../images/options-connection.png)

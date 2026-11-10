@@ -94,26 +94,6 @@ function Find-Role($Scope, [string]$Type, [string]$Name) {
     $Scope.FindFirst('Descendants', $c)
 }
 function RightClick-El($El) { $r = $El.Current.BoundingRectangle; [void][NativeUi]::SetCursorPos([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2)); Start-Sleep -Milliseconds 200; [NativeUi]::mouse_event(8, 0, 0, 0, [UIntPtr]::Zero); [NativeUi]::mouse_event(16, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 600 }
-function File-Dialog([string]$Path, [string]$Shot) {
-    # Wait for the Save As window. Stop the capture when it does not show,
-    # so that an export that was never saved cannot count as a success.
-    $d = $null; $end = (Get-Date).AddSeconds(20)
-    while (-not $d -and (Get-Date) -lt $end) {
-        $d = @(Find-All 'Save As') | Select-Object -First 1
-        if (-not $d) { $d = @($root.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition)) | Where-Object { $_.Current.ClassName -eq '#32770' } | Select-Object -First 1 }
-        if (-not $d) { Start-Sleep -Milliseconds 400 }
-    }
-    if (-not $d) {
-        $names = @($root.FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window))) | ForEach-Object { $_.Current.Name + '|' + $_.Current.ClassName }) -join ' ; '
-        Log ('windows: ' + $names)
-        throw 'The Save As dialog did not show.'
-    }
-    Start-Sleep -Milliseconds 800
-    if ($Shot) { Shot $d $Shot }
-    Focus-Win $d
-    if ($Path) { Send-Keys ($Path -replace '([+^%~{}\[\]()])', '{$1}') }
-    Send-Keys '{ENTER}'; Start-Sleep -Seconds 2
-}
 function Find-NameLike($Scope, [string]$Pattern, [int]$Seconds = 10) {
     # The first element whose name matches a wildcard pattern. The capture steps use it for list
     # items whose name carries a collection ID and a member count of the lab site.

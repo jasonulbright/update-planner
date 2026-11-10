@@ -214,11 +214,13 @@ Describe 'Message box position' -Skip:(-not $script:WindowGuard.Allowed) {
 Describe 'Layout <Theme> <Size>' -ForEach $script:Matrix -Skip:(-not $script:WindowGuard.Allowed) {
     It 'has no clipped text in the <View> view' -ForEach $script:ViewCases {
         $m = ($script:Measured['{0}|{1}' -f $Theme, $Size] | Where-Object View -eq $View)
+        $m | Should -Not -BeNullOrEmpty -Because ("the {0} view is measured" -f $View)
         $m.Clipped | ForEach-Object { '{0}: needs {1}px, has {2}px' -f $_.Text, $_.Needed, $_.Actual } | Should -BeNullOrEmpty
     }
 
     It 'keeps every button, box and list inside the window in the <View> view' -ForEach $script:ViewCases {
         $m = ($script:Measured['{0}|{1}' -f $Theme, $Size] | Where-Object View -eq $View)
+        $m | Should -Not -BeNullOrEmpty -Because ("the {0} view is measured" -f $View)
         $m.Offscreen | ForEach-Object { '{0} at {1},{2} size {3}x{4}' -f $_.Name, $_.X, $_.Y, $_.W, $_.H } | Should -BeNullOrEmpty
     }
 }

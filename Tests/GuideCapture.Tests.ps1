@@ -37,8 +37,12 @@ Describe 'Capture scripts' {
         # An IPv4 address, or a host name with a domain: two dots and a letter label at the end,
         # not a file name and not a .NET type name.
         $fileExt = '\.(ps1|psm1|psd1|json|png|log|flag|txt|exe|dll|md|html|xaml)$'
+        # The lab names are built from parts, so that this file does not carry them as text either.
+        $parts = @(('C', 'M01'), ('CLI', 'ENT01'), ('D', 'C01'), ('con', 'toso')) | ForEach-Object { $_ -join '' }
+        $labNames = '\b(' + ($parts -join '|') + ')'
         $bad = foreach ($s in $strings) {
             if ($s -match '\b\d{1,3}(\.\d{1,3}){3}\b') { "address: $s"; continue }
+            if ($s -match $labNames) { "lab name: $s"; continue }
             foreach ($m in [regex]::Matches($s, '\b[A-Za-z0-9-]+(\.[A-Za-z0-9-]+){2,}\b')) {
                 if ($m.Value -match '^(System|Microsoft)\.') { continue }
                 if ($m.Value -notmatch $fileExt -and $m.Value -match '\.[A-Za-z]{2,}$') { "host: $($m.Value)" }

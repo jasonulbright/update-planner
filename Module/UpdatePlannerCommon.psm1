@@ -75,7 +75,7 @@ function Connect-UpSite {
     # An optional credential for the site drive.
     #
     # .EXAMPLE
-    # $objConnection = Connect-UpSite -ComputerName 'CM01' -SiteCode 'ABC'
+    # $objConnection = Connect-UpSite -ComputerName 'SMS01' -SiteCode 'ABC'
     #
     # # The current location is now ABC:
     #
@@ -528,7 +528,7 @@ function Get-UpdatePlannerState {
     # provider computer. A failure here is a warning, not an error.
     #
     # .EXAMPLE
-    # $objState = Get-UpdatePlannerState -ComputerName 'CM01' -SiteCode 'ABC' -TargetCollection 'Pilot','Broad'
+    # $objState = Get-UpdatePlannerState -ComputerName 'SMS01' -SiteCode 'ABC' -TargetCollection 'Pilot','Broad'
     #
     # # $objState.Summary.NeededUpdates = 5
     #
@@ -1204,7 +1204,7 @@ function Get-UpdatePlannerCollection {
     # The three character site code.
     #
     # .EXAMPLE
-    # $objList = Get-UpdatePlannerCollection -ComputerName 'cm01.contoso.com' -SiteCode 'ABC'
+    # $objList = Get-UpdatePlannerCollection -ComputerName 'sms01.example.com' -SiteCode 'ABC'
     #
     # # $objList.Collections holds one object for each device collection.
     #
@@ -1317,7 +1317,7 @@ function Resolve-UpdatePlannerSetting {
     # The wave collections, as IDs, in wave order.
     #
     # .EXAMPLE
-    # $objSetting = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -StartDateText '2026-11-09' -TargetCollection 'MCM00015'
+    # $objSetting = Resolve-UpdatePlannerSetting -ComputerName 'sms01' -StartDateText '2026-11-09' -TargetCollection 'ABC00015'
     #
     # # $objSetting.IsValid = $true
     #

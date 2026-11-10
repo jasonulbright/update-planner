@@ -32,7 +32,8 @@ function Add-Wave([string]$filter, [string]$name, [string]$shot) {
   if ($shot) { Set-Text (Get-El $dlg 'txtPickerFilter') 'All'; Start-Sleep -Milliseconds 700; Shot $dlg $shot }
   Set-Text (Get-El $dlg 'txtPickerFilter') $filter; Start-Sleep -Milliseconds 700
   # A picker item is named "<collection name>  (<collection ID>, <n> members)".
-  $it = Find-NameLike $dlg ('{0}  (*' -f $name)
+  # The name is escaped, so a [ or * in a collection name matches as text.
+  $it = Find-NameLike $dlg ('{0}  (*' -f [WildcardPattern]::Escape($name))
   Select-El $it; Start-Sleep -Milliseconds 400
   if ($shot) { Shot $dlg ($shot + '-selected') }
   Invoke-El (Get-El $dlg 'btnOk'); Start-Sleep -Seconds 1
@@ -44,7 +45,7 @@ Section 'load and picker' {
   Add-Wave $waves[1] $waves[1]
   Add-Wave $waves[2] $waves[2]
   # A wave list item is named "<n>.  <collection name>   (<collection ID>)".
-  Select-El (Find-NameLike $win ('2.  {0}   (*' -f $waves[1])); Start-Sleep -Milliseconds 500; Shot $win 'plan-waves'
+  Select-El (Find-NameLike $win ('2.  {0}   (*' -f [WildcardPattern]::Escape($waves[1]))); Start-Sleep -Milliseconds 500; Shot $win 'plan-waves'
   Invoke-El (Get-El $win 'btnWaveUp'); Start-Sleep -Milliseconds 500; Shot $win 'plan-wave-moved-up'
   Invoke-El (Get-El $win 'btnWaveDown'); Start-Sleep -Milliseconds 500
 }

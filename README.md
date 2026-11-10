@@ -86,8 +86,8 @@ Update Planner only reads the site until **Enable actions** is on. With the swit
 The window wraps the same module as the script `Invoke-UpdatePlanner.ps1`. The script writes `update-plan.json` and `update-plan.md` and supports `-Apply`, `-WhatIf` and `-Confirm`:
 
 ```powershell
-.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -StartDate 2026-11-09
-.\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -Apply -WhatIf
+.\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -StartDate 2026-11-09
+.\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'Pilot', 'Broad' -Apply -WhatIf
 ```
 
 ## Files written on disk

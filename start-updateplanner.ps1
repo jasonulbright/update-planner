@@ -773,7 +773,7 @@ function Show-OptionsDialog {
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,4,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
+                         Controls:TextBoxHelper.Watermark="e.g. sms01.example.com"/>
                 <TextBlock Text="Site Code" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. ABC. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
