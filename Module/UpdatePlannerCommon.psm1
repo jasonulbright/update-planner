@@ -54,6 +54,136 @@ function Test-UpConsoleModule {
     }
 }
 
+function Get-UpLocalComputerIdentity {
+    # .SYNOPSIS
+    # Gets the names and the IP addresses of this computer.
+    #
+    # .DESCRIPTION
+    # Reads the NetBIOS name, the host name, the DNS name with the primary DNS suffix,
+    # and the unicast addresses of all network adapters. It does no DNS lookup. An
+    # IPv6 address has no scope ID. It changes nothing.
+    #
+    # .EXAMPLE
+    # $objIdentity = Get-UpLocalComputerIdentity
+    #
+    # # $objIdentity.Name contains the name of this computer.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [pscustomobject] Properties: Name (string[]), Address (string[]).
+    #
+    # .NOTES
+    # PRIVATE/INTERNAL HELPER. This function is not part of the public API surface.
+    #
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261110.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    param ()
+
+    process {
+        $listName = New-Object -TypeName 'System.Collections.Generic.List[string]'
+        $listAddress = New-Object -TypeName 'System.Collections.Generic.List[string]'
+        $listName.Add([System.Environment]::MachineName)
+        try {
+            $objProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
+            if (-not [string]::IsNullOrEmpty($objProperties.HostName)) {
+                $listName.Add($objProperties.HostName)
+                if (-not [string]::IsNullOrEmpty($objProperties.DomainName)) {
+                    $listName.Add(('{0}.{1}' -f $objProperties.HostName, $objProperties.DomainName))
+                }
+            }
+        } catch {
+            Write-Debug -Message ('Get-UpLocalComputerIdentity cannot read the host name: {0}' -f $_.Exception.Message)
+        }
+        try {
+            foreach ($objAdapter in [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()) {
+                foreach ($objUnicast in $objAdapter.GetIPProperties().UnicastAddresses) {
+                    $listAddress.Add(($objUnicast.Address.ToString() -replace '%.*$', ''))
+                }
+            }
+        } catch {
+            Write-Debug -Message ('Get-UpLocalComputerIdentity cannot read the addresses: {0}' -f $_.Exception.Message)
+        }
+        [pscustomobject]@{
+            Name = $listName.ToArray()
+            Address = $listAddress.ToArray()
+        }
+    }
+}
+
+function Test-UpLocalComputerName {
+    # .SYNOPSIS
+    # Tells if a computer name or an IP address is this computer.
+    #
+    # .DESCRIPTION
+    # Returns $true for 'localhost', '.', a loopback address, the short name or the
+    # DNS name of this computer, and an IP address of this computer. The test ignores
+    # case and spaces at the start and the end. An empty name returns $false.
+    #
+    # .PARAMETER ComputerName
+    # The name or the IP address to test.
+    #
+    # .EXAMPLE
+    # Test-UpLocalComputerName -ComputerName 'localhost'
+    #
+    # # Returns $true.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [bool]
+    #
+    # .NOTES
+    # PRIVATE/INTERNAL HELPER. This function is not part of the public API surface.
+    #
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261110.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string]$ComputerName
+    )
+
+    process {
+        if ([string]::IsNullOrWhiteSpace($ComputerName)) {
+            return $false
+        }
+        $strName = $ComputerName.Trim()
+        if (($strName -eq '.') -or ($strName -eq 'localhost')) {
+            return $true
+        }
+        $objIdentity = Get-UpLocalComputerIdentity
+        $objAddress = $null
+        if ([System.Net.IPAddress]::TryParse($strName, [ref]$objAddress)) {
+            if ([System.Net.IPAddress]::IsLoopback($objAddress)) {
+                return $true
+            }
+            $strAddress = $objAddress.ToString() -replace '%.*$', ''
+            foreach ($strLocal in @($objIdentity.Address)) {
+                if ($strLocal -eq $strAddress) {
+                    return $true
+                }
+            }
+            return $false
+        }
+        foreach ($strLocal in @($objIdentity.Name)) {
+            if ($strLocal -eq $strName) {
+                return $true
+            }
+        }
+        $false
+    }
+}
+
 function Connect-UpSite {
     # .SYNOPSIS
     # Imports the ConfigurationManager module and opens the site drive.
@@ -72,7 +202,9 @@ function Connect-UpSite {
     # The three character site code.
     #
     # .PARAMETER Credential
-    # An optional credential for the site drive.
+    # An optional credential for the site drive. When the SMS Provider is this
+    # computer, the function does not use it, because Windows does not allow
+    # credentials for a local connection. The signed-in account is used.
     #
     # .EXAMPLE
     # $objConnection = Connect-UpSite -ComputerName 'SMS01' -SiteCode 'ABC'
@@ -115,16 +247,23 @@ function Connect-UpSite {
             if (-not (Get-Module -Name 'ConfigurationManager')) {
                 Import-Module -Name $objCheck.Path -DisableNameChecking -ErrorAction Stop
             }
+            # Windows refuses credentials on a local WMI connection, so a local SMS
+            # Provider uses the signed-in account.
+            $boolUseCredential = $PSBoundParameters.ContainsKey('Credential')
+            if ($boolUseCredential -and (Test-UpLocalComputerName -ComputerName $ComputerName)) {
+                $boolUseCredential = $false
+                Write-Verbose -Message 'The SMS Provider is this computer. Windows does not allow credentials for a local connection, so the signed-in account is used.'
+            }
             $objDrive = Get-PSDrive -Name $SiteCode -PSProvider 'CMSite' -ErrorAction SilentlyContinue
             $boolCreated = $false
-            if ($null -ne $objDrive -and (($objDrive.Root -ne $ComputerName) -or $PSBoundParameters.ContainsKey('Credential'))) {
+            if ($null -ne $objDrive -and (($objDrive.Root -ne $ComputerName) -or $boolUseCredential)) {
                 Set-Location -LiteralPath $env:SystemDrive
                 Remove-PSDrive -Name $SiteCode -PSProvider 'CMSite' -Force -ErrorAction SilentlyContinue
                 $objDrive = $null
             }
             if ($null -eq $objDrive) {
                 $hashtableDrive = @{ Name = $SiteCode; PSProvider = 'CMSite'; Root = $ComputerName; Scope = 'Global'; ErrorAction = 'Stop' }
-                if ($PSBoundParameters.ContainsKey('Credential')) {
+                if ($boolUseCredential) {
                     $hashtableDrive['Credential'] = $Credential
                 }
                 [void](New-PSDrive @hashtableDrive)
@@ -135,6 +274,9 @@ function Connect-UpSite {
         } catch {
             Write-Debug -Message ('Connect-UpSite failed: {0}' -f $_.Exception.Message)
             Set-Location -LiteralPath $objPrevious.Path -ErrorAction SilentlyContinue
+            if ($_.Exception.Message -match 'credentials cannot be used for local connections') {
+                throw ('Cannot open site {0} on {1}. {1} is this computer, but Update Planner did not find that name in the names and addresses of this computer. Windows does not allow credentials for a local connection. Run Update Planner without -Credential and sign in with an account that has rights on the site, or run it from another computer. {2}' -f $SiteCode, $ComputerName, $_.Exception.Message)
+            }
             throw ('Cannot open site {0} on {1}. Check the site code and the SMS Provider name in Options, and the account rights. {2}' -f $SiteCode, $ComputerName, $_.Exception.Message)
         }
         [pscustomobject]@{
