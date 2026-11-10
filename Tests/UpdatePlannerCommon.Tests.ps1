@@ -419,6 +419,99 @@ Describe 'Connect-UpSite' {
         Mock -ModuleName UpdatePlannerCommon Set-Location { }
         { InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'sms01' -SiteCode 'ABC' } } | Should -Throw 'Cannot open site ABC on sms01.*RPC server is unavailable*'
     }
+
+    Context 'with a credential' {
+        BeforeEach {
+            Mock -ModuleName UpdatePlannerCommon Resolve-ConfigurationManagerModulePath { 'C:\Console\bin\ConfigurationManager.psd1' }
+            Mock -ModuleName UpdatePlannerCommon Get-Module { [pscustomobject]@{ Name = 'ConfigurationManager' } }
+            Mock -ModuleName UpdatePlannerCommon Get-PSDrive { }
+            Mock -ModuleName UpdatePlannerCommon New-PSDrive { }
+            Mock -ModuleName UpdatePlannerCommon Set-Location { }
+            Mock -ModuleName UpdatePlannerCommon Get-CMSite { [pscustomobject]@{ SiteCode = 'ABC' } }
+            Mock -ModuleName UpdatePlannerCommon Get-UpLocalComputerIdentity {
+                [pscustomobject]@{ Name = @('SMS01', 'sms01.example.com'); Address = @('192.0.2.10') }
+            }
+            $secure = New-Object -TypeName 'System.Security.SecureString'
+            $script:objTestCredential = New-Object -TypeName 'System.Management.Automation.PSCredential' -ArgumentList 'test\user', $secure
+        }
+
+        It 'does not give the credential to the site drive when the SMS Provider is this computer' {
+            $objConnection = InModuleScope UpdatePlannerCommon -Parameters @{ TestCredential = $script:objTestCredential } {
+                param ([System.Management.Automation.PSCredential]$TestCredential)
+                Connect-UpSite -ComputerName 'sms01.example.com' -SiteCode 'ABC' -Credential $TestCredential
+            }
+            $objConnection.CreatedDrive | Should -BeTrue
+            Should -Invoke -ModuleName UpdatePlannerCommon New-PSDrive -Times 1 -Exactly -Scope It -ParameterFilter { $Root -eq 'sms01.example.com' -and $null -eq $Credential }
+        }
+
+        It 'gives the credential to the site drive when the SMS Provider is another computer' {
+            [void](InModuleScope UpdatePlannerCommon -Parameters @{ TestCredential = $script:objTestCredential } {
+                    param ([System.Management.Automation.PSCredential]$TestCredential)
+                    Connect-UpSite -ComputerName 'sms02.example.com' -SiteCode 'ABC' -Credential $TestCredential
+                })
+            Should -Invoke -ModuleName UpdatePlannerCommon New-PSDrive -Times 1 -Exactly -Scope It -ParameterFilter { $Root -eq 'sms02.example.com' -and $null -ne $Credential -and $Credential.UserName -eq 'test\user' }
+        }
+
+        It 'tells why and what to do when Windows refuses the credential for a local connection' {
+            Mock -ModuleName UpdatePlannerCommon New-PSDrive { throw 'User credentials cannot be used for local connections' }
+            { InModuleScope UpdatePlannerCommon -Parameters @{ TestCredential = $script:objTestCredential } {
+                    param ([System.Management.Automation.PSCredential]$TestCredential)
+                    Connect-UpSite -ComputerName 'sms02.example.com' -SiteCode 'ABC' -Credential $TestCredential
+                } } | Should -Throw '*Windows does not allow credentials for a local connection*without -Credential*'
+        }
+    }
+}
+
+Describe 'Test-UpLocalComputerName' {
+    BeforeEach {
+        Mock -ModuleName UpdatePlannerCommon Get-UpLocalComputerIdentity {
+            [pscustomobject]@{ Name = @('SMS01', 'sms01.example.com'); Address = @('192.0.2.10', 'fe80::1234') }
+        }
+    }
+
+    It 'returns <Expected> for "<Name>"' -TestCases @(
+        @{ Name = 'SMS01'; Expected = $true }
+        @{ Name = 'sms01'; Expected = $true }
+        @{ Name = 'sms01.example.com'; Expected = $true }
+        @{ Name = 'SMS01.EXAMPLE.COM'; Expected = $true }
+        @{ Name = 'localhost'; Expected = $true }
+        @{ Name = 'LocalHost'; Expected = $true }
+        @{ Name = '.'; Expected = $true }
+        @{ Name = '127.0.0.1'; Expected = $true }
+        @{ Name = '::1'; Expected = $true }
+        @{ Name = '192.0.2.10'; Expected = $true }
+        @{ Name = 'FE80::1234'; Expected = $true }
+        @{ Name = ' sms01 '; Expected = $true }
+        @{ Name = 'sms02'; Expected = $false }
+        @{ Name = 'sms02.example.com'; Expected = $false }
+        @{ Name = 'sms01.example.org'; Expected = $false }
+        @{ Name = '192.0.2.11'; Expected = $false }
+        @{ Name = ''; Expected = $false }
+        @{ Name = '   '; Expected = $false }
+    ) {
+        InModuleScope UpdatePlannerCommon -Parameters @{ Name = $Name } {
+            param ($Name)
+            Test-UpLocalComputerName -ComputerName $Name
+        } | Should -Be $Expected
+    }
+
+    It 'returns false for a null name' {
+        InModuleScope UpdatePlannerCommon { Test-UpLocalComputerName -ComputerName $null } | Should -BeFalse
+    }
+}
+
+Describe 'Get-UpLocalComputerIdentity' {
+    It 'contains the name of this computer' {
+        $objIdentity = InModuleScope UpdatePlannerCommon { Get-UpLocalComputerIdentity }
+        @($objIdentity.Name) -contains [System.Environment]::MachineName | Should -BeTrue
+    }
+
+    It 'makes the real name of this computer a local name' {
+        InModuleScope UpdatePlannerCommon -Parameters @{ Name = [System.Environment]::MachineName.ToLowerInvariant() } {
+            param ($Name)
+            Test-UpLocalComputerName -ComputerName $Name
+        } | Should -BeTrue
+    }
 }
 
 Describe 'Disconnect-UpSite' {
