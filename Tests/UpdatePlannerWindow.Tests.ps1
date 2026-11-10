@@ -321,7 +321,7 @@ Describe 'Window files' {
 
     It 'resets the Skipped updates tab header when a change of the connection clears the plan' {
         $strStart = Get-Content -LiteralPath $script:strStartPath -Raw
-        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$tabSkipped\.Header = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
+        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$txtTabSkipped\.Text = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
     }
 
     It 'parses the start script without error' {

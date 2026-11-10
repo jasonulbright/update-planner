@@ -172,7 +172,7 @@ Describe 'Dialog windows' -Skip:(-not $script:WindowGuard.Allowed) {
         $first = ($script:DialogMeasured[$Theme] | Select-Object -First 1).Size
         $views = @($script:DialogMeasured[$Theme] | Where-Object { $_.Size -eq $first })
         @($views | ForEach-Object { $_.Text }).Count | Should -BeGreaterThan 3
-        Get-ContrastViolation -Views $views | Should -BeNullOrEmpty
+        (Get-ContrastViolation -Views $views) -join [Environment]::NewLine | Should -BeNullOrEmpty
     }
 }
 
@@ -186,7 +186,7 @@ Describe 'Message boxes' {
             if ([string]::IsNullOrWhiteSpace($c.Title)) { 'line {0}: empty title' -f $c.Line; continue }
             if ($c.Title -eq $ownerTitle) { 'line {0}: the title "{1}" equals the title of its owner {2}' -f $c.Line, $c.Title, $c.Owner }
         }
-        @($bad) | Should -BeNullOrEmpty
+        @($bad) -join [Environment]::NewLine | Should -BeNullOrEmpty
     }
 }
 
@@ -229,7 +229,7 @@ Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }
         @($m.Text).Count | Should -BeGreaterThan 3
         @($m.Interactive).Count | Should -BeGreaterThan 3
         $copy = [PSCustomObject]@{ View = $m.View; Text = $m.Text; Interactive = $m.Interactive; TitleBar = $null }
-        Get-ContrastViolation -Views @($copy) | Should -BeNullOrEmpty
+        (Get-ContrastViolation -Views @($copy)) -join [Environment]::NewLine | Should -BeNullOrEmpty
     }
 
     It 'keeps the title text readable on the active and the inactive title bar' {

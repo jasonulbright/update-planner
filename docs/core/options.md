@@ -30,7 +30,7 @@ If the site code has the wrong form, a message shows "The site code is three let
 
 ![The message for a wrong site code](../images/options-bad-site-code.png)
 
-The message boxes of the dialog carry the title **Options**, the same title as the dialog. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
+The message boxes of the dialog carry the title **Update Planner**. They open in the center of the dialog. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
 
 ### Read the version
 

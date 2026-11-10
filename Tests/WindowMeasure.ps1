@@ -197,7 +197,8 @@ $script:MeasureFunctions = {
     }
 
     function Get-PaneOverflow {
-        # Named panes whose content needs more room than the pane has (text cut off at the bottom or the right edge).
+        # Named panes whose content needs more height than the pane has at its width (text cut off at the bottom).
+        # Text cut off at the right edge is found by Get-ClippedText and Get-OffscreenControls.
         param($Window, [string[]]$PaneName)
         $rows = @()
         foreach ($n in $PaneName) {
@@ -206,11 +207,9 @@ $script:MeasureFunctions = {
             $w = $p.ActualWidth; $h = $p.ActualHeight
             $p.Measure([System.Windows.Size]::new($w, [double]::PositiveInfinity))
             $needH = $p.DesiredSize.Height
-            $p.Measure([System.Windows.Size]::new([double]::PositiveInfinity, $h))
-            $needW = $p.DesiredSize.Width
             $p.InvalidateMeasure(); Sync-Layout $Window
-            if ($needH -gt $h + 1 -or $needW -gt $w + 1) {
-                $rows += [PSCustomObject]@{ Name = $n; NeedW = [math]::Round($needW, 1); HasW = [math]::Round($w, 1); NeedH = [math]::Round($needH, 1); HasH = [math]::Round($h, 1) }
+            if ($needH -gt $h + 1) {
+                $rows += [PSCustomObject]@{ Name = $n; NeedW = [math]::Round($w, 1); HasW = [math]::Round($w, 1); NeedH = [math]::Round($needH, 1); HasH = [math]::Round($h, 1) }
             }
         }
         return $rows

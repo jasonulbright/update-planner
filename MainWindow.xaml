@@ -40,11 +40,77 @@
                             </Setter.Value>
                         </Setter>
                     </Trigger>
+                    <!-- A disabled sidebar button keeps its text colour (opacity would drop the contrast below 4.5:1) and shows normal weight text. -->
                     <Trigger Property="IsEnabled" Value="False">
-                        <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                        <Setter Property="FontWeight" Value="Normal"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
+
+            <!-- Contrast overrides of the MahApps theme brushes. One value passes in both themes:
+                 #7F7F7F is 4.0:1 on white and 3.8:1 on #252525 (control borders need 3:1);
+                 white title text is 7.0:1 on #595959 (the inactive title bar). -->
+            <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
+            <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
+
+            <!-- Square button without the MahApps disabled state, which fades the text below 4.5:1.
+                 A disabled button shows MahApps.Brushes.Gray.MouseOver text (#AAAAAA dark, #333333 light)
+                 and a #7F7F7F border. -->
+            <ControlTemplate x:Key="AppSquareButtonTemplate" TargetType="ButtonBase">
+                <Border x:Name="Bd"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        SnapsToDevicePixels="True">
+                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      Margin="{TemplateBinding Padding}"
+                                      RecognizesAccessKey="True"
+                                      SnapsToDevicePixels="True"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Button.Square.Foreground.MouseOver}"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+
+            <Style x:Key="AppSquareButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="Template" Value="{StaticResource AppSquareButtonTemplate}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Check box and radio button text keeps 4.5:1 when disabled. -->
+            <Style TargetType="CheckBox" BasedOn="{StaticResource MahApps.Styles.CheckBox}">
+                <Setter Property="Controls:CheckBoxHelper.ForegroundUncheckedDisabled" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                <Setter Property="Controls:CheckBoxHelper.ForegroundCheckedDisabled" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                <Setter Property="Controls:CheckBoxHelper.ForegroundIndeterminateDisabled" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+            </Style>
+            <Style TargetType="RadioButton" BasedOn="{StaticResource MahApps.Styles.RadioButton}">
+                <Setter Property="Controls:RadioButtonHelper.ForegroundDisabled" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+            </Style>
+
+            <!-- Tab header text in the theme foreground: the MahApps grey of an unselected tab is below 4.5:1. -->
+            <Style x:Key="TabHeaderText" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
 
             <Style x:Key="ViewButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
                 <Setter Property="Template" Value="{StaticResource SidebarButtonTemplate}"/>
@@ -67,7 +133,7 @@
 
             <Style x:Key="OptionsButtonStyle" TargetType="Button" BasedOn="{StaticResource ViewButtonStyle}"/>
 
-            <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+            <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
                 <Setter Property="Height" Value="28"/>
                 <Setter Property="MinWidth" Value="100"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
@@ -264,7 +330,7 @@
                                 <ListBox x:Name="lstWaves" Grid.Column="0" Height="116" FontSize="12"
                                          Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                          BorderThickness="1"
-                                         BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"/>
+                                         BorderBrush="{DynamicResource MahApps.Brushes.TextBox.Border}"/>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                     <Button x:Name="btnAddWave"    Content="Add..."  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"
                                             ToolTip="Pick a device collection. The list is searchable."/>
@@ -326,7 +392,8 @@
                     </Grid>
 
                     <TabControl Grid.Row="1" Controls:TabControlHelper.Underlined="TabPanel">
-                        <TabItem x:Name="tabPlanned" Header="Planned updates" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                        <TabItem x:Name="tabPlanned" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                            <TabItem.Header><TextBlock x:Name="txtTabPlanned" Text="Planned updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridPlan"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
@@ -344,7 +411,8 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
-                        <TabItem x:Name="tabSkipped" Header="Skipped updates" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                        <TabItem x:Name="tabSkipped" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                            <TabItem.Header><TextBlock x:Name="txtTabSkipped" Text="Skipped updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridSkipped"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
