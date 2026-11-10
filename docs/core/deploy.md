@@ -30,12 +30,12 @@ The tool never edits or deletes an existing deployment or group. It does not cre
 
 ![The Deploy page with the Enable actions switch off](../images/deploy-off.png)
 
-Each deployment, and its software update group, is named `UpdatePlanner <plan ID> Wave <n> <collection name>`. The grid shows the collection, its ID, the number of updates, the start and the deadline.
+Each deployment, and its software update group, is named `UpdatePlanner <plan ID> Wave <n> <collection name>`. The grid has the columns **Deployment name**, **Collection**, **ID**, **Updates**, **Start** and **Deadline**.
 
 ### Run a dry run
 
 1. Select the **Enable actions** switch. It shows **On**.
-2. Select **Dry run**. The overlay shows "Running the deploy step with -WhatIf...".
+2. Select **Dry run**. The overlay shows "Running the deploy step with -WhatIf...". A dry run does not open the site drive.
 3. Read the lower grid. Each row shows **Dry run** in **Result** and the message "Would create this deployment. Nothing was created."
 4. Read the log. It ends with "DryRun: 3 results, 0 created, 0 failed."
 
@@ -49,9 +49,18 @@ A dry run writes one record to the action log. See [Files and logs](../reference
 
 ### Create the deployments
 
-1. Select **Deploy...**. A confirmation shows the number of software update groups and deployments, the site, the provider and one line for each wave.
-2. Read the text. It names the change: "This changes the site." It also tells how to undo it: delete the deployments and the software update groups whose name holds the plan ID.
-3. Select **Yes** to create the deployments. Select **No** to stop. The log writes "Deploy cancelled."
+1. Select **Deploy...**. The tool first checks the plan (see [Deploy to a built-in collection](#deploy-to-a-built-in-collection)). Then a confirmation with the title **Create deployments** shows.
+2. Read the text. The tool builds it as follows. `<n>` is the number of waves that hold updates. There is one line for each of these waves.
+
+   ```text
+   Create <n> software update groups and <n> deployments on site <site code> (provider <SMS Provider>)?
+
+   <collection>: <number> updates, <start> to <deadline>
+
+   This changes the site. To undo, delete the deployments and the software update groups whose name holds the plan ID <plan ID>. Update Planner never edits or deletes an existing deployment or group.
+   ```
+
+3. Select **Yes** to create the deployments. The log writes `Deploy plan <plan ID>: <n> deployments.` and the overlay shows "Creating the deployments...". Select **No**, or press Esc, to stop. The log writes "Deploy cancelled."
 
 ![The confirmation before the tool creates the deployments](../images/deploy-confirm.png)
 
@@ -67,7 +76,9 @@ A wave that targets a built-in collection (an ID that starts with `SMS`) blocks 
 
 1. Add a built-in collection, for example All Systems, as a wave. Build the plan.
 2. Select **Deploy** in the sidebar. Turn on **Enable actions**.
-3. Select **Deploy...**. A message names the wave and the collection. The log writes "Deploy blocked:" with the same text. Nothing is created.
+3. Select **Deploy...**. A message box with the title **Deploy blocked** names the wave and the collection: `<wave>: the collection <ID> is built in. Deployments to built-in collections are blocked.` The log writes "Deploy blocked:" with the same text. Nothing is created.
+
+A plan in which no wave holds an update is blocked the same way, with the message "The plan holds no update to deploy."
 
 ![The message that blocks a deployment to a built-in collection](../images/deploy-blocked.png)
 
@@ -87,13 +98,13 @@ A wave that targets a built-in collection (an ID that starts with `SMS`) blocks 
 | **Dry run** | - | Runs the deploy step with `-WhatIf`. Creates nothing. |
 | **Deploy...** | - | Asks for a confirmation, then creates the deployments. |
 
-A group holds the update IDs of the wave. The deployment of the group sets the collection, the start time, the deadline (required), notification on and local time. The deployment does not allow installation or restart outside the maintenance window after the deadline. See [Plan rules](../reference/plan-rules.md). See [Plan rules](../reference/plan-rules.md).
+A group holds the update IDs of the wave. The deployment of the group sets the collection, the start time, the deadline (required), notification on and local time. The deployment does not allow installation or restart outside the maintenance window after the deadline. See [Plan rules](../reference/plan-rules.md).
 
 The status bar shows "actions enabled" or "read only".
 
 ## Limits
 
-- **Yes** is the default button of the confirmation. Pressing Enter creates the deployments.
+- **Yes** is the default button of the confirmation. Pressing Enter creates the deployments. **No** is the cancel button. Pressing Esc stops.
 - The tool creates deployments only for waves that hold updates.
 - A time zone difference can show another clock time on the site server. See [Plan rules](../reference/plan-rules.md).
 

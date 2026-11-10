@@ -20,7 +20,8 @@ The tool reads the site with the ConfigurationManager PowerShell module (it come
 
 | Data | Cmdlet | Notes |
 |---|---|---|
-| Update catalog: needed, installed, superseded, expired counts | `Get-CMSoftwareUpdate -Fast` | Same rows as `SMS_SoftwareUpdate`. |
+| Site check when the site drive opens | `Get-CMSite -SiteCode <site code>` | A wrong site code or provider stops the step with "Cannot open site ...". |
+| Update catalog: needed, installed, superseded, expired counts | `Get-CMSoftwareUpdate -Fast` | Same rows as `SMS_SoftwareUpdate`. The call does not use `-IncludeUpgrade`. See the note below. |
 | Last WSUS synchronization | `Get-CMSoftwareUpdateSyncStatus` | With **Include WSUS counts** it also reads update counts from the WSUS server (`Get-WsusServer`) over PowerShell remoting to the provider computer. |
 | Target collection (by ID or by name) | `Get-CMCollection` | The tool checks that it is a device collection. |
 | Members of a target collection | `Get-CMCollectionMember` | |
@@ -28,6 +29,8 @@ The tool reads the site with the ConfigurationManager PowerShell module (it come
 | Existing update deployments | `Get-CMSoftwareUpdateDeployment` | |
 | Collection picker: device collections | `Get-CMDeviceCollection` | |
 | Collection picker: console folders | `Get-CMFolder -TypeName SMS_Collection_Device` | |
+
+Note on `-IncludeUpgrade`: Microsoft Learn says that this switch of `Get-CMSoftwareUpdate` adds the software updates of the upgrade category. The tool does not use it. On a lab site with no updates of the upgrade category, the call returned the same count with and without the switch (checked 2026-11-10). On a site that synchronizes the upgrade category, the plan does not hold those updates.
 
 Two reads have no cmdlet. They use `Invoke-CMWmiQuery` (a ConfigurationManager cmdlet that runs a WQL `SELECT` on the open site drive):
 
@@ -40,26 +43,71 @@ Every site read is a read. Building a plan changes nothing on the site.
 
 ## Plan rules
 
+The tool checks each update of the catalog against the rules in this order. The first rule that matches gives the reason.
+
 | Rule | Result |
 |---|---|
-| Update is expired | Skipped. Counted, not listed. |
-| Update is superseded | Skipped. Listed when a device still needs it. |
-| No device needs the update | Skipped. Counted, not listed. |
-| Severity is below the lowest severity | Skipped and listed. |
-| No device in the wave collection needs the update | Not in that wave. |
+| Update is expired | Skipped (`Expired`). Counted, not listed. |
+| Update is superseded | Skipped (`Superseded`). Listed when a device still needs it. |
+| No device needs the update | Skipped (`NotNeeded`). Counted, not listed. |
+| Severity is below the lowest severity | Skipped and listed (`BelowMinimumSeverity`). |
+| No device in the wave collection needs the update | Not in that wave (`NotNeededInCollection`). Not listed. |
 | An existing deployment already targets the update at the collection | Skipped for that wave and listed (`AlreadyDeployed`). |
 | Wave holds the most updates per wave | The rest are skipped and listed (`WaveLimit`). |
 | Order in a wave | Severity (high to low), devices that need the update (high to low), article ID, CI ID. |
 | Dates | Wave n starts on the start date + (n - 1) x days between waves. The deadline is the start + days to deadline. |
 
+### Severity
+
+**Lowest severity** sets the lowest severity number to plan. An update with a lower number is skipped.
+
+| Lowest severity | Number | Updates in the plan |
+|---|---|---|
+| All | 0 | All, also updates with no severity (`None`) |
+| Low | 2 | Low, Moderate, Important, Critical |
+| Moderate | 6 | Moderate, Important, Critical |
+| Important | 8 | Important, Critical |
+| Critical | 10 | Critical |
+
+### Waves
+
+- The tool makes one wave for each wave collection, in the order of the wave list. The first collection is wave 1.
+- A wave is named `Wave <n> <collection name>`.
+- A wave collection is a device collection, given by its ID or by its name. A name must match exactly one collection.
+- A wave holds at most the value of **Most updates per wave**, 1 to 1000. 1000 is the limit of one software update group.
+- A wave that holds no update gets no deployment.
+
 ## What the Deploy step creates
 
 For each wave that holds updates, two objects:
 
-1. A software update group (`New-CMSoftwareUpdateGroup`) that holds the update IDs of the wave.
-2. A software update deployment of that group (`New-CMSoftwareUpdateDeployment`) with the target collection, the start time, the deadline (required), notification on, and local time. The deployment does not install outside the maintenance window and does not restart outside it. It does not distribute content (`-DeployWithNoPackage`).
+1. A software update group (`New-CMSoftwareUpdateGroup`) that holds the update IDs of the wave. Its description is `Created by Update Planner plan <PlanId>`.
+2. A software update deployment of that group (`New-CMSoftwareUpdateDeployment`) with these values:
+
+| Parameter | Value |
+|---|---|
+| `-CollectionId` | The wave collection. |
+| `-DeploymentName` | The name of the group. |
+| `-Comment` | `Created by Update Planner plan <PlanId>` |
+| `-DeploymentType` | `Required` |
+| `-AvailableDateTime` | The wave start date. |
+| `-DeadlineDateTime` | The wave deadline date. |
+| `-TimeBasedOn` | `LocalTime` |
+| `-UserNotification` | `DisplayAll` |
+| `-SoftwareInstallation` | `$false`: no installation outside the maintenance window after the deadline. |
+| `-AllowRestart` | `$false`: no restart outside the maintenance window after the deadline. |
+| `-DeployWithNoPackage` | `$true`: the deployment uses no deployment package and distributes no content. Without this switch the cmdlet fails for updates that the site has not downloaded. |
 
 Both are named `UpdatePlanner <PlanId> <wave name>`. To undo a run, delete the deployments and the groups whose name holds the plan ID.
+
+The **Dry run** button and `-WhatIf` run the same step. They do not open the site drive and create nothing.
+
+### Built-in collection block
+
+A collection whose ID starts with `SMS` is a built-in collection, for example All Systems (`SMS00001`). The deploy step refuses a wave that holds updates and targets such a collection:
+
+- The window checks the plan before the confirmation. The message box **Deploy blocked** names each such wave. It also blocks a plan in which no wave holds an update.
+- `Invoke-UpdatePlan -Apply` stops with the same message before it opens the site drive. With `-WhatIf` it does not stop.
 
 ## The plan file
 

@@ -26,7 +26,7 @@ Write access for your account to the folder of the script.
 | Lowest severity | **Plan**, **Lowest severity** | `Severity` | `All` | **Build plan** and window close |
 | Most updates per wave | **Plan**, **Most updates per wave** | `MaxUpdates` | `1000` | **Build plan** and window close |
 | Include WSUS counts | **Plan**, **Include WSUS counts** | `IncludeWsus` | `false` | **Build plan** and window close |
-| Wave list | **Plan**, wave list | `Waves`: a list of `<collection ID>\|<name>` | Empty | At each change of the list |
+| Wave list | **Plan**, wave list | `Waves`: a list of `<collection ID>\|<name>` | Empty | At the next save of the file: **Build plan**, **OK** in Options, the theme toggle or window close |
 
 The wave 1 start date is not saved. It starts as tomorrow at each start. **Enable actions** is not saved. It starts off.
 

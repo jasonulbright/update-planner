@@ -19,10 +19,10 @@ None.
 | Action | Where | Right |
 |---|---|---|
 | Start | This computer | The Configuration Manager console (the ConfigurationManager module). Without it the tool ends at start with a message. |
-| Load collections | The SMS Provider, through the ConfigurationManager module | The Options dialog says that a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. This was tested on the lab only. For another account, check the Configuration Manager roles and scopes in your site. An account with other rights is not tested. The tool reads with `Get-CMCollection`, `Get-CMFolder` and `Invoke-CMWmiQuery`. |
-| Build plan | The SMS Provider, the same way | Reads with `Get-CMSoftwareUpdate`, `Get-CMCollectionMember`, `Get-CMMaintenanceWindow`, `Get-CMSoftwareUpdateDeployment`, `Get-CMSoftwareUpdateSyncStatus` and `Invoke-CMWmiQuery` (a `SELECT` for the update status of each device). |
+| Load collections | The SMS Provider, through the ConfigurationManager module | The Options dialog says that a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. This was tested on the lab only. For another account, check the Configuration Manager roles and scopes in your site. An account with other rights is not tested. The tool opens the site drive (`Get-CMSite`) and reads with `Get-CMDeviceCollection`, `Get-CMFolder` and `Invoke-CMWmiQuery` (a `SELECT` for the folder of each collection). |
+| Build plan | The SMS Provider, the same way | Reads with `Get-CMSite`, `Get-CMSoftwareUpdate`, `Get-CMCollection`, `Get-CMCollectionMember`, `Get-CMMaintenanceWindow`, `Get-CMSoftwareUpdateDeployment`, `Get-CMSoftwareUpdateSyncStatus` and `Invoke-CMWmiQuery` (a `SELECT` for the update status of each device). |
 | Include WSUS counts | The provider computer (PowerShell remoting) | A right to run `Get-WsusServer` on the provider computer. Without it, the plan builds and the WSUS counts are missing. |
-| Dry run | None beyond Build plan | Creates nothing. |
+| Dry run | None | Creates nothing. It does not open the site drive. |
 | Deploy... | The SMS Provider | The right to create software update groups and deployments (`New-CMSoftwareUpdateGroup`, `New-CMSoftwareUpdateDeployment`). |
 | Reports, exports, logs | This computer | Write access to the folder of the script. |
 

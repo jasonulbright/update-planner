@@ -19,23 +19,23 @@ None. The dialog does not connect to the site.
 ### Set the connection
 
 1. Select **Options** in the sidebar. The button is off while a step runs.
-2. Select **Connection**.
+2. Select **Connection**. The section has the heading **Configuration Manager Connection**.
 3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `e.g. sms01.example.com`.
-4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The site code is required.
-5. Select **OK**. Select **Cancel** to discard the change. Press Esc to cancel.
+4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The watermark shows `e.g. ABC. Three letters or digits.` The site code is required.
+5. Select **OK**. **OK** is the default button: Enter selects it. Select **Cancel** to discard the change. Press Esc to cancel.
 
 ![The Connection section of the Options dialog](../images/options-connection.png)
 
-If the site code has the wrong form, a message shows "The site code is three letters or digits." The dialog stays open.
+If the site code has the wrong form, a message box with the title **Update Planner** shows "The site code is three letters or digits." The dialog stays open. An empty site code is not checked here. **Load collections**, **Add...** and **Build plan** need it.
 
 ![The message for a wrong site code](../images/options-bad-site-code.png)
 
-The message boxes of the dialog carry the title **Update Planner**. They open in the center of the dialog. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
+The message boxes of the dialog carry the title **Update Planner**, not the title of the dialog (**Options**). They show a warning sign and an **OK** button. They open in the center of the dialog. A message box of the main window has its own title too: a step that fails shows a message box with the title **Step failed** and the error text. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
 
 ### Read the version
 
 1. Select **About**.
-2. Read the version, for example `Update Planner v2026.11.06.0003`.
+2. Read the version, for example `Update Planner v2026.11.07.0004`. The section also shows a one-paragraph description, the author and the license (MIT).
 
 ![The About section](../images/options-about.png)
 
@@ -50,7 +50,7 @@ The message boxes of the dialog carry the title **Update Planner**. They open in
 | **SMS Provider FQDN** | Empty, or the value that the suite launcher hands over | The computer that runs the SMS Provider. Saved when you select **OK**. |
 | **Site Code** | Empty, or the value that the suite launcher hands over | A three-character site code. Required. The tool no longer asks the provider for it. |
 
-The text on the page says that the tool needs the Configuration Manager console on this computer, and that a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. This is the text of the dialog. It was tested on the lab only. An account with other rights is not tested. Check the roles and the scopes of the account in your site.
+The text under the boxes says: the tool connects with the Windows account that runs it and stores no password; the tool needs the Configuration Manager console on this computer; a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role; an account with fewer rights is not tested. This statement was tested on a lab site only. Check the roles and the scopes of the account in your site.
 
 ## Limits
 
@@ -61,7 +61,7 @@ The text on the page says that the tool needs the Configuration Manager console 
 
 | Message | Cause | Fix |
 |---|---|---|
-| The site code is three letters or digits. | The site code has another form. | Enter three letters or digits. |
+| The site code is three letters or digits. | The site code has another form. | Enter three letters or digits, or leave the box empty. |
 | The SMS provider is a computer name or an FQDN. | The provider holds a character that a name does not hold. | Enter a computer name or an FQDN. |
 
 ## Links

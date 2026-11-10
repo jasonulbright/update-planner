@@ -25,15 +25,15 @@ None. Some fixes need rights on the site.
 
 | Message or symptom | Cause | Fix |
 |---|---|---|
-| A message box says that the Configuration Manager console is not installed, and the tool ends. | The ConfigurationManager module is not on this computer. | Install the console, then start the tool again. |
+| A message box with the title **Update Planner** says that the Configuration Manager console is not installed, and the tool ends. | The ConfigurationManager module is not on this computer. | Install the console, then start the tool again. |
 
 ## Connection
 
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | The status bar shows "Open Options to set the SMS provider and the site code". | The provider or the site code is empty. | Select **Options** and enter both. |
-| Failed: ... Access is denied. | The account has no read right on the site. | Run the tool as an account with the Read-only Analyst role. |
-| Failed: ... WinRM cannot process the request. | The provider computer is not reachable by WinRM. | Check the name, the network and the WinRM service on the provider. |
+| Failed: ... Access is denied. | The account has no read right on the site. | Run the tool as an account with read rights on the site. See [Permissions](reference/permissions.md). |
+| Message box **Step failed**: `Cannot open site <site code> on <provider>. ...` | The site code or the provider name is wrong, the provider is not reachable, or the account has no rights. | Check the values in **Options**, the network and the account rights. |
 | The collection list is old. | The tool keeps the list from the last load. | Select **Load collections**. |
 
 ## Plan
@@ -42,7 +42,7 @@ None. Some fixes need rights on the site.
 |---|---|---|
 | The plan has 0 planned assignments. | No device in the wave collections needs an update, or **Lowest severity** is too high. | Read **Skipped updates** and the site totals in the summary. |
 | An update that you expect is missing. | The update is superseded, expired, below the severity, already deployed to the collection, or over the wave limit. | Find the update in **Skipped updates**. To check whether an update is expired, find it with `Get-CMSoftwareUpdate -Fast` on the site drive and read `IsExpired`. See [Plan grids](core/plan-grids.md). |
-| The report has no WSUS line. | **Include WSUS counts** is cleared, or the provider computer refused the WSUS query. | Select **Include WSUS counts** and build the plan again. Check the right to run `Get-WsusServer` on the provider. |
+| The report has no WSUS line. | **Include WSUS counts** is cleared, or the WSUS read failed (PowerShell remoting to the provider, or `Get-WsusServer` on it). The plan builds without the counts. | Select **Include WSUS counts** and build the plan again. Check PowerShell remoting and the right to run `Get-WsusServer` on the provider. |
 | A wave shows fewer updates than the site has. | The wave collection needs only part of them. | None. A wave holds only the updates that its devices need. |
 
 ## Deploy
