@@ -47,3 +47,5 @@ One command regenerates every image in `docs/images`. Run it from the repository
 - The lab workstation needs the Configuration Manager console and a lab site with at least three device collections.
 - The capture reads the site and runs a dry run. It opens the deploy confirmation and selects **No**. It never creates a deployment.
 - The command replaces an image only when every step passed. It stops with the failed steps when a step failed.
+- The command replaces only the images that are already in `docs/images`. Add `-AddNew` to also copy the images of a new page.
+- `-Minutes` sets the time limit of each capture run. The default is 30.

@@ -15,7 +15,7 @@ Use this page on a new installation, or when you connect the tool to a different
 - Windows 10, Windows 11 or Windows Server 2016 or later.
 - Windows PowerShell 5.1. PowerShell 7 also works for the command-line script.
 - .NET Framework 4.7.2 or later.
-- Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. WinRM to that computer is also necessary for WSUS counts (**Include WSUS counts**).
+- Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. PowerShell remoting (WinRM) to that computer is also necessary for WSUS counts (**Include WSUS counts**).
 - A Windows account that is a local administrator of the SMS Provider computer. A domain admin account of that kind needs no Configuration Manager role. An account with fewer rights is not tested.
 - The Configuration Manager console on this computer. The tool reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Without the console, the tool stops at start with a message (see below).
 - A window of at least 1024 by 640 pixels. The window opens at 1320 by 820.
@@ -72,7 +72,7 @@ The plan changes nothing on the site. See [Plan page](core/plan.md) for every co
 
 ### Start the tool on a computer without the console
 
-The tool checks for the console at start. When the ConfigurationManager module is not found, a message box says so and the tool ends. Install the console, then start the tool again.
+The tool checks for the console at start. When the ConfigurationManager module is not found, a message box with the title **Update Planner** says so and the tool ends. Install the console, then start the tool again.
 
 ![The message at start when the console is not installed](images/start-console-missing.png)
 
