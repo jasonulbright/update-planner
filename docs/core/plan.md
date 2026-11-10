@@ -23,7 +23,7 @@ The page turns a list of device collections and five settings into a plan. Colle
 ### Load the collections
 
 1. Select **Load collections**. A progress overlay shows "Reading device collections and console folders...".
-2. Read the log. It ends with "Loaded 26 device collections in 1 folders (site MCM)." with your numbers.
+2. Read the log. It ends with "Loaded 26 device collections in 1 folders (site ABC)." with your numbers.
 
 **Add...** loads the collections by itself the first time. **Options** loads them again when you change the provider or the site code.
 
@@ -40,7 +40,7 @@ The page turns a list of device collections and five settings into a plan. Colle
 
 ![The picker with one collection selected and OK on](../images/plan-picker-selected.png)
 
-The picker lists the collection name, the ID and the member count. The wave list shows a number, the name and the ID, for example `1.  HomeLab - Test Deployments   (MCM00014)`.
+The picker lists the collection name, the ID and the member count. The wave list shows a number, the name and the ID, for example `1.  HomeLab - Test Deployments   (ABC00014)`.
 
 A collection that is in the list twice is refused. The log writes "<name> is already in the wave list."
 

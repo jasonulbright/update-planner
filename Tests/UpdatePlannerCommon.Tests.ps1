@@ -44,7 +44,7 @@ BeforeAll {
             (New-TestUpdate -CIId 7 -ArticleId '5007' -NumMissing 0)
         )
         [pscustomobject]@{
-            ComputerName = 'CM01'
+            ComputerName = 'SMS01'
             SiteCode = 'ABC'
             Sync = $null
             Wsus = $null
@@ -246,7 +246,7 @@ Describe 'Get-UpdatePlannerState' {
         Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'provider.test'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon Get-CMSoftwareUpdateSyncStatus {
-            [pscustomobject]@{ WSUSServerName = 'CM01'; WSUSSourceServer = 'Microsoft Update'; LastSuccessfulSyncTime = [datetime]'2026-11-05'; LastSyncErrorCode = 0 }
+            [pscustomobject]@{ WSUSServerName = 'SMS01'; WSUSSourceServer = 'Microsoft Update'; LastSuccessfulSyncTime = [datetime]'2026-11-05'; LastSyncErrorCode = 0 }
         }
         Mock -ModuleName UpdatePlannerCommon Get-CMSoftwareUpdate {
             [pscustomobject]@{ CI_ID = 1; ArticleID = '5001'; LocalizedDisplayName = 'A'; Severity = 10; IsExpired = $false; IsSuperseded = $false; IsDeployed = $false; NumMissing = 2; NumPresent = 1; NumTotal = 3; DateRevised = [datetime]'2026-09-01' }
@@ -284,7 +284,7 @@ Describe 'Get-UpdatePlannerState' {
         $objState.Collections[0].MaintenanceWindows[0].Description | Should -Be 'Occurs every 1 weeks on Saturday'
         @($objState.Deployments).Count | Should -Be 1
         $objState.Deployments[0].AssignedCIds | Should -Contain 1
-        $objState.Sync.WsusServerName | Should -Be 'CM01'
+        $objState.Sync.WsusServerName | Should -Be 'SMS01'
     }
 
     It 'opens the site drive with the site code and the provider, and closes it' {
@@ -393,7 +393,7 @@ Describe 'Connect-UpSite' {
     It 'stops with the plain console message when the module is missing' {
         Mock -ModuleName UpdatePlannerCommon Resolve-ConfigurationManagerModulePath { $null }
         Mock -ModuleName UpdatePlannerCommon New-PSDrive { }
-        { InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'cm01' -SiteCode 'ABC' } } | Should -Throw 'The Configuration Manager console is not installed on this computer.*'
+        { InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'sms01' -SiteCode 'ABC' } } | Should -Throw 'The Configuration Manager console is not installed on this computer.*'
         Should -Invoke -ModuleName UpdatePlannerCommon New-PSDrive -Times 0 -Scope It
     }
 
@@ -404,9 +404,9 @@ Describe 'Connect-UpSite' {
         Mock -ModuleName UpdatePlannerCommon New-PSDrive { }
         Mock -ModuleName UpdatePlannerCommon Set-Location { }
         Mock -ModuleName UpdatePlannerCommon Get-CMSite { [pscustomobject]@{ SiteCode = 'ABC' } }
-        $objConnection = InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'cm01' -SiteCode 'ABC' }
+        $objConnection = InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'sms01' -SiteCode 'ABC' }
         $objConnection.CreatedDrive | Should -BeTrue
-        Should -Invoke -ModuleName UpdatePlannerCommon New-PSDrive -Times 1 -Exactly -Scope It -ParameterFilter { $Name -eq 'ABC' -and $PSProvider -eq 'CMSite' -and $Root -eq 'cm01' }
+        Should -Invoke -ModuleName UpdatePlannerCommon New-PSDrive -Times 1 -Exactly -Scope It -ParameterFilter { $Name -eq 'ABC' -and $PSProvider -eq 'CMSite' -and $Root -eq 'sms01' }
         Should -Invoke -ModuleName UpdatePlannerCommon Set-Location -Times 1 -Exactly -Scope It -ParameterFilter { $LiteralPath -eq 'ABC:' }
         Should -Invoke -ModuleName UpdatePlannerCommon Get-CMSite -Times 1 -Exactly -Scope It
     }
@@ -417,7 +417,7 @@ Describe 'Connect-UpSite' {
         Mock -ModuleName UpdatePlannerCommon Get-PSDrive { }
         Mock -ModuleName UpdatePlannerCommon New-PSDrive { throw 'RPC server is unavailable' }
         Mock -ModuleName UpdatePlannerCommon Set-Location { }
-        { InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'cm01' -SiteCode 'ABC' } } | Should -Throw 'Cannot open site ABC on cm01.*RPC server is unavailable*'
+        { InModuleScope UpdatePlannerCommon { Connect-UpSite -ComputerName 'sms01' -SiteCode 'ABC' } } | Should -Throw 'Cannot open site ABC on sms01.*RPC server is unavailable*'
     }
 }
 
@@ -426,7 +426,7 @@ Describe 'Disconnect-UpSite' {
         Mock -ModuleName UpdatePlannerCommon Set-Location { }
         Mock -ModuleName UpdatePlannerCommon Remove-PSDrive { }
         InModuleScope UpdatePlannerCommon {
-            Disconnect-UpSite -Connection ([pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\Work'; CreatedDrive = $true })
+            Disconnect-UpSite -Connection ([pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\Work'; CreatedDrive = $true })
         }
         Should -Invoke -ModuleName UpdatePlannerCommon Set-Location -Times 1 -Exactly -Scope It -ParameterFilter { $LiteralPath -eq 'C:\Work' }
         Should -Invoke -ModuleName UpdatePlannerCommon Remove-PSDrive -Times 1 -Exactly -Scope It
@@ -436,7 +436,7 @@ Describe 'Disconnect-UpSite' {
         Mock -ModuleName UpdatePlannerCommon Set-Location { }
         Mock -ModuleName UpdatePlannerCommon Remove-PSDrive { }
         InModuleScope UpdatePlannerCommon {
-            Disconnect-UpSite -Connection ([pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\Work'; CreatedDrive = $false })
+            Disconnect-UpSite -Connection ([pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\Work'; CreatedDrive = $false })
         }
         Should -Invoke -ModuleName UpdatePlannerCommon Remove-PSDrive -Times 0 -Scope It
     }
@@ -449,7 +449,7 @@ Describe 'Disconnect-UpSite' {
 Describe 'Invoke-UpdatePlan' {
     BeforeAll {
         $script:objPlan = New-UpdatePlan -State (New-TestState) -StartDate ([datetime]'2026-12-01')
-        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'CM01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'SMS01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup { [pscustomobject]@{ CI_ID = 777 } }
         Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { [pscustomobject]@{ AssignmentID = 4242 } }

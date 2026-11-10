@@ -85,12 +85,12 @@ param (
 # Create one software update group and one deployment of that group for each wave that holds updates. Supports -WhatIf and asks for confirmation before each wave. Without this switch the script changes nothing on the site.
 #
 # .EXAMPLE
-# .\Invoke-UpdatePlanner.ps1 -ComputerName CM01 -SiteCode ABC -TargetCollection 'Pilot', 'Broad'
+# .\Invoke-UpdatePlanner.ps1 -ComputerName SMS01 -SiteCode ABC -TargetCollection 'Pilot', 'Broad'
 #
 # # Writes update-plan.json and update-plan.md. Changes nothing on the site.
 #
 # .EXAMPLE
-# .\Invoke-UpdatePlanner.ps1 -ComputerName CM01 -SiteCode ABC -TargetCollection 'Pilot' -Apply -WhatIf
+# .\Invoke-UpdatePlanner.ps1 -ComputerName SMS01 -SiteCode ABC -TargetCollection 'Pilot' -Apply -WhatIf
 #
 # # Writes the plan and shows the software update groups and deployments that -Apply would create.
 #

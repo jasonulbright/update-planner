@@ -144,7 +144,7 @@ $chkWsus       = $window.FindName('chkWsus')
 $txtPlanSummary = $window.FindName('txtPlanSummary')
 $gridPlan      = $window.FindName('gridPlan')
 $gridSkipped   = $window.FindName('gridSkipped')
-$tabSkipped    = $window.FindName('tabSkipped')
+$txtTabSkipped = $window.FindName('txtTabSkipped')
 
 $rdoMarkdown  = $window.FindName('rdoMarkdown')
 $rdoHtml      = $window.FindName('rdoHtml')
@@ -196,12 +196,24 @@ $script:ViewButtons = @(
 )
 $script:ActiveView = 'Plan'
 
+# Contrast fixes of the SuiteCommon palette. The sidebar button border is 2.06:1 at #555555 on the
+# dark window; #8A8A8A is 4.4:1. White title text is 2.6:1 on the light inactive title bar #4BA3E0;
+# #595959 is 7.0:1. Window.Tests.ps1 reads this table, so the test checks the same values.
+$script:SuiteBrushOverride = @{
+    DarkButtonBorder = '#8A8A8A'
+    TitleBarInactive = '#595959'
+}
+$__brushConverter = [System.Windows.Media.BrushConverter]::new()
+$__suiteBrushes = @{}
+foreach ($__key in $script:SuiteBrushOverride.Keys) { $__suiteBrushes[$__key] = $__brushConverter.ConvertFrom($script:SuiteBrushOverride[$__key]) }
+
 Initialize-SuiteTheme -Window $window `
     -IsDarkGetter { [bool]$global:Prefs['DarkMode'] } `
     -ActiveViewGetter { $script:ActiveView } `
     -ViewButtons $script:ViewButtons `
     -OptionsButton $btnOptions `
-    -LogLabel $lblLogOutput
+    -LogLabel $lblLogOutput `
+    -Brushes $__suiteBrushes
 
 $__startIsDark = [bool]$global:Prefs['DarkMode']
 $toggleTheme.IsOn = $__startIsDark
@@ -434,7 +446,7 @@ function Start-BackgroundWork {
             if ($script:BgState.ErrorMsg) {
                 Add-LogLine ('Failed: {0}' -f $script:BgState.ErrorMsg)
                 Set-StatusText 'The step failed. See the log.'
-                [void](Show-ThemedMessage -Owner $window -Title 'Update Planner' -Message ([string]$script:BgState.ErrorMsg) -Icon Error)
+                [void](Show-ThemedMessage -Owner $window -Title 'Step failed' -Message ([string]$script:BgState.ErrorMsg) -Icon Error)
                 return
             }
             & $script:BgOnDone $script:BgState.Result
@@ -495,7 +507,7 @@ function Show-Plan {
     $script:Plan = $Plan
     $gridPlan.ItemsSource    = @(ConvertTo-UpdatePlanRow -Plan $Plan)
     $gridSkipped.ItemsSource = @(ConvertTo-UpdatePlanSkippedRow -Plan $Plan)
-    $tabSkipped.Header = ('Skipped updates ({0})' -f @($Plan.Skipped).Count)
+    $txtTabSkipped.Text = ('Skipped updates ({0})' -f @($Plan.Skipped).Count)
     $s = $Plan.Summary
     $txtPlanSummary.Text = ('Plan {0} for site {1}. {2} waves, {3} planned assignments, {4} skipped and listed. Site: {5} updates, {6} needed, {7} superseded, {8} expired, {9} existing deployments.' -f
         $Plan.PlanId, $Plan.SiteCode, $s.WavesPlanned, $s.UpdateAssignmentsPlanned, $s.SkippedListed, $s.TotalUpdates, $s.NeededUpdates, $s.SupersededUpdates, $s.ExpiredUpdates, $s.ExistingDeployments)
@@ -677,7 +689,39 @@ function Show-OptionsDialog {
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Steel.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <Style x:Key="CategoryRowStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+            <!-- Contrast overrides, the same as in MainWindow.xaml. -->
+            <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
+            <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
+            <ControlTemplate x:Key="AppSquareButtonTemplate" TargetType="ButtonBase">
+                <Border Name="SquareBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="True"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Button.Square.Foreground.MouseOver}"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="AppSquareButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="Template" Value="{StaticResource AppSquareButtonTemplate}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="CategoryRowStyle" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
                 <Setter Property="Height" Value="36"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="Padding" Value="14,0,14,0"/>
@@ -685,15 +729,25 @@ function Show-OptionsDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
                 <Setter Property="Margin" Value="0"/>
             </Style>
-            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
-            <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
-                <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
+            <!-- The accent fill is the theme highlight (#4A5763 dark, #00589F light): white text is 7:1 on both.
+                 The border is the theme foreground: the highlight alone is 2.1:1 on the dark dialog.
+                 The plain accent fill of the light theme is 4.49:1. -->
+            <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource DialogButton}">
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Highlight}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -719,10 +773,10 @@ function Show-OptionsDialog {
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,4,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
+                         Controls:TextBoxHelper.Watermark="e.g. sms01.example.com"/>
                 <TextBlock Text="Site Code" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. MCM. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
+                         Controls:TextBoxHelper.Watermark="e.g. ABC. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
                 <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
@@ -769,11 +823,11 @@ function Show-OptionsDialog {
         $newSite     = ([string]$txtSiteCode.Text).Trim()
         $newProvider = ([string]$txtSmsProvider.Text).Trim()
         if ($newSite -and $newSite -notmatch '^[A-Za-z0-9]{3}$') {
-            [void](Show-ThemedMessage -Owner $dlg -Title 'Options' -Message 'The site code is three letters or digits.' -Icon Warn)
+            [void](Show-ThemedMessage -Owner $dlg -Title 'Update Planner' -Message 'The site code is three letters or digits.' -Icon Warn)
             return
         }
         if ($newProvider -and $newProvider -notmatch '^[A-Za-z0-9_.-]{1,255}$') {
-            [void](Show-ThemedMessage -Owner $dlg -Title 'Options' -Message 'The SMS provider is a computer name or an FQDN.' -Icon Warn)
+            [void](Show-ThemedMessage -Owner $dlg -Title 'Update Planner' -Message 'The SMS provider is a computer name or an FQDN.' -Icon Warn)
             return
         }
         $changed = ($newSite -ne [string]$global:Prefs.SiteCode) -or ($newProvider -ne [string]$global:Prefs.SMSProvider)
@@ -784,7 +838,7 @@ function Show-OptionsDialog {
             $script:CollectionData = $null
             $script:Plan = $null
             $gridPlan.ItemsSource = $null; $gridSkipped.ItemsSource = $null; $gridPreview.ItemsSource = $null; $gridResults.ItemsSource = $null
-            $tabSkipped.Header = 'Skipped updates'
+            $txtTabSkipped.Text = 'Skipped updates'
             $txtPlanSummary.Text = 'No plan yet.'
             Update-ReportText
             Update-ControlState

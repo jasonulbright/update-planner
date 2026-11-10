@@ -26,7 +26,7 @@ The script reads the site, writes `update-plan.json` and `update-plan.md`, and c
 2. Run the script with the provider and the wave collections:
 
    ```powershell
-   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014', 'MCM00016'
+   .\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'ABC00014', 'ABC00016'
    ```
 
 3. Read the output. It shows the path of the two files.
@@ -44,7 +44,7 @@ The script writes the files to the current folder unless you set `-OutputPath`. 
 1. Add `-Apply -WhatIf`:
 
    ```powershell
-   .\Invoke-UpdatePlanner.ps1 -ComputerName cm01.contoso.com -SiteCode MCM -TargetCollection 'MCM00014' -Apply -WhatIf
+   .\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'ABC00014' -Apply -WhatIf
    ```
 
 2. Read the lines that begin with `What if: Performing the operation "Create software update group and deployment" on target`.

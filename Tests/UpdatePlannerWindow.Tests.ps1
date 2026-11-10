@@ -10,7 +10,7 @@ BeforeAll {
 
     function New-WindowTestPlan {
         $objState = [pscustomobject]@{
-            ComputerName = 'cm01.contoso.com'
+            ComputerName = 'sms01.example.com'
             SiteCode = 'ABC'
             Sync = [pscustomobject]@{ WsusServerName = 'wsus'; Source = 'Microsoft Update'; LastSuccessfulSyncTime = '2026-11-05 02:02'; LastSyncErrorCode = 0 }
             Wsus = $null
@@ -36,10 +36,10 @@ AfterAll {
 
 Describe 'Resolve-UpdatePlannerSetting' {
     It 'accepts good values and returns typed values' {
-        $objSetting = Resolve-UpdatePlannerSetting -ComputerName ' cm01.contoso.com ' -StartDateText '2026-12-01' -WaveSpacingText '7' -DeadlineText '3' -SeverityName 'Important' -MaxUpdatesText '25' -TargetCollection @('ABC00001', 'ABC00002')
+        $objSetting = Resolve-UpdatePlannerSetting -ComputerName ' sms01.example.com ' -StartDateText '2026-12-01' -WaveSpacingText '7' -DeadlineText '3' -SeverityName 'Important' -MaxUpdatesText '25' -TargetCollection @('ABC00001', 'ABC00002')
         $objSetting.IsValid | Should -BeTrue
         $objSetting.Errors.Count | Should -Be 0
-        $objSetting.ComputerName | Should -Be 'cm01.contoso.com'
+        $objSetting.ComputerName | Should -Be 'sms01.example.com'
         $objSetting.StartDate | Should -Be ([datetime]'2026-12-01')
         $objSetting.WaveSpacingDays | Should -Be 7
         $objSetting.DeadlineDays | Should -Be 3
@@ -51,17 +51,17 @@ Describe 'Resolve-UpdatePlannerSetting' {
     It 'maps each severity name to its number' {
         $hashtableExpected = @{ All = 0; Low = 2; Moderate = 6; Important = 8; Critical = 10 }
         foreach ($strName in $hashtableExpected.Keys) {
-            (Resolve-UpdatePlannerSetting -ComputerName 'cm01' -StartDateText '2026-12-01' -SeverityName $strName -TargetCollection 'ABC00001').MinimumSeverity | Should -Be $hashtableExpected[$strName]
+            (Resolve-UpdatePlannerSetting -ComputerName 'sms01' -StartDateText '2026-12-01' -SeverityName $strName -TargetCollection 'ABC00001').MinimumSeverity | Should -Be $hashtableExpected[$strName]
         }
     }
 
     It 'checks the site code only when it is passed' {
-        $objGood = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode ' abc ' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
+        $objGood = Resolve-UpdatePlannerSetting -ComputerName 'sms01' -SiteCode ' abc ' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
         $objGood.IsValid | Should -BeTrue
-        $objBad = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode '' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
+        $objBad = Resolve-UpdatePlannerSetting -ComputerName 'sms01' -SiteCode '' -StartDateText '2026-12-01' -TargetCollection 'ABC00001'
         $objBad.IsValid | Should -BeFalse
         $objBad.Errors | Should -Contain 'Enter the site code in Options. It is three letters or digits.'
-        (Resolve-UpdatePlannerSetting -ComputerName 'cm01' -SiteCode 'ABCD' -StartDateText '2026-12-01' -TargetCollection 'ABC00001').IsValid | Should -BeFalse
+        (Resolve-UpdatePlannerSetting -ComputerName 'sms01' -SiteCode 'ABCD' -StartDateText '2026-12-01' -TargetCollection 'ABC00001').IsValid | Should -BeFalse
     }
 
     It 'reports one message for each wrong value' {
@@ -71,11 +71,11 @@ Describe 'Resolve-UpdatePlannerSetting' {
     }
 
     It 'refuses a provider name that carries a query or a path' {
-        (Resolve-UpdatePlannerSetting -ComputerName 'cm01;calc' -StartDateText '2026-12-01' -TargetCollection 'ABC00001').IsValid | Should -BeFalse
+        (Resolve-UpdatePlannerSetting -ComputerName 'sms01;calc' -StartDateText '2026-12-01' -TargetCollection 'ABC00001').IsValid | Should -BeFalse
     }
 
     It 'refuses a collection that is in the wave list twice' {
-        $objSetting = Resolve-UpdatePlannerSetting -ComputerName 'cm01' -StartDateText '2026-12-01' -TargetCollection @('ABC00001', 'ABC00001')
+        $objSetting = Resolve-UpdatePlannerSetting -ComputerName 'sms01' -StartDateText '2026-12-01' -TargetCollection @('ABC00001', 'ABC00001')
         $objSetting.IsValid | Should -BeFalse
         $objSetting.Errors | Should -Contain 'A collection is in the wave list more than once.'
     }
@@ -207,13 +207,13 @@ Describe 'ConvertTo-UpdatePlanResultRow' {
 }
 Describe 'Invoke-UpdatePlan built-in collection block' {
     It 'refuses a real apply to a built-in collection and creates nothing' {
-        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup { }
         Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { }
         $objPlan = New-WindowTestPlan
         $objPlan.Waves[0].CollectionId = 'SMS00001'
-        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -Confirm:$false } | Should -Throw '*built in*'
+        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'sms01' -Apply -Confirm:$false } | Should -Throw '*built in*'
         Should -Invoke -ModuleName UpdatePlannerCommon Connect-UpSite -Times 0 -Exactly
         Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup -Times 0 -Exactly
         Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment -Times 0 -Exactly
@@ -222,7 +222,7 @@ Describe 'Invoke-UpdatePlan built-in collection block' {
     It 'still previews with -WhatIf for a built-in collection' {
         $objPlan = New-WindowTestPlan
         $objPlan.Waves[0].CollectionId = 'SMS00001'
-        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'cm01' -Apply -WhatIf 6>$null } | Should -Not -Throw
+        { Invoke-UpdatePlan -Plan $objPlan -ComputerName 'sms01' -Apply -WhatIf 6>$null } | Should -Not -Throw
     }
 }
 Describe 'Test-UpdatePlanApplyAllowed' {
@@ -249,7 +249,7 @@ Describe 'Test-UpdatePlanApplyAllowed' {
 }
 Describe 'Get-UpdatePlannerCollection' {
     It 'returns collections with their folder and the folder tree, from cmdlets and one SELECT' {
-        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'cm01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { [pscustomobject]@{ InstanceKey = 'ABC00010'; ContainerNodeID = 5 } }
         Mock -ModuleName UpdatePlannerCommon Get-CMFolder { [pscustomobject]@{ ContainerNodeID = 5; Name = 'Pilot rings'; ParentContainerNodeID = 0 } }
@@ -257,7 +257,7 @@ Describe 'Get-UpdatePlannerCollection' {
             [pscustomobject]@{ CollectionID = 'SMS00001'; Name = 'All Systems'; MemberCount = 12 }
             [pscustomobject]@{ CollectionID = 'ABC00010'; Name = 'Ring 0'; MemberCount = 3 }
         }
-        $objList = Get-UpdatePlannerCollection -ComputerName 'cm01' -SiteCode 'ABC'
+        $objList = Get-UpdatePlannerCollection -ComputerName 'sms01' -SiteCode 'ABC'
         $objList.SiteCode | Should -Be 'ABC'
         @($objList.Collections).Count | Should -Be 2
         $objRing = @($objList.Collections | Where-Object { $_.CollectionID -eq 'ABC00010' })[0]
@@ -321,7 +321,7 @@ Describe 'Window files' {
 
     It 'resets the Skipped updates tab header when a change of the connection clears the plan' {
         $strStart = Get-Content -LiteralPath $script:strStartPath -Raw
-        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$tabSkipped\.Header = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
+        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$txtTabSkipped\.Text = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
     }
 
     It 'parses the start script without error' {
