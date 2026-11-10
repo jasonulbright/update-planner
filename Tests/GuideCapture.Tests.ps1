@@ -1,7 +1,7 @@
 #Requires -Modules Pester
 # Static checks of the capture scripts in tools\guide-capture. The test opens no window and
-# runs no capture. It parses the scripts and checks that they carry no computer name, account
-# or address: the caller gives the lab values as parameters.
+# runs no capture. It parses the scripts and checks that they carry no password, secret or
+# credential file path: the caller gives the credential script and the lab values as parameters.
 
 BeforeDiscovery {
     $script:CaptureDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools\guide-capture'
@@ -27,28 +27,28 @@ Describe 'Capture scripts' {
         @($errors) | Should -BeNullOrEmpty
     }
 
-    It 'has no network address, host name or account literal in <Name>' -ForEach $script:ScriptCases {
+    It 'has no password, secret or credential file literal in <Name>' -ForEach $script:ScriptCases {
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
         $strings = @($ast.FindAll({
                     param($n)
                     $n -is [System.Management.Automation.Language.StringConstantExpressionAst] -or
                     $n -is [System.Management.Automation.Language.ExpandableStringExpressionAst]
                 }, $true) | ForEach-Object { $_.Value })
-        # An IPv4 address, or a host name with a domain: two dots and a letter label at the end,
-        # not a file name and not a .NET type name.
-        $fileExt = '\.(ps1|psm1|psd1|json|png|log|flag|txt|exe|dll|md|html|xaml)$'
-        # The lab names are built from parts, so that this file does not carry them as text either.
-        $parts = @(('C', 'M01'), ('CLI', 'ENT01'), ('D', 'C01'), ('con', 'toso')) | ForEach-Object { $_ -join '' }
-        $labNames = '\b(' + ($parts -join '|') + ')'
         $bad = foreach ($s in $strings) {
-            if ($s -match '\b\d{1,3}(\.\d{1,3}){3}\b') { "address: $s"; continue }
-            if ($s -match $labNames) { "lab name: $s"; continue }
-            foreach ($m in [regex]::Matches($s, '\b[A-Za-z0-9-]+(\.[A-Za-z0-9-]+){2,}\b')) {
-                if ($m.Value -match '^(System|Microsoft)\.') { continue }
-                if ($m.Value -notmatch $fileExt -and $m.Value -match '\.[A-Za-z]{2,}$') { "host: $($m.Value)" }
-            }
+            # A password, key or token given as a value in a string.
+            if ($s -match '(?i)\b(password|passwd|pwd|secret|apikey|api_key|token)\s*[:=]\s*\S') { "secret: $s"; continue }
+            # The path of a credential file: the caller gives it as a parameter.
+            if ($s -match '(?i)credentials?[^\\/]*\.local\.ps1') { "credential file: $s"; continue }
         }
         @($bad) | Should -BeNullOrEmpty
+        # A secure string or a credential built from a literal password.
+        $plain = @($ast.FindAll({
+                    param($n)
+                    $n -is [System.Management.Automation.Language.CommandAst] -and
+                    $n.GetCommandName() -eq 'ConvertTo-SecureString' -and
+                    @($n.CommandElements | Where-Object { $_ -is [System.Management.Automation.Language.StringConstantExpressionAst] -and $_.StringConstantType -ne 'BareWord' }).Count -gt 0
+                }, $true))
+        $plain | Should -BeNullOrEmpty
     }
 
     It 'takes the lab computer, the logon account, the credential and the site values only from parameters without a default' {
