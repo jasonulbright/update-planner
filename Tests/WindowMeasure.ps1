@@ -85,6 +85,8 @@ $script:MeasureFunctions = {
             if ([string]::IsNullOrWhiteSpace($text)) { continue }
             if (-not (Test-VisibleInTree $e)) { continue }
             if ($e.ActualWidth -le 0 -or $e.ActualHeight -le 0) { continue }
+            # Text at opacity 0 is not shown (for example the On text of a toggle switch that is off).
+            if ((Get-ElementOpacity $e) -lt 0.01) { continue }
             $sc = Get-SolidColor $fg
             if (-not $sc) { continue }
             $backdrop = if ($e -is [System.Windows.Controls.TextBox] -and (Get-SolidColor $e.Background) -and (Get-SolidColor $e.Background).Color.A -gt 0) {

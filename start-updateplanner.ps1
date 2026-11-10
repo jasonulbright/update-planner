@@ -693,7 +693,7 @@ function Show-OptionsDialog {
             <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
             <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
             <ControlTemplate x:Key="AppSquareButtonTemplate" TargetType="ButtonBase">
-                <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                <Border Name="SquareBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
                     <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -701,11 +701,11 @@ function Show-OptionsDialog {
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
+                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
                         <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Button.Square.Foreground.MouseOver}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                         <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
@@ -735,10 +735,11 @@ function Show-OptionsDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <!-- The accent fill is the theme highlight (#4A5763 dark, #00589F light): white text is 7:1 on both.
+                 The border is the theme foreground: the highlight alone is 2.1:1 on the dark dialog.
                  The plain accent fill of the light theme is 4.49:1. -->
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource DialogButton}">
                 <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Highlight}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Highlight}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Style.Triggers>
                     <Trigger Property="IsEnabled" Value="False">
