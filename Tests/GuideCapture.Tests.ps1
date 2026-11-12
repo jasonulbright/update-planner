@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.1.0' }
 # Static checks of the capture scripts in tools\guide-capture. The test opens no window and
 # runs no capture. It parses the scripts and checks that they carry no password, secret or
 # credential file path: the caller gives the credential script and the lab values as parameters.
@@ -106,6 +106,32 @@ Describe 'Capture scripts' {
         $removals = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Remove-Item' }, $true))
         foreach ($c in $removals) { $c.Extent.Text | Should -Not -Match "C:\\guide\b(?!\\)" -Because $c.Extent.Text }
         $text | Should -Match 'Remove-Item -LiteralPath \$path -Force'
+    }
+
+    It 'stops a running capture in the finally block before it removes the task, the folder and the lock' {
+        $text = [System.IO.File]::ReadAllText($script:InvokePath)
+        $iFinally = $text.LastIndexOf('finally {')
+        $iFinally | Should -BeGreaterThan 0
+        $tail = $text.Substring($iFinally)
+        $iStop = $tail.IndexOf('Stop-ScheduledTask')
+        $iKill = $tail.IndexOf('Stop-Process')
+        $iUnregister = $tail.IndexOf('Unregister-ScheduledTask')
+        $iFolder = $tail.IndexOf('Remove-Item $r -Recurse')
+        $iLock = $tail.IndexOf('Remove-Item -LiteralPath $path -Force')
+        $iStop | Should -BeGreaterThan -1
+        $iKill | Should -BeGreaterThan $iStop
+        $iUnregister | Should -BeGreaterThan $iKill
+        $iFolder | Should -BeGreaterThan $iUnregister
+        $iLock | Should -BeGreaterThan $iFolder
+        $tail | Should -Match '-like "\*\$r\\\*"'
+    }
+
+    It 'does not spin on a stale lock, re-reads the age before the delete and touches the lock while it runs' {
+        $text = [System.IO.File]::ReadAllText($script:InvokePath)
+        $text | Should -Match '\$again = Get-Item -LiteralPath \$path'
+        $text | Should -Match 'if \(-not \(Test-Path -LiteralPath \$path\)\) \{ continue \}'
+        $text | Should -Not -Match '(?s)Remove-Item -LiteralPath \$path -Force -ErrorAction SilentlyContinue\s*\r?\n\s*continue'
+        $text | Should -Match '\.LastWriteTime = Get-Date'
     }
 
     It 'stops before it replaces an image when a step failed' {

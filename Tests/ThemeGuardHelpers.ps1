@@ -291,7 +291,8 @@ function Get-ButtonThemeViolation {
     param([string]$Text, [string]$Source)
     [xml]$xml = $Text
     $listFound = New-Object System.Collections.Generic.List[string]
-    $scriptIsLiteral = { param($v) ($v -match '^\s*#[0-9A-Fa-f]{3,8}\s*$') -or ($v -match '^\s*(White|Black|Red|Green|Blue|Gray|Grey|Transparent|Navy|Steel\w*|\w*Blue|Dark\w+|Light\w+)\s*$') }
+    # A literal color is a hex value or any bare alphabetic value (White, Orange, Silver, WhiteSmoke). A value in braces is a resource.
+    $scriptIsLiteral = { param($v) ($v -match '^\s*#[0-9A-Fa-f]{3,8}\s*$') -or ($v -match '^\s*[A-Za-z]+\s*$') }
     $hashStyle = @{}
     foreach ($objStyle in @($xml.SelectNodes("//*[local-name()='Style'][@TargetType='Button']"))) { $hashStyle[$objStyle.GetAttribute('Key', $script:strXamlNamespace)] = $objStyle.GetAttribute('BasedOn') }
     $scriptResolve = {
@@ -318,7 +319,8 @@ function Get-ButtonThemeViolation {
             if ((Get-PropertyLeaf $objAttribute.Name) -match '(Background|Foreground|Brush)$' -and (& $scriptIsLiteral $objAttribute.Value)) { [void]$listFound.Add(('{0}: Button {1} sets {2} to the literal {3}' -f $Source, $strName, $objAttribute.Name, $objAttribute.Value)) }
         }
     }
-    $arrScope = @($xml.SelectNodes("//*[local-name()='Style'][@TargetType='Button']")) + @($xml.SelectNodes("//*[local-name()='ControlTemplate'][@TargetType='Button']"))
+    # Every Style and every ControlTemplate of the document, not only those of a button.
+    $arrScope = @($xml.SelectNodes("//*[local-name()='Style']")) + @($xml.SelectNodes("//*[local-name()='ControlTemplate']"))
     foreach ($objScope in $arrScope) {
         $strKey = $objScope.GetAttribute('Key', $script:strXamlNamespace)
         foreach ($objNode in @($objScope.SelectNodes('descendant-or-self::*'))) {
@@ -375,8 +377,14 @@ function Get-XamlTitle {
 function Get-UiExceptionText {
     param([string]$Path, [string[]]$Command = @('Add-LogLine', 'Set-StatusText', 'Show-ThemedMessage', 'Show-ConfirmDialog'))
     $objAst = [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
+    $strPattern = '\$_(?![\w])|\$PSItem|Exception|ErrorMsg|ErrorMessage|\.Error\b|\.Detail\b|\$err\b|\$ex\b'
     $arrCall = $objAst.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $Command -contains $n.GetCommandName() }, $true)
     foreach ($objCall in $arrCall) {
-        if ($objCall.Extent.Text -match '\$_(?![\w])|\$PSItem|Exception|ErrorMsg|\$err\b|\$ex\b') { '{0}:{1}: {2}' -f (Split-Path -Leaf $Path), $objCall.Extent.StartLineNumber, $objCall.Extent.Text }
+        if ($objCall.Extent.Text -match $strPattern) { '{0}:{1}: {2}' -f (Split-Path -Leaf $Path), $objCall.Extent.StartLineNumber, $objCall.Extent.Text }
+    }
+    # An assignment to the Text property of a control is a UI write too.
+    $arrAssign = $objAst.FindAll({ param($n) $n -is [System.Management.Automation.Language.AssignmentStatementAst] -and $n.Left -is [System.Management.Automation.Language.MemberExpressionAst] -and [string]$n.Left.Member.Value -eq 'Text' }, $true)
+    foreach ($objAssign in $arrAssign) {
+        if ($objAssign.Right.Extent.Text -match $strPattern) { '{0}:{1}: {2}' -f (Split-Path -Leaf $Path), $objAssign.Extent.StartLineNumber, $objAssign.Extent.Text }
     }
 }

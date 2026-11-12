@@ -10,7 +10,8 @@
 
     One capture runs at a time on a lab workstation. The script takes the lock file
     C:\guide\capture.lock (New-Item fails when the file exists) and waits while another
-    capture holds it. A lock older than 60 minutes is stale and the script removes it.
+    capture holds it. The script touches the lock every 5 seconds while its capture runs, so a
+    live capture never looks stale. A lock older than 60 minutes is stale and the script removes it.
     The script works in its own folder C:\guide\update-planner and its own task
     GuideShots-update-planner. It removes the lock and its own files at the end. It never
     removes the folder C:\guide.
@@ -105,8 +106,13 @@ try {
             catch [System.IO.IOException] {
                 $held = Get-Item -LiteralPath $path -ErrorAction SilentlyContinue
                 if ($held -and ((Get-Date) - $held.LastWriteTime).TotalMinutes -gt $staleMinutes) {
-                    Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
-                    continue
+                    # Read the age again right before the delete: the holder may have touched the lock. Retry at once
+                    # only when the lock is gone. Otherwise fall to the deadline check and the sleep, so the loop never spins.
+                    $again = Get-Item -LiteralPath $path -ErrorAction SilentlyContinue
+                    if ($again -and ((Get-Date) - $again.LastWriteTime).TotalMinutes -gt $staleMinutes) {
+                        Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+                    }
+                    if (-not (Test-Path -LiteralPath $path)) { continue }
                 }
                 if ((Get-Date) -gt $deadline) { return $false }
                 Start-Sleep -Seconds 15
@@ -141,7 +147,11 @@ try {
             Start-ScheduledTask $task
         } -ArgumentList $root, $LogonUser, $captureJson, $taskName
         $end = (Get-Date).AddMinutes($Minutes)
-        do { Start-Sleep 5; $done = Invoke-Command $session { param($r) Test-Path (Join-Path $r 'ui\out\finished.flag') } -ArgumentList $root } while (-not $done -and (Get-Date) -lt $end)
+        do {
+            Start-Sleep 5
+            # The poll also touches the lock, so that a long capture is never taken for a stale one.
+            $done = Invoke-Command $session { param($r, $path) (Get-Item -LiteralPath $path -ErrorAction SilentlyContinue).LastWriteTime = Get-Date; Test-Path (Join-Path $r 'ui\out\finished.flag') } -ArgumentList $root, $lockPath
+        } while (-not $done -and (Get-Date) -lt $end)
         if (-not $done) { throw "The capture did not finish: $steps" }
         $out = Join-Path $tmp ([IO.Path]::GetFileNameWithoutExtension($steps))
         New-Item -ItemType Directory $out | Out-Null
@@ -163,7 +173,17 @@ try {
 }
 finally {
     # Each cleanup runs on its own, so that a failed cleanup cannot replace the original error.
-    try { Invoke-Command $session { param($t) Unregister-ScheduledTask $t -Confirm:$false -ErrorAction SilentlyContinue } -ArgumentList $taskName } catch { Write-Warning "Cleanup of the scheduled task failed: $($_.Exception.Message)" }
+    # Stop a capture that still runs (a timeout leaves it running), then remove the task. Stop the task first, then the
+    # powershell.exe processes of this folder, then unregister, so that nothing keeps writing into the folder or the lock.
+    try {
+        Invoke-Command $session {
+            param($t, $r)
+            Stop-ScheduledTask -TaskName $t -ErrorAction SilentlyContinue
+            Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -like "*$r\*" -and $_.ProcessId -ne $PID } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+            Start-Sleep -Seconds 2
+            Unregister-ScheduledTask -TaskName $t -Confirm:$false -ErrorAction SilentlyContinue
+        } -ArgumentList $taskName, $root
+    } catch { Write-Warning "Cleanup of the scheduled task failed: $($_.Exception.Message)" }
     try { Invoke-Command $session { param($r) Remove-Item $r -Recurse -Force -ErrorAction SilentlyContinue } -ArgumentList $root } catch { Write-Warning "Cleanup of $root failed: $($_.Exception.Message)" }
     # Remove the lock only when this capture took it.
     try {

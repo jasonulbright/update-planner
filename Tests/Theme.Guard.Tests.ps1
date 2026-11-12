@@ -385,6 +385,19 @@ Describe 'Every button takes the shared themed style (d)' {
         @(Get-ButtonThemeViolation -Text "<Grid $strNamespace><Grid.Resources>$strThemed<Style x:Key=`"S`" TargetType=`"Button`" BasedOn=`"{StaticResource ThemedButtonStyle}`"><Setter Property=`"Foreground`" Value=`"{DynamicResource MahApps.Brushes.ThemeForeground}`"/></Style></Grid.Resources><Button Style=`"{StaticResource S}`"/></Grid>" -Source 's').Count | Should -Be 0
     }
 
+    It 'flags a named color and a color in a style or template of another control' {
+        $strNamespace = 'xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"'
+        $strThemed = '<Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}"/>'
+        foreach ($strName in 'Orange', 'Silver', 'WhiteSmoke') {
+            $strStyle = '<Style x:Key="T" TargetType="TextBlock"><Setter Property="Foreground" Value="' + $strName + '"/></Style>'
+            @(Get-ButtonThemeViolation -Text "<Grid $strNamespace><Grid.Resources>$strThemed$strStyle</Grid.Resources></Grid>" -Source 's').Count | Should -Be 1 -Because $strName
+        }
+        $strTemplate = '<ControlTemplate TargetType="ListBoxItem"><Border Background="Silver"/></ControlTemplate>'
+        @(Get-ButtonThemeViolation -Text "<Grid $strNamespace><Grid.Resources>$strThemed$strTemplate</Grid.Resources></Grid>" -Source 's').Count | Should -Be 1
+        $strOk = '<Style x:Key="T" TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray1}"/></Style>'
+        @(Get-ButtonThemeViolation -Text "<Grid $strNamespace><Grid.Resources>$strThemed$strOk</Grid.Resources></Grid>" -Source 's').Count | Should -Be 0
+    }
+
     It 'flags a literal color in a qualified brush property and in a nested brush of a button template' {
         $strNamespace = 'xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"'
         $strThemed = '<Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}"/>'
@@ -514,6 +527,8 @@ Describe 'No raw exception text in the window (e)' {
         try {
             [System.IO.File]::WriteAllText($strTemp, "try { 1 } catch { Add-LogLine (`$_.Exception.Message) }`ntry { 1 } catch { Show-ThemedMessage -Message `$script:State.ErrorMsg }`nAdd-LogLine 'The step failed.'`n")
             @(Get-UiExceptionText -Path $strTemp).Count | Should -Be 2
+            [System.IO.File]::WriteAllText($strTemp, "`$txtStatus.Text = `$state.ErrorMessage`n`$txtLog.Text = `$r.Detail`n`$txtLog.Text = `$e.Error`n`$txtLog.Text = 'Ready.'`nSet-StatusText `$r.Detail`n")
+            @(Get-UiExceptionText -Path $strTemp).Count | Should -Be 4
         }
         finally { Remove-Item -LiteralPath $strTemp -Force -ErrorAction SilentlyContinue }
     }
