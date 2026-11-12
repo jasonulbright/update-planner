@@ -23,14 +23,15 @@ None. The dialog does not connect to the site.
 3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `e.g. sms01.example.com`.
 4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The watermark shows `e.g. ABC. Three letters or digits.` The site code is required.
 5. Select **OK**. **OK** is the default button: Enter selects it. Select **Cancel** to discard the change. Press Esc to cancel.
+6. Read the right end of the status bar. It shows the saved **Site Code** and **SMS Provider**, or "not set".
 
 ![The Connection section of the Options dialog](../images/options-connection.png)
 
-If the site code has the wrong form, a message box with the title **Update Planner** shows "The site code is three letters or digits." The dialog stays open. An empty site code is not checked here. **Load collections**, **Add...** and **Build plan** need it.
+If the site code has the wrong form, a message box with the title **Update Planner** shows "The site code is three letters or digits." The dialog stays open. An empty site code is not checked here. **Load Collections**, **Add...** and **Build Plan** need it.
 
 ![The message for a wrong site code](../images/options-bad-site-code.png)
 
-The message boxes of the dialog carry the title **Update Planner**, not the title of the dialog (**Options**). They show a warning sign and an **OK** button. They open in the center of the dialog. A message box of the main window has its own title too: a step that fails shows a message box with the title **Step failed** and the error text. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
+The message boxes of the dialog carry the title **Update Planner**, not the title of the dialog (**Options**). They show a warning sign and an **OK** button. They open in the center of the dialog. A message box of the main window has its own title too: a step that fails shows a message box with the title **Step Failed** and a fixed message. The log file holds the error text. A change of the provider or the site code clears the collection list, the plan, the grids and the report. The wave list stays. Load the collections and build the plan again. After a change of site, check each wave that stays: remove it and select it again when its collection is not the one that you mean.
 
 ### Read the version
 
@@ -62,7 +63,7 @@ The text under the boxes says: the tool connects with the Windows account that r
 | Message | Cause | Fix |
 |---|---|---|
 | The site code is three letters or digits. | The site code has another form. | Enter three letters or digits, or leave the box empty. |
-| The SMS provider is a computer name or an FQDN. | The provider holds a character that a name does not hold. | Enter a computer name or an FQDN. |
+| The SMS Provider is a computer name or an FQDN. | The provider holds a character that a name does not hold. | Enter a computer name or an FQDN. |
 
 ## Links
 

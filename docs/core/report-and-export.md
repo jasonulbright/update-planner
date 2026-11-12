@@ -4,7 +4,7 @@ The Report page shows the plan as text. The three export buttons save the plan t
 
 ## What it does
 
-The Report page shows the review text of the plan in Markdown, or the source of the HTML report. **Open HTML report** writes the page to the `Reports` folder and opens it in the default browser. **Export JSON**, **Export Markdown** and **Export HTML** save the plan to a file that you choose.
+The Report page shows the review text of the plan in Markdown, or the source of the HTML report. **Open HTML Report** writes the page to the `Reports` folder and opens it in the default browser. **Export JSON**, **Export Markdown** and **Export HTML** save the plan to a file that you choose.
 
 ## When to use it
 
@@ -13,23 +13,23 @@ The Report page shows the review text of the plan in Markdown, or the source of 
 
 ## Requirements
 
-A plan. Before **Build plan**, the page shows "Build a plan to see the report." and the buttons **Open HTML report**, **Copy** and the three export buttons are off.
+A plan. Before **Build Plan**, the page shows "Build a plan to see the report." and the buttons **Open HTML Report**, **Copy** and the three export buttons are off.
 
 ## Steps
 
 ### Read the report
 
 1. Select **Report** in the sidebar.
-2. Select **Markdown** or **HTML source**.
+2. Select **Markdown** or **HTML Source**.
 3. Read the text. Use the scroll bar to move in it.
 
 ![The Report page with the Markdown text of the plan](../images/report-markdown.png)
 
 ![The Report page with the source of the HTML report](../images/report-html-source.png)
 
-The Markdown report holds the plan ID, the generation time, the mode ("plan only"), the site state and one section for each wave. A wave section has the collection, the start, the deadline, the maintenance windows on the collection and a table of the updates. With **Include WSUS counts**, the site state also has a WSUS line.
+The Markdown report holds the plan ID, the generation time, the mode ("plan only"), the site state and one section for each wave. A wave section has the collection, the start, the deadline, the maintenance windows on the collection and a table of the updates. With **Include WSUS Counts**, the site state also has a WSUS line.
 
-![The Markdown report of a plan that used Include WSUS counts](../images/report-markdown-wsus.png)
+![The Markdown report of a plan that used Include WSUS Counts](../images/report-markdown-wsus.png)
 
 ### Copy the report
 
@@ -40,7 +40,7 @@ The text is the text of the format that is selected.
 
 ### Open the HTML report
 
-1. Select **Open HTML report**.
+1. Select **Open HTML Report**.
 2. The tool writes `Reports\update-plan-<ID>.html` and opens it in the default browser. The log writes "HTML report written:" and the path.
 
 ![The HTML report in the browser](../images/report-html-browser.png)
@@ -68,8 +68,8 @@ The export of a plan does not change the site. The JSON file is a Suite ring pla
 | Control | Effect |
 |---|---|
 | **Markdown** | Shows the review text. This is the default. |
-| **HTML source** | Shows the source of the HTML report. |
-| **Open HTML report** | Writes the HTML file to `Reports` and opens it. |
+| **HTML Source** | Shows the source of the HTML report. |
+| **Open HTML Report** | Writes the HTML file to `Reports` and opens it. |
 | **Copy** | Copies the shown text to the clipboard. |
 | **Export JSON**, **Export Markdown**, **Export HTML** | Save the file of that format. |
 
@@ -83,7 +83,7 @@ The export of a plan does not change the site. The JSON file is a Suite ring pla
 
 | Message | Cause | Fix |
 |---|---|---|
-| Build a plan to see the report. | No plan exists yet, or a change of the connection cleared it. | Select **Build plan** on the **Plan** page. |
+| Build a plan to see the report. | No plan exists yet, or a change of the connection cleared it. | Select **Build Plan** on the **Plan** page. |
 
 ## Links
 

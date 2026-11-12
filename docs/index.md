@@ -8,11 +8,11 @@ Update Planner plans software update rollouts in waves for a Configuration Manag
 
 ## Core
 
-- [Plan page](core/plan.md): the wave collections, the collection picker, the plan settings and Build plan.
-- [Plan grids](core/plan-grids.md): the Planned updates grid, the Skipped updates grid and the skip reasons.
-- [Report and export](core/report-and-export.md): the Markdown and HTML report, Copy, Open HTML report and the three export buttons.
-- [Deploy page](core/deploy.md): Enable actions, Dry run, Deploy... and the built-in collection block.
-- [Options dialog](core/options.md): the SMS provider, the site code and About.
+- [Plan page](core/plan.md): the wave collections, the collection picker, the plan settings and Build Plan.
+- [Plan grids](core/plan-grids.md): the Planned Updates grid, the Skipped Updates grid and the skip reasons.
+- [Report and export](core/report-and-export.md): the Markdown and HTML report, Copy, Open HTML Report and the three export buttons.
+- [Deploy page](core/deploy.md): Enable Actions, Dry Run, Deploy... and the built-in collection block.
+- [Options dialog](core/options.md): the SMS Provider, the site code and About.
 - [Command line](core/command-line.md): `Invoke-UpdatePlanner.ps1`, its parameters and its results.
 
 ## Reference

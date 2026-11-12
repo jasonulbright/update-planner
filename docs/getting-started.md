@@ -4,7 +4,7 @@ This page shows how to install Update Planner, set the connection to a ConfigMgr
 
 ## What it does
 
-Update Planner reads the software update state of a ConfigMgr site and builds a plan: which updates go to which collection, in which wave, on which dates. The plan is a review document. The tool creates deployments only when you turn on **Enable actions** and confirm.
+Update Planner reads the software update state of a ConfigMgr site and builds a plan: which updates go to which collection, in which wave, on which dates. The plan is a review document. The tool creates deployments only when you turn on **Enable Actions** and confirm.
 
 ## When to use it
 
@@ -15,7 +15,7 @@ Use this page on a new installation, or when you connect the tool to a different
 - Windows 10, Windows 11 or Windows Server 2016 or later.
 - Windows PowerShell 5.1. PowerShell 7 also works for the command-line script.
 - .NET Framework 4.7.2 or later.
-- Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. PowerShell remoting (WinRM) to that computer is also necessary for WSUS counts (**Include WSUS counts**).
+- Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. PowerShell remoting (WinRM) to that computer is also necessary for WSUS counts (**Include WSUS Counts**).
 - A Windows account that is a local administrator of the SMS Provider computer. A domain admin account of that kind needs no Configuration Manager role. An account with fewer rights is not tested.
 - The Configuration Manager console on this computer. The tool reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Without the console, the tool stops at start with a message (see below).
 - A window of at least 1024 by 640 pixels. The window opens at 1320 by 820.
@@ -51,7 +51,7 @@ Inside the AppPackager Suite, the launcher starts the tool and hands over its si
 
 ![The Options dialog with the SMS Provider entered](images/options-connection.png)
 
-Until you set the provider and the site code, **Add...** writes "Add: set the SMS provider and the site code in Options first." in the log, and the status bar shows "Open Options to set the SMS provider and the site code."
+Until you set the provider and the site code, **Add...** writes "Add: set the SMS Provider and the site code in Options first." in the log, and the status bar shows "Open Options to set the SMS Provider and the site code."
 
 ![The log and the status bar after Add... without a provider](images/start-add-without-provider.png)
 
@@ -61,12 +61,12 @@ A provider with no site code gives the same message.
 
 ### Build the first plan
 
-1. On the **Plan** page, select **Load collections**. The tool reads the device collections and the console folders. The log shows "Loaded 26 device collections in 1 folders (site ABC)." with the numbers of your site.
+1. On the **Plan** page, select **Load Collections**. The tool reads the device collections and the console folders. The log shows "Loaded 26 device collections in 1 folders (site ABC)." with the numbers of your site.
 2. Select **Add...**. Select a collection in the picker and select **OK**. Repeat for each wave. The first collection is wave 1.
-3. Select **Build plan**.
-4. Read the plan in the **Planned updates** grid.
+3. Select **Build Plan**.
+4. Read the plan in the **Planned Updates** grid.
 
-![The Plan page after Build plan, with three wave collections and eight planned updates](images/plan-planned.png)
+![The Plan page after Build Plan, with three wave collections and eight planned updates](images/plan-planned.png)
 
 The plan changes nothing on the site. See [Plan page](core/plan.md) for every control.
 

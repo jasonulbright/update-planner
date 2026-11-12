@@ -28,7 +28,7 @@ Section 'first run' {
   Invoke-El (Get-El $dlg 'btnOk'); Start-Sleep -Milliseconds 800
 }
 function Add-Wave([string]$filter, [string]$name, [string]$shot) {
-  Invoke-El (Get-El $win 'btnAddWave'); $dlg = Find-Top 'Add wave collection' 40; Start-Sleep -Milliseconds 800
+  Invoke-El (Get-El $win 'btnAddWave'); $dlg = Find-Top 'Add Wave Collection' 40; Start-Sleep -Milliseconds 800
   if ($shot) { Set-Text (Get-El $dlg 'txtPickerFilter') 'All'; Start-Sleep -Milliseconds 700; Shot $dlg $shot }
   Set-Text (Get-El $dlg 'txtPickerFilter') $filter; Start-Sleep -Milliseconds 700
   # A picker item is named "<collection name>  (<collection ID>, <n> members)".
@@ -55,7 +55,7 @@ Section 'duplicate' {
 Section 'invalid' {
   Set-Text (Get-El $win 'txtSpacing') 'x'
   Invoke-El (Get-El $win 'btnBuildPlan'); Start-Sleep -Seconds 1
-  $m = Find-Last 'Build plan'; Shot $m 'plan-invalid-input'; Invoke-El (Get-El $m 'OK'); Start-Sleep -Milliseconds 500
+  $m = Find-Last 'Build Plan'; Shot $m 'plan-invalid-input'; Invoke-El (Get-El $m 'OK'); Start-Sleep -Milliseconds 500
   Set-Text (Get-El $win 'txtSpacing') '7'
 }
 Section 'build' {
@@ -108,7 +108,7 @@ Section 'deploy' {
   Toggle-El (Get-El $win 'toggleActions'); Start-Sleep -Milliseconds 600; Shot $win 'deploy-on'
   Invoke-El (Get-El $win 'btnDryRun'); Start-Sleep -Milliseconds 700; Shot $win 'deploy-dry-run-running'
   $null = Wait-Until { (Get-El $win 'btnDryRun').Current.IsEnabled } 120; Start-Sleep -Seconds 2; Shot $win 'deploy-dry-run'
-  Invoke-El (Get-El $win 'btnApply'); $d = Find-Top 'Create deployments' 20; Shot $d 'deploy-confirm'
+  Invoke-El (Get-El $win 'btnApply'); $d = Find-Top 'Create Deployments' 20; Shot $d 'deploy-confirm'
   Invoke-El (Get-El $d 'btnNo'); Start-Sleep -Milliseconds 800; Shot $win 'deploy-cancelled'
 }
 Section 'builtin' {
@@ -121,7 +121,7 @@ Section 'builtin' {
   Invoke-El (Get-El $win 'btnViewReport'); Start-Sleep -Milliseconds 400; Shot $win 'report-markdown-wsus'
   Invoke-El (Get-El $win 'btnViewApply'); Start-Sleep -Milliseconds 400
   Invoke-El (Get-El $win 'btnApply'); Start-Sleep -Seconds 1
-  $m = Find-Last 'Deploy blocked'; Shot $m 'deploy-blocked'; Invoke-El (Get-El $m 'OK'); Start-Sleep -Milliseconds 600
+  $m = Find-Last 'Deploy Blocked'; Shot $m 'deploy-blocked'; Invoke-El (Get-El $m 'OK'); Start-Sleep -Milliseconds 600
   Toggle-El (Get-El $win 'toggleActions')
   Invoke-El (Get-El $win 'btnViewPlan')
   Select-El (Find-NameLike $win '4.  All Systems   (*'); Invoke-El (Get-El $win 'btnRemoveWave'); Start-Sleep -Milliseconds 500
@@ -164,7 +164,7 @@ Section 'light' {
   Invoke-El (Get-El $win 'btnViewReport'); Shot $win 'report-light'
   Invoke-El (Get-El $win 'btnViewApply'); Start-Sleep -Milliseconds 800; Toggle-El (Get-El $win 'toggleActions'); Start-Sleep -Milliseconds 600
   Invoke-El (Get-El $win 'btnDryRun'); $null = Wait-Until { (Get-El $win 'btnDryRun').Current.IsEnabled } 120; Start-Sleep -Seconds 2; Shot $win 'deploy-light'
-  Invoke-El (Get-El $win 'btnApply'); $d = Find-Top 'Create deployments' 20; Shot $d 'deploy-confirm-light'; Invoke-El (Get-El $d 'btnNo'); Start-Sleep -Milliseconds 600
+  Invoke-El (Get-El $win 'btnApply'); $d = Find-Top 'Create Deployments' 20; Shot $d 'deploy-confirm-light'; Invoke-El (Get-El $d 'btnNo'); Start-Sleep -Milliseconds 600
   Toggle-El (Get-El $win 'toggleActions')
   Invoke-El (Get-El $win 'btnOptions'); $d = Find-Top 'Options' 10; Shot $d 'options-light'; Invoke-El (Get-El $d 'btnCancel'); Start-Sleep -Milliseconds 500
   Toggle-El (Get-El $win 'toggleTheme')

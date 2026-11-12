@@ -4,19 +4,19 @@ The Deploy page runs the only step that changes the site. It creates one softwar
 
 ## What it does
 
-The page shows the deployments that the plan would create. **Dry run** runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation, then creates the deployments. Both buttons stay off until you turn on **Enable actions**.
+The page shows the deployments that the plan would create. **Dry Run** runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation, then creates the deployments. Both buttons stay off until you turn on **Enable Actions**.
 
 The tool never edits or deletes an existing deployment or group. It does not create deployment packages, and it does not download content.
 
 ## When to use it
 
-- Use **Dry run** to see what the plan would create.
+- Use **Dry Run** to see what the plan would create.
 - Use **Deploy...** only after you reviewed the plan and the report.
 
 ## Requirements
 
 - A plan.
-- **Enable actions** is on.
+- **Enable Actions** is on.
 - For **Deploy...**: a right to create software update deployments on the site.
 - No wave targets a built-in collection. See below.
 
@@ -28,14 +28,14 @@ The tool never edits or deletes an existing deployment or group. It does not cre
 2. Select **Deploy** in the sidebar.
 3. Read the upper grid. It has one row for each wave that holds updates.
 
-![The Deploy page with the Enable actions switch off](../images/deploy-off.png)
+![The Deploy page with the Enable Actions switch off](../images/deploy-off.png)
 
-Each deployment, and its software update group, is named `UpdatePlanner <plan ID> Wave <n> <collection name>`. The grid has the columns **Deployment name**, **Collection**, **ID**, **Updates**, **Start** and **Deadline**.
+Each deployment, and its software update group, is named `UpdatePlanner <plan ID> Wave <n> <collection name>`. The grid has the columns **Deployment Name**, **Collection**, **ID**, **Updates**, **Start** and **Deadline**.
 
 ### Run a dry run
 
-1. Select the **Enable actions** switch. It shows **On**.
-2. Select **Dry run**. The overlay shows "Running the deploy step with -WhatIf...". A dry run does not open the site drive.
+1. Select the **Enable Actions** switch. It shows **On**.
+2. Select **Dry Run**. The overlay shows "Running the deploy step with -WhatIf...". A dry run does not open the site drive.
 3. Read the lower grid. Each row shows **Dry run** in **Result** and the message "Would create this deployment. Nothing was created."
 4. Read the log. It ends with "DryRun: 3 results, 0 created, 0 failed."
 
@@ -49,7 +49,7 @@ A dry run writes one record to the action log. See [Files and logs](../reference
 
 ### Create the deployments
 
-1. Select **Deploy...**. The tool first checks the plan (see [Deploy to a built-in collection](#deploy-to-a-built-in-collection)). Then a confirmation with the title **Create deployments** shows.
+1. Select **Deploy...**. The tool first checks the plan (see [Deploy to a built-in collection](#deploy-to-a-built-in-collection)). Then a confirmation with the title **Create Deployments** shows.
 2. Read the text. The tool builds it as follows. `<n>` is the number of waves that hold updates. There is one line for each of these waves.
 
    ```text
@@ -75,14 +75,14 @@ To undo a run, delete the deployments and the software update groups whose name 
 A wave that targets a built-in collection (an ID that starts with `SMS`) blocks **Deploy...**.
 
 1. Add a built-in collection, for example All Systems, as a wave. Build the plan.
-2. Select **Deploy** in the sidebar. Turn on **Enable actions**.
-3. Select **Deploy...**. A message box with the title **Deploy blocked** names the wave and the collection: `<wave>: the collection <ID> is built in. Deployments to built-in collections are blocked.` The log writes "Deploy blocked:" with the same text. Nothing is created.
+2. Select **Deploy** in the sidebar. Turn on **Enable Actions**.
+3. Select **Deploy...**. A message box with the title **Deploy Blocked** names the wave and the collection: `<wave>: the collection <ID> is built in. Deployments to built-in collections are blocked.` The log writes "Deploy blocked:" with the same text. Nothing is created.
 
 A plan in which no wave holds an update is blocked the same way, with the message "The plan holds no update to deploy."
 
 ![The message that blocks a deployment to a built-in collection](../images/deploy-blocked.png)
 
-**Dry run** still works for such a plan. The plan shows what the deployment would target.
+**Dry Run** still works for such a plan. The plan shows what the deployment would target.
 
 ### Deploy page in the light theme
 
@@ -94,8 +94,8 @@ A plan in which no wave holds an update is blocked the same way, with the messag
 
 | Control | Default | Effect |
 |---|---|---|
-| **Enable actions** | Off | Turns on **Dry run** and **Deploy...**. The state is not saved. The tool starts with the switch off. |
-| **Dry run** | - | Runs the deploy step with `-WhatIf`. Creates nothing. |
+| **Enable Actions** | Off | Turns on **Dry Run** and **Deploy...**. The state is not saved. The tool starts with the switch off. |
+| **Dry Run** | - | Runs the deploy step with `-WhatIf`. Creates nothing. |
 | **Deploy...** | - | Asks for a confirmation, then creates the deployments. |
 
 A group holds the update IDs of the wave. The deployment of the group sets the collection, the start time, the deadline (required), notification on and local time. The deployment does not allow installation or restart outside the maintenance window after the deadline. See [Plan rules](../reference/plan-rules.md).
@@ -112,7 +112,7 @@ The status bar shows "actions enabled" or "read only".
 
 | Message | Cause | Fix |
 |---|---|---|
-| Dry run and Deploy... are off. | **Enable actions** is off, or no plan exists. | Build a plan and turn on **Enable actions**. |
+| Dry Run and Deploy... are off. | **Enable Actions** is off, or no plan exists. | Build a plan and turn on **Enable Actions**. |
 | Deploy blocked: Wave 4 All Systems: the collection SMS00001 is built in. Deployments to built-in collections are blocked. | A wave targets a built-in collection. | Remove the wave and build the plan again. |
 | Failed ... in the **Result** column | The site refused a deployment. The **Message** column shows the reason. | Note the plan ID and read every result. A software update group of that wave can exist without a deployment: check the console and delete the unused group. Fix the cause. Build the plan again. Review every wave before you deploy again. |
 

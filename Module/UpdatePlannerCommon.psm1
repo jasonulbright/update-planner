@@ -513,20 +513,20 @@ function ConvertTo-UpMarkdown {
 
     process {
         $listLine = New-Object -TypeName 'System.Collections.Generic.List[string]'
-        $listLine.Add('# Update plan')
+        $listLine.Add('# Update Plan')
         $listLine.Add('')
         $listLine.Add(('Plan ID: {0}' -f $Plan.PlanId))
         $listLine.Add(('Generated: {0}' -f $Plan.GeneratedAt))
         $listLine.Add(('Site: {0} on {1}' -f $Plan.SiteCode, $Plan.ComputerName))
         $listLine.Add('Mode: plan only. This file changes nothing on the site.')
         $listLine.Add('')
-        $listLine.Add('## Site state')
+        $listLine.Add('## Site State')
         $listLine.Add('')
         foreach ($objProperty in $Plan.Summary.PSObject.Properties) {
             $listLine.Add(('- {0}: {1}' -f $objProperty.Name, $objProperty.Value))
         }
         if ($null -ne $Plan.Sync) {
-            $listLine.Add(('- Last successful WSUS synchronization: {0} (error code {1}, source {2})' -f $Plan.Sync.LastSuccessfulSyncTime, $Plan.Sync.LastSyncErrorCode, $Plan.Sync.Source))
+            $listLine.Add(('- Last Successful WSUS Synchronization: {0} (error code {1}, source {2})' -f $Plan.Sync.LastSuccessfulSyncTime, $Plan.Sync.LastSyncErrorCode, $Plan.Sync.Source))
         }
         if ($null -ne $Plan.Wsus) {
             $listLine.Add(('- WSUS: {0} updates, {1} approved, {2} declined, {3} expired, {4} computers' -f $Plan.Wsus.UpdateCount, $Plan.Wsus.ApprovedUpdateCount, $Plan.Wsus.DeclinedUpdateCount, $Plan.Wsus.ExpiredUpdateCount, $Plan.Wsus.ComputerTargetCount))
@@ -549,7 +549,7 @@ function ConvertTo-UpMarkdown {
             $listLine.Add(('- Updates in this wave: {0}' -f @($objWave.Updates).Count))
             $listLine.Add('')
             if (@($objWave.Updates).Count -gt 0) {
-                $listLine.Add('| Seq | Article | Severity | Devices that need it | Title |')
+                $listLine.Add('| Seq | Article | Severity | Devices That Need It | Title |')
                 $listLine.Add('|---|---|---|---|---|')
                 foreach ($objUpdate in $objWave.Updates) {
                     $strArticle = if ([string]::IsNullOrEmpty($objUpdate.ArticleId)) { 'none' } else { 'KB{0}' -f $objUpdate.ArticleId }
@@ -558,7 +558,7 @@ function ConvertTo-UpMarkdown {
                 $listLine.Add('')
             }
         }
-        $listLine.Add('## Skipped updates')
+        $listLine.Add('## Skipped Updates')
         $listLine.Add('')
         if (@($Plan.Skipped).Count -eq 0) {
             $listLine.Add('None.')
@@ -1265,6 +1265,7 @@ function Invoke-UpdatePlan {
                         Status = 'Skipped'
                         AssignmentId = $null
                         Message = 'Not confirmed or WhatIf.'
+                        Detail = ''
                     }
                     continue
                 }
@@ -1297,10 +1298,12 @@ function Invoke-UpdatePlan {
                         Status = 'Created'
                         AssignmentId = [int]$objCreated.AssignmentID
                         Message = ''
+                        Detail = ''
                     }
                 } catch {
                     Write-Debug -Message ('Deployment failed: {0}' -f $_.Exception.Message)
-                    $strFailure = $_.Exception.Message
+                    $strDetail = $_.Exception.Message
+                    $strFailure = 'The deployment failed. The log file has the details.'
                     if ($null -ne $objGroup) {
                         $strFailure = '{0} The software update group {1} (CI_ID {2}) was created and still exists. Delete it in the console or by name.' -f $strFailure, $strName, $objGroup.CI_ID
                     }
@@ -1311,6 +1314,7 @@ function Invoke-UpdatePlan {
                         Status = 'Failed'
                         AssignmentId = $null
                         Message = $strFailure
+                        Detail = $strDetail
                     }
                 }
             }
@@ -1927,17 +1931,17 @@ function ConvertTo-UpdatePlanHtml {
         $listLine = New-Object -TypeName 'System.Collections.Generic.List[string]'
         $listLine.Add('<!DOCTYPE html>')
         $listLine.Add('<html lang="en"><head><meta charset="utf-8">')
-        $listLine.Add('<title>Update plan</title>')
+        $listLine.Add('<title>Update Plan</title>')
         $listLine.Add('<style>body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1b1b1b}h1{font-size:22px}h2{font-size:17px;margin-top:28px;border-bottom:1px solid #ccc;padding-bottom:4px}table{border-collapse:collapse;margin:8px 0;font-size:13px}th,td{border:1px solid #c8c8c8;padding:4px 10px;text-align:left}th{background:#0078d4;color:#fff}tr:nth-child(even) td{background:#f3f3f3}.meta{color:#555;font-size:13px}</style>')
         $listLine.Add('</head><body>')
-        $listLine.Add('<h1>Update plan</h1>')
+        $listLine.Add('<h1>Update Plan</h1>')
         $listLine.Add(('<p class="meta">Plan ID {0}. Generated {1}. Site {2} on {3}. Plan only: this report changes nothing on the site.</p>' -f (& $scriptBlockEncode $Plan.PlanId), (& $scriptBlockEncode $Plan.GeneratedAt), (& $scriptBlockEncode $Plan.SiteCode), (& $scriptBlockEncode $Plan.ComputerName)))
-        $listLine.Add('<h2>Site state</h2><table>')
+        $listLine.Add('<h2>Site State</h2><table>')
         foreach ($objProperty in $Plan.Summary.PSObject.Properties) {
             $listLine.Add(('<tr><th>{0}</th><td>{1}</td></tr>' -f (& $scriptBlockEncode $objProperty.Name), (& $scriptBlockEncode $objProperty.Value)))
         }
         if ($null -ne $Plan.Sync) {
-            $listLine.Add(('<tr><th>Last successful WSUS synchronization</th><td>{0} (error code {1})</td></tr>' -f (& $scriptBlockEncode $Plan.Sync.LastSuccessfulSyncTime), (& $scriptBlockEncode $Plan.Sync.LastSyncErrorCode)))
+            $listLine.Add(('<tr><th>Last Successful WSUS Synchronization</th><td>{0} (error code {1})</td></tr>' -f (& $scriptBlockEncode $Plan.Sync.LastSuccessfulSyncTime), (& $scriptBlockEncode $Plan.Sync.LastSyncErrorCode)))
         }
         $listLine.Add('</table>')
         foreach ($objWave in @($Plan.Waves)) {
@@ -1945,7 +1949,7 @@ function ConvertTo-UpdatePlanHtml {
             $strDeviceNoun = if ([int]$objWave.MemberCount -eq 1) { 'device' } else { 'devices' }
             $listLine.Add(('<p class="meta">Collection {0} ({1}), {2} {6}. Start {3}. Deadline {4}. Maintenance windows: {5}.</p>' -f (& $scriptBlockEncode $objWave.CollectionName), (& $scriptBlockEncode $objWave.CollectionId), (& $scriptBlockEncode $objWave.MemberCount), (& $scriptBlockEncode $objWave.StartDate), (& $scriptBlockEncode $objWave.DeadlineDate), (& $scriptBlockEncode $objWave.MaintenanceWindowCount), $strDeviceNoun))
             if (@($objWave.Updates).Count -gt 0) {
-                $listLine.Add('<table><tr><th>Seq</th><th>Article</th><th>Severity</th><th>Devices that need it</th><th>Title</th></tr>')
+                $listLine.Add('<table><tr><th>Seq</th><th>Article</th><th>Severity</th><th>Devices That Need It</th><th>Title</th></tr>')
                 foreach ($objUpdate in @($objWave.Updates)) {
                     $strArticle = 'none'
                     if (-not [string]::IsNullOrEmpty($objUpdate.ArticleId)) {
@@ -1958,7 +1962,7 @@ function ConvertTo-UpdatePlanHtml {
                 $listLine.Add('<p>No update in this wave.</p>')
             }
         }
-        $listLine.Add('<h2>Skipped updates</h2>')
+        $listLine.Add('<h2>Skipped Updates</h2>')
         if (@($Plan.Skipped).Count -eq 0) {
             $listLine.Add('<p>None.</p>')
         } else {
