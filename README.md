@@ -20,7 +20,7 @@ The user guide is in [docs/index.md](docs/index.md). It has one page for each pa
 - Build the plan without changing the site. The plan reads the update catalog, the update need of each collection, the maintenance windows and the existing deployments.
 - Review the plan in a grid, in the Markdown review text or in an HTML report. A second grid lists each skipped update and the reason.
 - Export the plan as JSON, Markdown or HTML. The JSON file is a ring plan that Deployment Helper loads (see [docs/reference/plan-format.md](docs/reference/plan-format.md)).
-- Deploy behind an **Enable actions** switch. A dry run runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation that lists every deployment before it creates one.
+- Deploy behind an **Enable Actions** switch. A dry run runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation that lists every deployment before it creates one.
 - Built-in collections (an ID that starts with `SMS`) are blocked as a deploy target.
 - Every dry run and every deploy writes one record to `Logs\update-planner-actions.jsonl`.
 - Dark and light themes with a runtime toggle, like the other tools of the AppPackager Suite.
@@ -46,7 +46,7 @@ The tool connects with the Windows account that runs it. It stores no password a
    ```
 3. Click **Options** and set the SMS Provider FQDN and the site code. Both are required.
 4. On the **Plan** view, click **Add...**. The first click loads the device collections. Pick each wave collection in rollout order.
-5. Set the dates and click **Build plan**.
+5. Set the dates and click **Build Plan**.
 
 Inside the AppPackager Suite, the launcher hands its site code and provider to the tool.
 
@@ -54,11 +54,11 @@ Inside the AppPackager Suite, the launcher hands its site code and provider to t
 
 The shell has a sidebar with three views and an Options dialog:
 
-- **Plan** -- wave collections, dates and settings on top. Two tabs below: *Planned updates* (one row for each update in each wave) and *Skipped updates* (the reason for each).
-- **Report** -- the plan as Markdown or HTML source. **Open HTML report** writes the page to `Reports\` and opens it in the default browser. **Copy** copies the text.
-- **Deploy** -- the Enable actions switch, **Dry run**, **Deploy...**, the deployments that the plan would create, and the result of the last run.
+- **Plan** -- wave collections, dates and settings on top. Two tabs below: *Planned Updates* (one row for each update in each wave) and *Skipped Updates* (the reason for each).
+- **Report** -- the plan as Markdown or HTML Source. **Open HTML Report** writes the page to `Reports\` and opens it in the default browser. **Copy** copies the text.
+- **Deploy** -- the Enable Actions switch, **Dry Run**, **Deploy...**, the deployments that the plan would create, and the result of the last run.
 
-![Skipped updates](docs/images/plan-skipped.png)
+![Skipped Updates](docs/images/plan-skipped.png)
 
 ![Report](docs/images/report-markdown.png)
 
@@ -70,14 +70,14 @@ The shell has a sidebar with three views and an Options dialog:
 
 ## Deploy
 
-Update Planner only reads the site until **Enable actions** is on. With the switch on, **Dry run** and **Deploy...** work.
+Update Planner only reads the site until **Enable Actions** is on. With the switch on, **Dry Run** and **Deploy...** work.
 
-- **Dry run** runs the deploy step with `-WhatIf`. The grid shows each deployment that the step would create. Nothing is created.
+- **Dry Run** runs the deploy step with `-WhatIf`. The grid shows each deployment that the step would create. Nothing is created.
 - **Deploy...** shows a confirmation with the number of deployments, the site, the provider and each wave. After **Yes**, the tool creates one software update group and one deployment of that group for each wave that holds updates. Each is named `UpdatePlanner <PlanId> <wave name>`.
 - To undo a run, delete the deployments and the groups whose name holds the plan ID. The tool never edits or deletes an existing deployment or group.
 - The tool does not create deployment packages and does not download content. Review a created deployment in the console before a real rollout. See [docs/reference/plan-rules.md](docs/reference/plan-rules.md).
 
-![Dry run](docs/images/deploy-dry-run.png)
+![Dry Run](docs/images/deploy-dry-run.png)
 
 ![Confirmation](docs/images/deploy-confirm.png)
 
@@ -94,7 +94,7 @@ The window wraps the same module as the script `Invoke-UpdatePlanner.ps1`. The s
 
 | File | Purpose |
 |------|---------|
-| `UpdatePlanner.prefs.json` | Site code, SMS provider, the last settings and the wave list |
+| `UpdatePlanner.prefs.json` | Site code, SMS Provider, the last settings and the wave list |
 | `UpdatePlanner.windowstate.json` | Window size, position and last-used view |
 | `Logs\UpdatePlanner-*.log` | Per-session tool log |
 | `Logs\update-planner-actions.jsonl` | One record for each dry run and each deploy |

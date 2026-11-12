@@ -20,44 +20,19 @@
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Steel.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <ControlTemplate x:Key="SidebarButtonTemplate" TargetType="Button">
-                <Border x:Name="Bd"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        SnapsToDevicePixels="True">
-                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      Margin="{TemplateBinding Padding}"
-                                      RecognizesAccessKey="True"
-                                      SnapsToDevicePixels="True"/>
-                </Border>
-                <ControlTemplate.Triggers>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="Bd" Property="Background">
-                            <Setter.Value>
-                                <SolidColorBrush Color="#3A3A3A"/>
-                            </Setter.Value>
-                        </Setter>
-                    </Trigger>
-                    <!-- A disabled sidebar button keeps its text colour (opacity would drop the contrast below 4.5:1) and shows normal weight text. -->
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="FontWeight" Value="Normal"/>
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
-
             <!-- Contrast overrides of the MahApps theme brushes. One value passes in both themes:
                  #7F7F7F is 4.0:1 on white and 3.8:1 on #252525 (control borders need 3:1);
                  white title text is 7.0:1 on #595959 (the inactive title bar). -->
             <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
             <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
 
-            <!-- Square button without the MahApps disabled state, which fades the text below 4.5:1.
-                 A disabled button shows MahApps.Brushes.Gray.MouseOver text (#AAAAAA dark, #333333 light)
-                 and a #7F7F7F border. -->
-            <ControlTemplate x:Key="AppSquareButtonTemplate" TargetType="ButtonBase">
-                <Border Name="SquareBd"
+            <!-- The one button template and the one button style. Every Button of the window takes ThemedButtonStyle
+                 or a style that is based on it. No color literal is allowed here: the colors come from the MahApps
+                 theme resources, so the same markup works in the dark and the light theme. Hover and pressed change
+                 only the opacity. A disabled button shows MahApps.Brushes.Gray.MouseOver text (4.5:1 or more in both
+                 themes) and a Gray2 border, because the MahApps disabled state fades the text below 4.5:1. -->
+            <ControlTemplate x:Key="ThemedButtonTemplate" TargetType="Button">
+                <Border Name="Bd"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
@@ -70,20 +45,24 @@
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Button.Square.Foreground.MouseOver}"/>
+                        <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                    </Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                        <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
 
-            <Style x:Key="AppSquareButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
-                <Setter Property="Template" Value="{StaticResource AppSquareButtonTemplate}"/>
+            <Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="Template" Value="{StaticResource ThemedButtonTemplate}"/>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
                 <Style.Triggers>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
@@ -102,6 +81,30 @@
                 <Setter Property="Controls:RadioButtonHelper.ForegroundDisabled" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
             </Style>
 
+            <!-- Selected and highlighted items: white text (IdealForeground) on the accent blue, in both themes. -->
+            <Style x:Key="ThemedListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource MahApps.Styles.ListBoxItem}">
+                <!-- Disabled item text keeps 4.5:1. The MahApps grey is 3.7:1 dark and 1.9:1 light. -->
+                <Setter Property="Controls:ItemHelper.DisabledForegroundBrush" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ThemedComboBoxItemStyle" TargetType="ComboBoxItem" BasedOn="{StaticResource MahApps.Styles.ComboBoxItem}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                    <Trigger Property="IsHighlighted" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
             <!-- Tab header text in the theme foreground: the MahApps grey of an unselected tab is below 4.5:1. -->
             <Style x:Key="TabHeaderText" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
@@ -112,32 +115,21 @@
                 </Style.Triggers>
             </Style>
 
-            <Style x:Key="ViewButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
-                <Setter Property="Template" Value="{StaticResource SidebarButtonTemplate}"/>
+            <Style x:Key="ViewButtonStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Height" Value="42"/>
                 <Setter Property="Margin" Value="8,3,8,3"/>
                 <Setter Property="Padding" Value="12,0,12,0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="Background">
-                    <Setter.Value><SolidColorBrush Color="#1E1E1E"/></Setter.Value>
-                </Setter>
-                <Setter Property="BorderBrush">
-                    <Setter.Value><SolidColorBrush Color="#555555"/></Setter.Value>
-                </Setter>
-                <Setter Property="BorderThickness" Value="1"/>
             </Style>
 
             <Style x:Key="OptionsButtonStyle" TargetType="Button" BasedOn="{StaticResource ViewButtonStyle}"/>
 
-            <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
+            <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Height" Value="28"/>
                 <Setter Property="MinWidth" Value="100"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
                 <Setter Property="FontSize" Value="12"/>
             </Style>
 
@@ -177,6 +169,12 @@
 
             <Style x:Key="GridCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource MahApps.Styles.DataGridCell}">
                 <Setter Property="Padding" Value="6,0,6,0"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="TrimmedTextStyle" TargetType="TextBlock">
@@ -201,6 +199,7 @@
 
             <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Margin" Value="0,0,0,2"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray1}"/>
             </Style>
@@ -234,23 +233,23 @@
                                                IsOn="True"
                                                OnContent="" OffContent=""
                                                MinWidth="0"
-                                               ToolTip="Toggle dark / light theme"/>
+                                               ToolTip="Switch between the dark theme and the light theme."/>
                     </DockPanel>
                 </StackPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Button x:Name="btnViewPlan"   Content="Plan"   Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="Choose the wave collections and dates, then build the plan"/>
+                                ToolTip="Choose the wave collections and the dates, then build the plan."/>
                         <Button x:Name="btnViewReport" Content="Report" Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="The plan as a Markdown or HTML report"/>
+                                ToolTip="Show the plan as a Markdown or an HTML report."/>
                         <Button x:Name="btnViewApply"  Content="Deploy" Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="Dry run and create the deployments of the plan"/>
+                                ToolTip="Run a dry run or create the deployments of the plan."/>
 
                         <Button x:Name="btnOptions" Content="Options"
                                 Style="{StaticResource OptionsButtonStyle}"
                                 Margin="8,24,8,3"
-                                ToolTip="Site code, SMS provider, about"/>
+                                ToolTip="Set the site code and the SMS Provider."/>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
@@ -270,9 +269,9 @@
 
             <Border Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray10}" Padding="16,12,16,10">
                 <StackPanel>
-                    <TextBlock x:Name="txtModuleTitle" Text="Plan" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="txtModuleTitle" Text="Plan" FontSize="18" FontWeight="Bold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
-                               Text="Add the wave collections in the order of the rollout, set the dates, then click Build plan. Building a plan changes nothing on the site."
+                               Text="Add the wave collections in the order of the rollout, set the dates, then click Build Plan. Building a plan changes nothing on the site."
                                FontSize="11"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource MahApps.Brushes.Gray1}"
@@ -282,22 +281,22 @@
 
             <Border Grid.Row="1" Padding="16,10,16,10">
                 <DockPanel LastChildFill="False">
-                    <Button x:Name="btnBuildPlan" DockPanel.Dock="Left" Content="Build plan"
+                    <Button x:Name="btnBuildPlan" DockPanel.Dock="Left" Content="Build Plan"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120"
-                            ToolTip="Read the site and build the plan. Nothing changes on the site."/>
-                    <Button x:Name="btnLoadCollections" DockPanel.Dock="Left" Content="Load collections"
+                            ToolTip="Read the site and build the plan without a change to the site."/>
+                    <Button x:Name="btnLoadCollections" DockPanel.Dock="Left" Content="Load Collections"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="140"
-                            ToolTip="Read the device collections and console folders from the site"/>
+                            ToolTip="Read the device collections and the console folders from the site."/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="btnExportJson" Content="Export JSON"
                                 Style="{StaticResource SquareInlineButtonStyle}"
-                                ToolTip="Save the plan as a JSON file"/>
+                                ToolTip="Save the plan as a JSON file."/>
                         <Button x:Name="btnExportMarkdown" Content="Export Markdown"
                                 Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
-                                ToolTip="Save the plan as a Markdown review file"/>
+                                ToolTip="Save the plan as a Markdown review file."/>
                         <Button x:Name="btnExportHtml" Content="Export HTML"
                                 Style="{StaticResource SquareInlineButtonStyle}" Margin="0"
-                                ToolTip="Save the plan as an HTML report"/>
+                                ToolTip="Save the plan as an HTML report."/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -321,29 +320,27 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Wave collections, in order" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Text="Wave Collections in Order" Style="{StaticResource FieldLabelStyle}"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <ListBox x:Name="lstWaves" Grid.Column="0" Height="116" FontSize="12"
+                                         ItemContainerStyle="{StaticResource ThemedListBoxItemStyle}"
                                          Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                          BorderThickness="1"
                                          BorderBrush="{DynamicResource MahApps.Brushes.TextBox.Border}">
-                                    <!-- Disabled item text keeps 4.5:1. The MahApps grey is 3.7:1 dark and 1.9:1 light. -->
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource MahApps.Styles.ListBoxItem}">
-                                            <Setter Property="Controls:ItemHelper.DisabledForegroundBrush" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
                                 </ListBox>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                     <Button x:Name="btnAddWave"    Content="Add..."  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"
-                                            ToolTip="Pick a device collection. The list is searchable."/>
-                                    <Button x:Name="btnRemoveWave" Content="Remove"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"/>
-                                    <Button x:Name="btnWaveUp"     Content="Move up" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"/>
-                                    <Button x:Name="btnWaveDown"   Content="Move down" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0"/>
+                                            ToolTip="Pick a device collection from a searchable list."/>
+                                    <Button x:Name="btnRemoveWave" Content="Remove"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"
+                                            ToolTip="Remove the selected wave collection from the list."/>
+                                    <Button x:Name="btnWaveUp"     Content="Move Up" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0,0,0,4"
+                                            ToolTip="Move the selected wave collection one place up."/>
+                                    <Button x:Name="btnWaveDown"   Content="Move Down" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="90" Margin="0"
+                                            ToolTip="Move the selected wave collection one place down."/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -361,21 +358,21 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
-                                <TextBlock Text="Wave 1 start date" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="Wave 1 Start Date" Style="{StaticResource FieldLabelStyle}"/>
                                 <DatePicker x:Name="dpStartDate" FontSize="12"/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,10">
-                                <TextBlock Text="Days between waves" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="Days Between Waves" Style="{StaticResource FieldLabelStyle}"/>
                                 <TextBox x:Name="txtSpacing" FontSize="12" Padding="6,4,6,4" Text="7"/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
-                                <TextBlock Text="Days to deadline" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="Days to Deadline" Style="{StaticResource FieldLabelStyle}"/>
                                 <TextBox x:Name="txtDeadline" FontSize="12" Padding="6,4,6,4" Text="3"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10">
-                                <TextBlock Text="Lowest severity" Style="{StaticResource FieldLabelStyle}"/>
-                                <ComboBox x:Name="cboSeverity" FontSize="12">
+                                <TextBlock Text="Lowest Severity" Style="{StaticResource FieldLabelStyle}"/>
+                                <ComboBox x:Name="cboSeverity" FontSize="12" ItemContainerStyle="{StaticResource ThemedComboBoxItemStyle}">
                                     <ComboBoxItem Content="All" IsSelected="True"/>
                                     <ComboBoxItem Content="Low"/>
                                     <ComboBoxItem Content="Moderate"/>
@@ -384,12 +381,12 @@
                                 </ComboBox>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,10">
-                                <TextBlock Text="Most updates per wave" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="Most Updates per Wave" Style="{StaticResource FieldLabelStyle}"/>
                                 <TextBox x:Name="txtMaxUpdates" FontSize="12" Padding="6,4,6,4" Text="1000"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,10" VerticalAlignment="Bottom">
-                                <CheckBox x:Name="chkWsus" Content="Include WSUS counts" FontSize="12"
-                                          ToolTip="Also read update counts from the WSUS server on the provider computer"/>
+                                <CheckBox x:Name="chkWsus" Content="Include WSUS Counts" FontSize="12"
+                                          ToolTip="Also read the update counts from the WSUS server on the SMS Provider computer."/>
                             </StackPanel>
 
                             <TextBlock x:Name="txtPlanSummary" Grid.Row="2" Grid.ColumnSpan="3" FontSize="11" TextWrapping="Wrap"
@@ -400,7 +397,7 @@
 
                     <TabControl Grid.Row="1" Controls:TabControlHelper.Underlined="TabPanel">
                         <TabItem x:Name="tabPlanned" Controls:HeaderedControlHelper.HeaderFontSize="13">
-                            <TabItem.Header><TextBlock x:Name="txtTabPlanned" Text="Planned updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
+                            <TabItem.Header><TextBlock x:Name="txtTabPlanned" Text="Planned Updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridPlan"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
@@ -419,7 +416,7 @@
                             </DataGrid>
                         </TabItem>
                         <TabItem x:Name="tabSkipped" Controls:HeaderedControlHelper.HeaderFontSize="13">
-                            <TabItem.Header><TextBlock x:Name="txtTabSkipped" Text="Skipped updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
+                            <TabItem.Header><TextBlock x:Name="txtTabSkipped" Text="Skipped Updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridSkipped"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
@@ -445,11 +442,11 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,0,8,8">
                         <RadioButton x:Name="rdoMarkdown" Content="Markdown" IsChecked="True" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                        <RadioButton x:Name="rdoHtml"     Content="HTML source" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                        <Button x:Name="btnOpenHtml" Content="Open HTML report" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="150" Margin="8,0,8,0"
-                                ToolTip="Write the HTML report to the Reports folder and open it in the default browser"/>
+                        <RadioButton x:Name="rdoHtml"     Content="HTML Source" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <Button x:Name="btnOpenHtml" Content="Open HTML Report" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="150" Margin="8,0,8,0"
+                                ToolTip="Write the HTML report to the Reports folder and open it in the default browser."/>
                         <Button x:Name="btnCopyReport" Content="Copy" Style="{StaticResource SquareInlineButtonStyle}"
-                                ToolTip="Copy the text to the clipboard"/>
+                                ToolTip="Copy the report text to the clipboard."/>
                     </StackPanel>
                     <TextBox x:Name="txtReport" Grid.Row="1" Style="{StaticResource DetailTextStyle}"
                              TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto"
@@ -470,16 +467,16 @@
                     <Border Grid.Row="0" Padding="8,0,8,10">
                         <StackPanel>
                             <TextBlock FontSize="12" TextWrapping="Wrap"
-                                       Text="Update Planner only reads the site until you turn on Enable actions. Dry run shows what Deploy would create and changes nothing. Deploy creates one software update group and one deployment of that group for each wave that holds updates, after you confirm."/>
+                                       Text="Update Planner only reads the site until you turn on Enable Actions. Dry Run shows what Deploy would create and changes nothing. Deploy creates one software update group and one deployment of that group for each wave that holds updates, after you confirm."/>
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                 <Controls:ToggleSwitch x:Name="toggleActions" IsOn="False"
-                                                       Header="Enable actions"
+                                                       Header="Enable Actions"
                                                        OnContent="On" OffContent="Off" MinWidth="0" Margin="0,0,24,0"
-                                                       ToolTip="Dry run and Deploy stay disabled until this switch is on"/>
-                                <Button x:Name="btnDryRun" Content="Dry run" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120" VerticalAlignment="Bottom"
-                                        ToolTip="Run the deploy step with -WhatIf. Nothing is created."/>
+                                                       ToolTip="Dry Run and Deploy stay off until this switch is on."/>
+                                <Button x:Name="btnDryRun" Content="Dry Run" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120" VerticalAlignment="Bottom"
+                                        ToolTip="Show the deployments that Deploy would create, without a change to the site."/>
                                 <Button x:Name="btnApply" Content="Deploy..." Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120" VerticalAlignment="Bottom"
-                                        ToolTip="Create the deployments after a confirmation"/>
+                                        ToolTip="Create the deployments after a confirmation."/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -489,7 +486,7 @@
                               ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
                               CellStyle="{StaticResource GridCellStyle}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Deployment name" Width="3*" Binding="{Binding Name}"/>
+                            <DataGridTextColumn Header="Deployment Name" Width="3*" Binding="{Binding Name}"/>
                             <DataGridTextColumn Header="Collection"      Width="2*" Binding="{Binding Collection}"/>
                             <DataGridTextColumn Header="ID"              Width="90" Binding="{Binding CollectionId}"/>
                             <DataGridTextColumn Header="Updates"         Width="70" Binding="{Binding UpdateCount}"/>
@@ -527,7 +524,7 @@
                                                Foreground="{DynamicResource MahApps.Brushes.Accent}"/>
                         <TextBlock x:Name="txtProgressTitle"
                                    Text="Loading..."
-                                   FontSize="18" FontWeight="SemiBold"
+                                   FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Center"
                                    Margin="0,14,0,0"/>
                         <TextBlock x:Name="txtProgressStep"
@@ -546,8 +543,8 @@
 
             <Border Grid.Row="4">
                 <DockPanel>
-                    <TextBlock x:Name="lblLogOutput" DockPanel.Dock="Top" Text="LOG OUTPUT"
-                               FontSize="10" FontWeight="SemiBold"
+                    <TextBlock x:Name="lblLogOutput" DockPanel.Dock="Top" Text="Log Output"
+                               FontSize="10" FontWeight="Bold"
                                Margin="8,6,0,4"/>
                     <TextBox x:Name="txtLog"
                              IsReadOnly="True"
@@ -563,7 +560,15 @@
 
             <Border Grid.Row="5" Padding="8,4,8,4"
                     Background="{DynamicResource MahApps.Brushes.Gray10}">
-                <TextBlock x:Name="txtStatus" Text="Ready." FontSize="11"/>
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="Site Code" FontSize="14" FontWeight="Bold" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="txtSiteCode" Text="" FontSize="12" Margin="0,0,16,0"/>
+                        <TextBlock Text="SMS Provider" FontSize="14" FontWeight="Bold" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="txtSmsProvider" Text="" FontSize="12"/>
+                    </StackPanel>
+                    <TextBlock x:Name="txtStatus" Text="Ready." FontSize="11" VerticalAlignment="Center"/>
+                </DockPanel>
             </Border>
         </Grid>
     </Grid>

@@ -22,7 +22,7 @@ The tool reads the site with the ConfigurationManager PowerShell module (it come
 |---|---|---|
 | Site check when the site drive opens | `Get-CMSite -SiteCode <site code>` | A wrong site code or provider stops the step with "Cannot open site ...". |
 | Update catalog: needed, installed, superseded, expired counts | `Get-CMSoftwareUpdate -Fast` | Same rows as `SMS_SoftwareUpdate`. The call does not use `-IncludeUpgrade`. See the note below. |
-| Last WSUS synchronization | `Get-CMSoftwareUpdateSyncStatus` | With **Include WSUS counts** it also reads update counts from the WSUS server (`Get-WsusServer`) over PowerShell remoting to the provider computer. |
+| Last WSUS synchronization | `Get-CMSoftwareUpdateSyncStatus` | With **Include WSUS Counts** it also reads update counts from the WSUS server (`Get-WsusServer`) over PowerShell remoting to the provider computer. |
 | Target collection (by ID or by name) | `Get-CMCollection` | The tool checks that it is a device collection. |
 | Members of a target collection | `Get-CMCollectionMember` | |
 | Maintenance windows for updates | `Get-CMMaintenanceWindow` | Windows of type 1 (all deployments) and type 4 (software updates). |
@@ -59,9 +59,9 @@ The tool checks each update of the catalog against the rules in this order. The 
 
 ### Severity
 
-**Lowest severity** sets the lowest severity number to plan. An update with a lower number is skipped.
+**Lowest Severity** sets the lowest severity number to plan. An update with a lower number is skipped.
 
-| Lowest severity | Number | Updates in the plan |
+| Lowest Severity | Number | Updates in the plan |
 |---|---|---|
 | All | 0 | All, also updates with no severity (`None`) |
 | Low | 2 | Low, Moderate, Important, Critical |
@@ -74,7 +74,7 @@ The tool checks each update of the catalog against the rules in this order. The 
 - The tool makes one wave for each wave collection, in the order of the wave list. The first collection is wave 1.
 - A wave is named `Wave <n> <collection name>`.
 - A wave collection is a device collection, given by its ID or by its name. A name must match exactly one collection.
-- A wave holds at most the value of **Most updates per wave**, 1 to 1000. 1000 is the limit of one software update group.
+- A wave holds at most the value of **Most Updates per Wave**, 1 to 1000. 1000 is the limit of one software update group.
 - A wave that holds no update gets no deployment.
 
 ## What the Deploy step creates
@@ -100,13 +100,13 @@ For each wave that holds updates, two objects:
 
 Both are named `UpdatePlanner <PlanId> <wave name>`. To undo a run, delete the deployments and the groups whose name holds the plan ID.
 
-The **Dry run** button and `-WhatIf` run the same step. They do not open the site drive and create nothing.
+The **Dry Run** button and `-WhatIf` run the same step. They do not open the site drive and create nothing.
 
 ### Built-in collection block
 
 A collection whose ID starts with `SMS` is a built-in collection, for example All Systems (`SMS00001`). The deploy step refuses a wave that holds updates and targets such a collection:
 
-- The window checks the plan before the confirmation. The message box **Deploy blocked** names each such wave. It also blocks a plan in which no wave holds an update.
+- The window checks the plan before the confirmation. The message box **Deploy Blocked** names each such wave. It also blocks a plan in which no wave holds an update.
 - `Invoke-UpdatePlan -Apply` stops with the same message before it opens the site drive. With `-WhatIf` it does not stop.
 
 ## The plan file

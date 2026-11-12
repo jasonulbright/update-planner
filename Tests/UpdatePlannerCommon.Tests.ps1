@@ -601,7 +601,9 @@ Describe 'Invoke-UpdatePlan' {
         Mock -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment { throw 'deployment refused' }
         $arrResult = @(Invoke-UpdatePlan -Plan $script:objPlan -Apply -Confirm:$false)
         $arrResult[0].Status | Should -Be 'Failed'
-        $arrResult[0].Message | Should -BeLike '*deployment refused*'
+        $arrResult[0].Message | Should -BeLike 'The deployment failed. The log file has the details.*'
+        $arrResult[0].Message | Should -Not -BeLike '*deployment refused*'
+        $arrResult[0].Detail | Should -Be 'deployment refused'
         $arrResult[0].Message | Should -BeLike '*software update group UpdatePlanner * (CI_ID 777) was created and still exists*'
     }
 
@@ -615,7 +617,8 @@ Describe 'Invoke-UpdatePlan' {
         $arrResult = @(Invoke-UpdatePlan -Plan $script:objPlan -Apply -Confirm:$false)
         $arrResult.Count | Should -Be 2
         $arrResult[0].Status | Should -Be 'Failed'
-        $arrResult[0].Message | Should -Match 'provider error'
+        $arrResult[0].Message | Should -Not -Match 'provider error'
+        $arrResult[0].Detail | Should -Be 'provider error'
         $arrResult[1].Status | Should -Be 'Created'
     }
 

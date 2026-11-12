@@ -128,7 +128,7 @@ Describe 'Plan reports' {
 
     It 'returns the Markdown text that the file export writes' {
         $strText = ConvertTo-UpdatePlanMarkdown -Plan $script:objPlan
-        $strText | Should -BeLike '# Update plan*'
+        $strText | Should -BeLike '# Update Plan*'
         $strText | Should -BeLike '*## Wave 1: Wave 1 Pilot*'
         $strText | Should -BeLike '*KB5001*'
     }
@@ -319,9 +319,9 @@ Describe 'Window files' {
         $strXaml | Should -BeLike ('*Text="{0}"*' -f $strMeta)
     }
 
-    It 'resets the Skipped updates tab header when a change of the connection clears the plan' {
+    It 'resets the Skipped Updates tab header when a change of the connection clears the plan' {
         $strStart = Get-Content -LiteralPath $script:strStartPath -Raw
-        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$txtTabSkipped\.Text = 'Skipped updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
+        $strStart | Should -Match "(?s)\`$gridResults\.ItemsSource = \`$null\s*\r?\n\s*\`$txtTabSkipped\.Text = 'Skipped Updates'\s*\r?\n\s*\`$txtPlanSummary\.Text = 'No plan yet\.'"
     }
 
     It 'parses the start script without error' {

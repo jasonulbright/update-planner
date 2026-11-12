@@ -34,7 +34,7 @@ Update Planner writes its plan as a Suite ring plan, version 1. The file has the
 
 ## Rules for Deployment Helper
 
-Deployment Helper refuses a plan when a ring deadline is not later than its start, or not later than the deadline of the ring before. Set **Days to deadline** to 1 or more and **Days between waves** to 1 or more when you plan to load the file in Deployment Helper.
+Deployment Helper refuses a plan when a ring deadline is not later than its start, or not later than the deadline of the ring before. Set **Days to Deadline** to 1 or more and **Days Between Waves** to 1 or more when you plan to load the file in Deployment Helper.
 
 ## Compatibility
 

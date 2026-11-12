@@ -21,14 +21,14 @@ Write access for your account to the folder of the script.
 | Theme | Toggle at the bottom of the sidebar | `DarkMode` | `true` (dark) | At once |
 | SMS Provider | **Options**, **SMS Provider FQDN** | `SMSProvider` | Empty, or `SUITE_CM_PROVIDER` | **OK** in Options |
 | Site code | **Options**, **Site Code** | `SiteCode` | Empty, or `SUITE_CM_SITECODE`. Required. | **OK** in Options |
-| Days between waves | **Plan**, **Days between waves** | `WaveSpacingDays` | `7` | **Build plan** and window close |
-| Days to deadline | **Plan**, **Days to deadline** | `DeadlineDays` | `3` | **Build plan** and window close |
-| Lowest severity | **Plan**, **Lowest severity** | `Severity` | `All` | **Build plan** and window close |
-| Most updates per wave | **Plan**, **Most updates per wave** | `MaxUpdates` | `1000` | **Build plan** and window close |
-| Include WSUS counts | **Plan**, **Include WSUS counts** | `IncludeWsus` | `false` | **Build plan** and window close |
-| Wave list | **Plan**, wave list | `Waves`: a list of `<collection ID>\|<name>` | Empty | At the next save of the file: **Build plan**, **OK** in Options, the theme toggle or window close |
+| Days Between Waves | **Plan**, **Days Between Waves** | `WaveSpacingDays` | `7` | **Build Plan** and window close |
+| Days to Deadline | **Plan**, **Days to Deadline** | `DeadlineDays` | `3` | **Build Plan** and window close |
+| Lowest Severity | **Plan**, **Lowest Severity** | `Severity` | `All` | **Build Plan** and window close |
+| Most Updates per Wave | **Plan**, **Most Updates per Wave** | `MaxUpdates` | `1000` | **Build Plan** and window close |
+| Include WSUS Counts | **Plan**, **Include WSUS Counts** | `IncludeWsus` | `false` | **Build Plan** and window close |
+| Wave list | **Plan**, wave list | `Waves`: a list of `<collection ID>\|<name>` | Empty | At the next save of the file: **Build Plan**, **OK** in Options, the theme toggle or window close |
 
-The wave 1 start date is not saved. It starts as tomorrow at each start. **Enable actions** is not saved. It starts off.
+The wave 1 start date is not saved. It starts as tomorrow at each start. **Enable Actions** is not saved. It starts off.
 
 ### Window state
 

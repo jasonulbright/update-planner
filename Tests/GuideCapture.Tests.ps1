@@ -74,7 +74,38 @@ Describe 'Capture scripts' {
             }
             else { $text | Should -Match '-UserId \$user\b' }
         }
-        [System.IO.File]::ReadAllText($script:InvokePath) | Should -Match '-ArgumentList \$app, \$LogonUser, \$captureJson'
+        [System.IO.File]::ReadAllText($script:InvokePath) | Should -Match '-ArgumentList \$root, \$LogonUser, \$captureJson, \$taskName'
+    }
+
+    It 'takes the capture lock with New-Item and an IOException catch, and treats a lock older than 60 minutes as stale' {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:InvokePath, [ref]$null, [ref]$null)
+        $newItem = @($ast.FindAll({
+                    param($n)
+                    $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'New-Item' -and
+                    $n.Extent.Text -match '-ItemType File' -and $n.Extent.Text -match '-ErrorAction Stop'
+                }, $true))
+        $newItem.Count | Should -Be 1
+        $catch = @($ast.FindAll({
+                    param($n)
+                    $n -is [System.Management.Automation.Language.CatchClauseAst] -and
+                    @($n.CatchTypes | Where-Object { $_.TypeName.FullName -eq 'System.IO.IOException' }).Count -gt 0
+                }, $true))
+        $catch.Count | Should -Be 1
+        $text = [System.IO.File]::ReadAllText($script:InvokePath)
+        $text | Should -Match "\`$lockPath = 'C:\\guide\\capture\.lock'"
+        $text | Should -Match '-ArgumentList \$lockPath, \$lockToken, 60, \$LockWaitMinutes'
+        $text | Should -Match 'TotalMinutes -gt \$staleMinutes'
+    }
+
+    It 'works in its own folder and its own task, removes only its own files and the lock, and never removes C:\guide' {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:InvokePath, [ref]$null, [ref]$null)
+        $text = [System.IO.File]::ReadAllText($script:InvokePath)
+        $text | Should -Match '\$root = "C:\\guide\\\$app"'
+        $text | Should -Match '\$taskName = "GuideShots-\$app"'
+        $text | Should -Not -Match 'TaskName GuideShots\b'
+        $removals = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Remove-Item' }, $true))
+        foreach ($c in $removals) { $c.Extent.Text | Should -Not -Match "C:\\guide\b(?!\\)" -Because $c.Extent.Text }
+        $text | Should -Match 'Remove-Item -LiteralPath \$path -Force'
     }
 
     It 'stops before it replaces an image when a step failed' {

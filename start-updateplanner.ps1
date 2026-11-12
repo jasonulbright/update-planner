@@ -165,6 +165,8 @@ $txtProgressStep  = $window.FindName('txtProgressStep')
 $lblLogOutput = $window.FindName('lblLogOutput')
 $txtLog       = $window.FindName('txtLog')
 $txtStatus    = $window.FindName('txtStatus')
+$txtStatusSiteCode = $window.FindName('txtSiteCode')
+$txtStatusProvider = $window.FindName('txtSmsProvider')
 
 $null = $txtAppTitle
 
@@ -279,9 +281,9 @@ function Update-ControlState {
 
 # === View switching ===
 $script:ViewMeta = @{
-    'Plan'   = @{ Title = 'Plan';   Subtitle = 'Add the wave collections in the order of the rollout, set the dates, then click Build plan. Building a plan changes nothing on the site.' }
+    'Plan'   = @{ Title = 'Plan';   Subtitle = 'Add the wave collections in the order of the rollout, set the dates, then click Build Plan. Building a plan changes nothing on the site.' }
     'Report' = @{ Title = 'Report'; Subtitle = 'The plan as the Markdown review text or as an HTML report.' }
-    'Deploy' = @{ Title = 'Deploy'; Subtitle = 'Turn on Enable actions to use the dry run and the deployment step. Every deployment asks for a confirmation.' }
+    'Deploy' = @{ Title = 'Deploy'; Subtitle = 'Turn on Enable Actions to use the dry run and the deployment step. Every deployment asks for a confirmation.' }
 }
 function Set-ActiveView {
     param([Parameter(Mandatory)][ValidateSet('Plan', 'Report', 'Deploy')][string]$View)
@@ -302,12 +304,10 @@ $btnViewReport.Add_Click({ Set-ActiveView -View 'Report' })
 $btnViewApply.Add_Click({  Set-ActiveView -View 'Deploy' })
 
 function Update-StatusBarSummary {
+    $txtStatusSiteCode.Text = if ($global:Prefs.SiteCode) { [string]$global:Prefs.SiteCode } else { 'not set' }
+    $txtStatusProvider.Text = if ($global:Prefs.SMSProvider) { [string]$global:Prefs.SMSProvider } else { 'not set' }
     $parts = @()
-    if (-not $global:Prefs.SMSProvider) { $parts += 'Open Options to set the SMS provider' }
-    else {
-        $site = if ($global:Prefs.SiteCode) { $global:Prefs.SiteCode } else { 'no site code' }
-        $parts += ('Provider {0} ({1})' -f $global:Prefs.SMSProvider, $site)
-    }
+    if (-not $global:Prefs.SMSProvider) { $parts += 'Open Options to set the SMS Provider' }
     $parts += ('{0} wave collections' -f $script:WaveList.Count)
     if ($script:Plan) { $parts += ('plan {0}: {1} assignments' -f $script:Plan.PlanId, $script:Plan.Summary.UpdateAssignmentsPlanned) }
     if ($toggleActions.IsOn) { $parts += 'actions enabled' } else { $parts += 'read only' }
@@ -444,9 +444,11 @@ function Start-BackgroundWork {
             $script:IsBusy = $false
             Update-ControlState
             if ($script:BgState.ErrorMsg) {
-                Add-LogLine ('Failed: {0}' -f $script:BgState.ErrorMsg)
-                Set-StatusText 'The step failed. See the log.'
-                [void](Show-ThemedMessage -Owner $window -Title 'Step failed' -Message ([string]$script:BgState.ErrorMsg) -Icon Error)
+                # The window shows a fixed message. The exception text goes to the log file only.
+                try { Write-Log -Message ('Step failed: {0}' -f $script:BgState.ErrorMsg) -Level ERROR -Quiet } catch { $null = $_ }
+                Add-LogLine 'The step failed. The log file has the details.'
+                Set-StatusText 'The step failed. The log file has the details.'
+                [void](Show-ThemedMessage -Owner $window -Title 'Step Failed' -Message 'The step failed. Check the site code, the SMS Provider and your account rights in Options. The log file has the details.' -Icon Error)
                 return
             }
             & $script:BgOnDone $script:BgState.Result
@@ -460,14 +462,14 @@ $btnLoadCollections.Add_Click({ Invoke-LoadCollections -Pick $false })
 function Invoke-LoadCollections {
     param([bool]$Pick)
     if (-not $global:Prefs.SMSProvider -or -not $global:Prefs.SiteCode) {
-        Add-LogLine 'Load collections: set the SMS provider and the site code in Options first.'
-        Set-StatusText 'Open Options to set the SMS provider and the site code.'
+        Add-LogLine 'Load Collections: set the SMS Provider and the site code in Options first.'
+        Set-StatusText 'Open Options to set the SMS Provider and the site code.'
         return
     }
     $script:PickAfterLoad = $Pick
-    Add-LogLine ('Load collections: provider={0}' -f $global:Prefs.SMSProvider)
+    Add-LogLine ('Load Collections: provider={0}' -f $global:Prefs.SMSProvider)
     $args1 = @{ Provider = [string]$global:Prefs.SMSProvider; SiteCode = [string]$global:Prefs.SiteCode }
-    Start-BackgroundWork -Title 'Loading collections' -Step 'Reading device collections and console folders...' -Arguments $args1 -Work {
+    Start-BackgroundWork -Title 'Loading Collections' -Step 'Reading device collections and console folders...' -Arguments $args1 -Work {
         param($A, $S)
         Get-UpdatePlannerCollection -ComputerName $A.Provider -SiteCode $A.SiteCode
     } -OnDone {
@@ -480,7 +482,7 @@ function Invoke-LoadCollections {
 }
 
 function Show-WavePicker {
-    $picked = Show-CollectionPickerDialog -Owner $window -Collections $script:CollectionData.Collections -Folders $script:CollectionData.Folders -Title 'Add wave collection'
+    $picked = Show-CollectionPickerDialog -Owner $window -Collections $script:CollectionData.Collections -Folders $script:CollectionData.Folders -Title 'Add Wave Collection'
     if (-not $picked) { return }
     if (@($script:WaveList | Where-Object { $_.Id -eq [string]$picked.CollectionID }).Count -gt 0) {
         Add-LogLine ('{0} is already in the wave list.' -f $picked.Name)
@@ -493,8 +495,8 @@ function Show-WavePicker {
 
 $btnAddWave.Add_Click({
     if (-not $global:Prefs.SMSProvider -or -not $global:Prefs.SiteCode) {
-        Set-StatusText 'Open Options to set the SMS provider and the site code.'
-        Add-LogLine 'Add: set the SMS provider and the site code in Options first.'
+        Set-StatusText 'Open Options to set the SMS Provider and the site code.'
+        Add-LogLine 'Add: set the SMS Provider and the site code in Options first.'
         return
     }
     if (-not $script:CollectionData) { Invoke-LoadCollections -Pick $true; return }
@@ -507,7 +509,7 @@ function Show-Plan {
     $script:Plan = $Plan
     $gridPlan.ItemsSource    = @(ConvertTo-UpdatePlanRow -Plan $Plan)
     $gridSkipped.ItemsSource = @(ConvertTo-UpdatePlanSkippedRow -Plan $Plan)
-    $txtTabSkipped.Text = ('Skipped updates ({0})' -f @($Plan.Skipped).Count)
+    $txtTabSkipped.Text = ('Skipped Updates ({0})' -f @($Plan.Skipped).Count)
     $s = $Plan.Summary
     $txtPlanSummary.Text = ('Plan {0} for site {1}. {2} waves, {3} planned assignments, {4} skipped and listed. Site: {5} updates, {6} needed, {7} superseded, {8} expired, {9} existing deployments.' -f
         $Plan.PlanId, $Plan.SiteCode, $s.WavesPlanned, $s.UpdateAssignmentsPlanned, $s.SkippedListed, $s.TotalUpdates, $s.NeededUpdates, $s.SupersededUpdates, $s.ExpiredUpdates, $s.ExistingDeployments)
@@ -526,20 +528,20 @@ $btnBuildPlan.Add_Click({
         -SeverityName (Get-SeverityName) -MaxUpdatesText ([string]$txtMaxUpdates.Text) `
         -TargetCollection @($script:WaveList | ForEach-Object { $_.Id })
     if (-not $setting.IsValid) {
-        Add-LogLine ('Build plan: {0}' -f ($setting.Errors -join ' '))
+        Add-LogLine ('Build Plan: {0}' -f ($setting.Errors -join ' '))
         Set-StatusText $setting.Errors[0]
-        [void](Show-ThemedMessage -Owner $window -Title 'Build plan' -Message ($setting.Errors -join [Environment]::NewLine) -Icon Warn)
+        [void](Show-ThemedMessage -Owner $window -Title 'Build Plan' -Message ($setting.Errors -join [Environment]::NewLine) -Icon Warn)
         return
     }
     Save-SettingsToPrefs
-    Add-LogLine ('Build plan: {0} waves, start {1}, spacing {2} days, deadline {3} days, lowest severity {4}' -f $setting.TargetCollection.Count, $setting.StartDate.ToString('yyyy-MM-dd'), $setting.WaveSpacingDays, $setting.DeadlineDays, (Get-SeverityName))
+    Add-LogLine ('Build Plan: {0} waves, start {1}, spacing {2} days, deadline {3} days, lowest severity {4}' -f $setting.TargetCollection.Count, $setting.StartDate.ToString('yyyy-MM-dd'), $setting.WaveSpacingDays, $setting.DeadlineDays, (Get-SeverityName))
     $args2 = @{
         Provider = $setting.ComputerName; SiteCode = [string]$global:Prefs.SiteCode
         Target = $setting.TargetCollection; Start = $setting.StartDate; Spacing = $setting.WaveSpacingDays
         Deadline = $setting.DeadlineDays; Severity = $setting.MinimumSeverity; Max = $setting.MaxUpdatesPerWave
         Wsus = [bool]$chkWsus.IsChecked
     }
-    Start-BackgroundWork -Title 'Building the plan' -Step 'Connecting to the SMS Provider...' -Arguments $args2 -Work {
+    Start-BackgroundWork -Title 'Building the Plan' -Step 'Connecting to the SMS Provider...' -Arguments $args2 -Work {
         param($A, $S)
         $p = @{ ComputerName = $A.Provider; SiteCode = $A.SiteCode; TargetCollection = $A.Target; IncludeWsus = $A.Wsus }
         $S.Step = 'Reading updates, collections and deployments...'
@@ -609,7 +611,10 @@ function Write-ActionRecord {
             Provider = [string]$global:Prefs.SMSProvider
             Results  = @($Results)
         })
-    } catch { Add-LogLine ('The action log could not be written: {0}' -f $_.Exception.Message) }
+    } catch {
+        try { Write-Log -Message ('The action log could not be written: {0}' -f $_.Exception.Message) -Level ERROR -Quiet } catch { $null = $_ }
+        Add-LogLine 'The action log could not be written. The log file has the details.'
+    }
 }
 
 function Show-DeployResult {
@@ -626,13 +631,13 @@ function Show-DeployResult {
 $toggleActions.Add_Toggled({
     Update-ControlState
     Update-StatusBarSummary
-    Add-LogLine ('Enable actions: {0}' -f $(if ($toggleActions.IsOn) { 'on' } else { 'off' }))
+    Add-LogLine ('Enable Actions: {0}' -f $(if ($toggleActions.IsOn) { 'on' } else { 'off' }))
 })
 
 $btnDryRun.Add_Click({
     if (-not $script:Plan -or -not $toggleActions.IsOn) { return }
-    Add-LogLine ('Dry run of plan {0} (-WhatIf).' -f $script:Plan.PlanId)
-    Start-BackgroundWork -Title 'Dry run' -Step 'Running the deploy step with -WhatIf...' -Arguments @{ Plan = $script:Plan; Provider = [string]$global:Prefs.SMSProvider } -Work {
+    Add-LogLine ('Dry Run of plan {0} (-WhatIf).' -f $script:Plan.PlanId)
+    Start-BackgroundWork -Title 'Dry Run' -Step 'Running the deploy step with -WhatIf...' -Arguments @{ Plan = $script:Plan; Provider = [string]$global:Prefs.SMSProvider } -Work {
         param($A, $S)
         @(Invoke-UpdatePlan -Plan $A.Plan -ComputerName $A.Provider -Apply -WhatIf)
     } -OnDone {
@@ -646,7 +651,7 @@ $btnApply.Add_Click({
     $check = Test-UpdatePlanApplyAllowed -Plan $script:Plan
     if (-not $check.IsAllowed) {
         Add-LogLine ('Deploy blocked: {0}' -f ($check.Reasons -join ' '))
-        [void](Show-ThemedMessage -Owner $window -Title 'Deploy blocked' -Message ($check.Reasons -join [Environment]::NewLine) -Icon Warn)
+        [void](Show-ThemedMessage -Owner $window -Title 'Deploy Blocked' -Message ($check.Reasons -join [Environment]::NewLine) -Icon Warn)
         return
     }
     $preview = @(Get-UpdatePlanDeploymentPreview -Plan $script:Plan)
@@ -655,12 +660,12 @@ $btnApply.Add_Click({
         [Environment]::NewLine + [Environment]::NewLine + ($lines -join [Environment]::NewLine) +
         [Environment]::NewLine + [Environment]::NewLine +
         ('This changes the site. To undo, delete the deployments and the software update groups whose name holds the plan ID {0}. Update Planner never edits or deletes an existing deployment or group.' -f $script:Plan.PlanId)
-    if (-not (Show-ConfirmDialog -Title 'Create deployments' -Message $message -Owner $window)) {
+    if (-not (Show-ConfirmDialog -Title 'Create Deployments' -Message $message -Owner $window)) {
         Add-LogLine 'Deploy cancelled.'
         return
     }
     Add-LogLine ('Deploy plan {0}: {1} deployments.' -f $script:Plan.PlanId, $preview.Count)
-    Start-BackgroundWork -Title 'Creating deployments' -Step 'Creating the deployments...' -Arguments @{ Plan = $script:Plan; Provider = [string]$global:Prefs.SMSProvider } -Work {
+    Start-BackgroundWork -Title 'Creating Deployments' -Step 'Creating the deployments...' -Arguments @{ Plan = $script:Plan; Provider = [string]$global:Prefs.SMSProvider } -Work {
         param($A, $S)
         @(Invoke-UpdatePlan -Plan $A.Plan -ComputerName $A.Provider -Apply -Confirm:$false)
     } -OnDone {
@@ -692,8 +697,10 @@ function Show-OptionsDialog {
             <!-- Contrast overrides, the same as in MainWindow.xaml. -->
             <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
             <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
-            <ControlTemplate x:Key="AppSquareButtonTemplate" TargetType="ButtonBase">
-                <Border Name="SquareBd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+            <!-- The one button template and the one button style, the same as in MainWindow.xaml. No color literal:
+                 the colors come from the MahApps theme resources. -->
+            <ControlTemplate x:Key="ThemedButtonTemplate" TargetType="Button">
+                <Border Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
                     <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -701,19 +708,23 @@ function Show-OptionsDialog {
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.Button.Square.Background.MouseOver}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Button.Square.Foreground.MouseOver}"/>
+                        <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                    </Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="SquareBd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                        <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
-            <Style x:Key="AppSquareButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
-                <Setter Property="Template" Value="{StaticResource AppSquareButtonTemplate}"/>
+            <Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="Template" Value="{StaticResource ThemedButtonTemplate}"/>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
                 <Style.Triggers>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
@@ -721,26 +732,31 @@ function Show-OptionsDialog {
                     </Trigger>
                 </Style.Triggers>
             </Style>
-            <Style x:Key="CategoryRowStyle" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
+            <Style x:Key="CategoryRowStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Height" Value="36"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="Padding" Value="14,0,14,0"/>
                 <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
                 <Setter Property="Margin" Value="0"/>
             </Style>
-            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource AppSquareButtonStyle}">
+            <!-- The one secondary dialog style: a gray fill, the theme text color and a visible border. Cancel uses it.
+                 The primary dialog style is DialogAccentButton. No other dialog button style sets a Background. -->
+            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}"/>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <!-- The accent fill is the theme highlight (#4A5763 dark, #00589F light): white text is 7:1 on both.
                  The border is the theme foreground: the highlight alone is 2.1:1 on the dark dialog.
                  The plain accent fill of the light theme is 4.49:1. -->
-            <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource DialogButton}">
+            <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Highlight}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
+                <Setter Property="Margin" Value="0,0,8,0"/>
                 <Style.Triggers>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
@@ -748,6 +764,12 @@ function Show-OptionsDialog {
                         <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+            <Style x:Key="OptLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray1}"/>
+                <Setter Property="Margin" Value="0,12,0,2"/>
             </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -770,11 +792,11 @@ function Show-OptionsDialog {
         <Border Grid.Column="1" Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray8}"/>
         <Grid Grid.Column="2" Grid.Row="0" Margin="20,16,20,16">
             <StackPanel x:Name="paneConnection" Visibility="Visible">
-                <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,4,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+                <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Margin="0,4,0,2" Text="SMS Provider FQDN"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. sms01.example.com"/>
-                <TextBlock Text="Site Code" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+                <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Text="Site Code"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. ABC. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
                 <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
@@ -782,8 +804,8 @@ function Show-OptionsDialog {
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             </StackPanel>
             <StackPanel x:Name="paneAbout" Visibility="Collapsed">
-                <TextBlock Text="About" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <TextBlock x:Name="txtAboutVersion" Text="Update Planner v0.0.0" FontSize="13" FontWeight="SemiBold"/>
+                <TextBlock Text="About" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock x:Name="txtAboutVersion" Text="Update Planner v0.0.0" FontSize="13" FontWeight="Bold"/>
                 <TextBlock Text="Plan software update rollouts for a Configuration Manager site: which updates go to which collection, in which wave, on which dates. Build the plan, review it as a grid or a report, export it, and create the deployments only when you choose to."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                 <TextBlock Text="Author: Jason Ulbright. License: MIT."
@@ -827,7 +849,7 @@ function Show-OptionsDialog {
             return
         }
         if ($newProvider -and $newProvider -notmatch '^[A-Za-z0-9_.-]{1,255}$') {
-            [void](Show-ThemedMessage -Owner $dlg -Title 'Update Planner' -Message 'The SMS provider is a computer name or an FQDN.' -Icon Warn)
+            [void](Show-ThemedMessage -Owner $dlg -Title 'Update Planner' -Message 'The SMS Provider is a computer name or an FQDN.' -Icon Warn)
             return
         }
         $changed = ($newSite -ne [string]$global:Prefs.SiteCode) -or ($newProvider -ne [string]$global:Prefs.SMSProvider)
@@ -838,7 +860,7 @@ function Show-OptionsDialog {
             $script:CollectionData = $null
             $script:Plan = $null
             $gridPlan.ItemsSource = $null; $gridSkipped.ItemsSource = $null; $gridPreview.ItemsSource = $null; $gridResults.ItemsSource = $null
-            $txtTabSkipped.Text = 'Skipped updates'
+            $txtTabSkipped.Text = 'Skipped Updates'
             $txtPlanSummary.Text = 'No plan yet.'
             Update-ReportText
             Update-ControlState
@@ -873,7 +895,7 @@ $window.Add_Loaded({
     Update-ReportText
     Update-ControlState
     Update-StatusBarSummary
-    Add-LogLine 'Update Planner ready. Set the SMS provider in Options, add the wave collections, then click Build plan.'
+    Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then click Build Plan.'
 })
 
 # Suite update notice: one shared daily lookup across the suite tools; the launcher installs.
