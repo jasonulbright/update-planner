@@ -23,7 +23,7 @@
 
 .NOTES
     ScriptName : start-updateplanner.ps1
-    Version    : 2026.11.10.0005
+    Version    : 2026.11.12.0006
     Updated    : 2026-11-07
 #>
 
