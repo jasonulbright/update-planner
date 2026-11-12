@@ -2,6 +2,27 @@
 
 All notable changes to Update Planner are documented in this file.
 
+## [2026.11.12.0006] - 2026-11-12
+
+## 1 button style for every dialog and window
+
+### Fixed
+
+- Show white text on blue buttons in light mode.
+- Keep text contrast when a button is hovered or pressed.
+- Raise the dark theme button border to 3:1 contrast.
+- Show field titles in bold 14 pt and field values in normal weight.
+- Show no raw exception text in the window.
+
+### Changed
+
+- Use one themed style for every button and one secondary style for dialogs.
+- Retake the user guide images.
+
+### Added
+
+- Add tests that guard button text and border contrast.
+
 ## [2026.11.10.0005] - 2026-11-10
 
 ## 44 user guide images retaken
