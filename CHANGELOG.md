@@ -2,6 +2,13 @@
 
 All notable changes to Update Planner are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Show page headers, status and About text in the normal weight, not bold.
+- Add a guard test that fails when text other than a field title is bold.
+
 ## [2026.11.12.0006] - 2026-11-12
 
 ## 1 button style for every dialog and window
