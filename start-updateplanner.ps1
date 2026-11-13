@@ -165,8 +165,6 @@ $txtProgressStep  = $window.FindName('txtProgressStep')
 $lblLogOutput = $window.FindName('lblLogOutput')
 $txtLog       = $window.FindName('txtLog')
 $txtStatus    = $window.FindName('txtStatus')
-$txtStatusSiteCode = $window.FindName('txtSiteCode')
-$txtStatusProvider = $window.FindName('txtSmsProvider')
 
 $null = $txtAppTitle
 
@@ -183,6 +181,13 @@ function Add-LogLine {
 function Set-StatusText {
     param([Parameter(Mandatory)][string]$Text)
     $txtStatus.Text = $Text
+}
+
+function Sync-FooterSite {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Updates an in-window TextBlock only.')]
+    param()
+    try { Update-SuiteFooter -Window $window -SiteCode ([string]$global:Prefs.SiteCode) -SiteServer ([string]$global:Prefs.SMSProvider) }
+    catch { Write-Log ('Footer: {0}' -f $_.Exception.Message) -Level ERROR -Quiet; Add-LogLine 'The footer failed. The log file has the details.' }
 }
 
 # === Title-bar drag fallback: SuiteCommon owns the hook ===
@@ -304,8 +309,6 @@ $btnViewReport.Add_Click({ Set-ActiveView -View 'Report' })
 $btnViewApply.Add_Click({  Set-ActiveView -View 'Deploy' })
 
 function Update-StatusBarSummary {
-    $txtStatusSiteCode.Text = if ($global:Prefs.SiteCode) { [string]$global:Prefs.SiteCode } else { 'not set' }
-    $txtStatusProvider.Text = if ($global:Prefs.SMSProvider) { [string]$global:Prefs.SMSProvider } else { 'not set' }
     $parts = @()
     if (-not $global:Prefs.SMSProvider) { $parts += 'Open Options to set the SMS Provider' }
     $parts += ('{0} wave collections' -f $script:WaveList.Count)
@@ -477,6 +480,7 @@ function Invoke-LoadCollections {
         $script:CollectionData = $r
         Add-LogLine ('Loaded {0} device collections in {1} folders (site {2}).' -f @($r.Collections).Count, @($r.Folders).Count, $r.SiteCode)
         Set-StatusText ('{0} device collections loaded.' -f @($r.Collections).Count)
+        Sync-FooterSite
         if ($script:PickAfterLoad) { $script:PickAfterLoad = $false; Show-WavePicker }
     }
 }
@@ -860,6 +864,7 @@ function Show-OptionsDialog {
         $global:Prefs.SiteCode    = $newSite
         $global:Prefs.SMSProvider = $newProvider
         Save-UpPreferences -Prefs $global:Prefs
+        Sync-FooterSite
         if ($changed) {
             $script:CollectionData = $null
             $script:Plan = $null
@@ -899,6 +904,9 @@ $window.Add_Loaded({
     Update-ReportText
     Update-ControlState
     Update-StatusBarSummary
+    try { [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { Show-OptionsDialog }) }
+    catch { Write-Log ('Footer: {0}' -f $_.Exception.Message) -Level ERROR -Quiet; Add-LogLine 'The footer failed. The log file has the details.' }
+    Sync-FooterSite
     Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then click Build Plan.'
 })
 

@@ -280,7 +280,7 @@ Describe 'Fonts do not depend on the theme (b)' {
             foreach ($strName in 'txtSiteCode', 'txtSmsProvider') { if ($xml.SelectSingleNode(("//*[@*[local-name()='Name']='{0}']" -f $strName))) { $strName } }
         }
         @($arrName | Sort-Object -Unique) | Should -Be @('txtSiteCode', 'txtSmsProvider')
-        @($arrName).Count | Should -BeGreaterOrEqual 4
+        @($arrName).Count | Should -BeGreaterOrEqual 2
     }
 
     It 'sets the title of the site code and SMS Provider boxes to bold 14 pt or more, and the value to normal weight and a size below 14 pt, in <_.Source>' -ForEach $script:arrOwnXamlDocD {

@@ -47,7 +47,7 @@ Inside the AppPackager Suite, the launcher starts the tool and hands over its si
 1. Select **Options** in the sidebar.
 2. In **SMS Provider FQDN**, enter the computer name or the FQDN of the SMS Provider, for example `sms01.example.com`.
 3. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The tool needs both values and no longer asks the provider for the site code.
-4. Select **OK**.
+4. Select **OK**. The right end of the footer shows the site, for example `Site ABC · sms01.example.com`. The footer is read-only. Select the site text to open Options.
 
 ![The Options dialog with the SMS Provider entered](images/options-connection.png)
 

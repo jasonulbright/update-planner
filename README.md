@@ -44,7 +44,7 @@ The tool connects with the Windows account that runs it. It stores no password a
    ```powershell
    powershell -ExecutionPolicy Bypass -File start-updateplanner.ps1
    ```
-3. Click **Options** and set the SMS Provider FQDN and the site code. Both are required.
+3. Click **Options** and set the SMS Provider FQDN and the site code. Both are required. The footer then shows the site at the right end, for example `Site ABC · sms01.example.com`. The footer is read-only. Click the site text to open Options.
 4. On the **Plan** view, click **Add...**. The first click loads the device collections. Pick each wave collection in rollout order.
 5. Set the dates and click **Build Plan**.
 
