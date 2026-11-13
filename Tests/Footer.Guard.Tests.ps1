@@ -256,9 +256,16 @@ BeforeAll {
         $bare = @($Ast.FindAll({ param($n)
                     $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in @('Initialize-SuiteFooter', 'Update-SuiteFooter')
                 }, $true) | Where-Object {
+                # The call must sit in the body of a try block, not in its catch or finally block.
+                $call = $_
                 $p = $_.Parent
-                while ($null -ne $p -and $p -isnot [System.Management.Automation.Language.TryStatementAst]) { $p = $p.Parent }
-                $null -eq $p
+                $inBody = $false
+                while ($null -ne $p) {
+                    if ($p -is [System.Management.Automation.Language.TryStatementAst] -and
+                        $call.Extent.StartOffset -ge $p.Body.Extent.StartOffset -and $call.Extent.EndOffset -le $p.Body.Extent.EndOffset) { $inBody = $true; break }
+                    $p = $p.Parent
+                }
+                -not $inBody
             })
         foreach ($b in $bare) { $problems.Add(('line {0}: {1} is not inside a try block' -f $b.Extent.StartLineNumber, $b.GetCommandName())) }
         $initCalls = @(Get-CommandName -Ast $Ast | Where-Object { $_ -eq 'Initialize-SuiteFooter' })
@@ -446,6 +453,14 @@ $window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window) } catc
 function Show-OptionsDialog { Sync-FooterSite }
 function Invoke-ConnectSite { Sync-FooterSite }
 $window.Add_Loaded({ [void](Initialize-SuiteFooter -Window $window); Sync-FooterSite })'
+        @(Get-FooterCallProblem -Ast $ast).Count | Should -Be 2
+    }
+
+    It 'fails a footer call in a catch block or a finally block (bad sample)' {
+        $ast = New-AstSample 'function Sync-FooterSite { try { $x = 1 } catch { Update-SuiteFooter -Window $window } }
+function Show-OptionsDialog { Sync-FooterSite }
+function Invoke-ConnectSite { Sync-FooterSite }
+$window.Add_Loaded({ try { $x = 1 } finally { [void](Initialize-SuiteFooter -Window $window) }; Sync-FooterSite })'
         @(Get-FooterCallProblem -Ast $ast).Count | Should -Be 2
     }
 

@@ -155,6 +155,9 @@ Section 'options clears plan' {
   # A different provider text (the short name) is a change of the connection, which clears the plan.
   Set-Text (Get-El $d 'txtSmsProvider') $shortProvider; Invoke-El (Get-El $d 'btnOk'); Start-Sleep -Seconds 1
   Shot $win 'options-plan-cleared'
+  # Put the FQDN back, so that the later images show the same site text as the first ones.
+  Invoke-El (Get-El $win 'btnOptions'); $d = Find-Top 'Options' 10
+  Set-Text (Get-El $d 'txtSmsProvider') $Capture.SmsProvider; Invoke-El (Get-El $d 'btnOk'); Start-Sleep -Seconds 1
 }
 Section 'light' {
   Toggle-El (Get-El $win 'toggleTheme'); Start-Sleep -Seconds 1
