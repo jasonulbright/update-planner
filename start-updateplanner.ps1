@@ -186,7 +186,8 @@ function Set-StatusText {
 function Sync-FooterSite {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Updates an in-window TextBlock only.')]
     param()
-    Update-SuiteFooter -Window $window -SiteCode ([string]$global:Prefs.SiteCode) -SiteServer ([string]$global:Prefs.SMSProvider)
+    try { Update-SuiteFooter -Window $window -SiteCode ([string]$global:Prefs.SiteCode) -SiteServer ([string]$global:Prefs.SMSProvider) }
+    catch { Add-LogLine ('Footer: {0}' -f $_.Exception.Message) }
 }
 
 # === Title-bar drag fallback: SuiteCommon owns the hook ===
@@ -903,7 +904,8 @@ $window.Add_Loaded({
     Update-ReportText
     Update-ControlState
     Update-StatusBarSummary
-    [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { Show-OptionsDialog })
+    try { [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { Show-OptionsDialog }) }
+    catch { Add-LogLine ('Footer: {0}' -f $_.Exception.Message) }
     Sync-FooterSite
     Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then click Build Plan.'
 })
