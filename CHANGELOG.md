@@ -19,6 +19,7 @@ All notable changes to Update Planner are documented in this file.
 
 - Show page headers, status and About text in the normal weight, not bold.
 - Add a guard test that fails when text other than a field title is bold.
+- Do nothing when you select the site text in the footer while an action runs. The Options button is off then, and so is the footer click.
 
 ## [2026.11.12.0006] - 2026-11-12
 
