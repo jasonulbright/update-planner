@@ -27,6 +27,8 @@ BeforeAll {
     # The function that shows the Options dialog, and the functions that connect to the site.
     $script:OptionsFunction = 'Show-OptionsDialog'
     $script:ConnectFunction = @('Invoke-LoadCollections')
+    # The flag that is true while an action runs. The Options button is off then, so the footer click must not open Options.
+    $script:BusyFlagPattern = '\$script:IsBusy'
     # A window whose title is in this list, or whose label matches the pattern, may edit the site fields.
     $script:AllowedWindowTitle = @('Options')
     $script:AllowedWindowLabelPattern = '(?i)first.?run|wizard|welcome'
@@ -279,6 +281,28 @@ BeforeAll {
         $problems.ToArray()
     }
 
+    # The footer click handler (-OnOpenOptions) must return while an action runs, before it opens Options.
+    function Get-OpenOptionsProblem {
+        param($Ast)
+        $problems = New-Object System.Collections.Generic.List[string]
+        $init = @($Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Initialize-SuiteFooter' }, $true))
+        if ($init.Count -eq 0) { return @('Initialize-SuiteFooter is not called') }
+        $block = $null
+        foreach ($c in $init) {
+            $els = @($c.CommandElements)
+            for ($i = 0; $i -lt $els.Count - 1; $i++) {
+                if ($els[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and $els[$i].ParameterName -eq 'OnOpenOptions' -and $els[$i + 1] -is [System.Management.Automation.Language.ScriptBlockExpressionAst]) { $block = $els[$i + 1] }
+            }
+        }
+        if ($null -eq $block) { return @('Initialize-SuiteFooter has no -OnOpenOptions script block') }
+        $text = $block.Extent.Text
+        $guard = [regex]::Match($text, '(?s)if\s*\([^)]*' + $script:BusyFlagPattern + '[^)]*\)\s*\{\s*return\b')
+        $open = [regex]::Match($text, [regex]::Escape($script:OptionsFunction))
+        if (-not $guard.Success) { $problems.Add('the -OnOpenOptions script block does not return while an action runs') }
+        elseif ($open.Success -and $open.Index -lt $guard.Index) { $problems.Add('the -OnOpenOptions script block opens Options before it checks the busy flag') }
+        $problems.ToArray()
+    }
+
     function New-XmlSample {
         param([string]$Body, [string]$Title = '')
         $x = New-Object System.Xml.XmlDocument
@@ -341,6 +365,12 @@ Describe 'The footer font' {
         $fns = Get-FunctionTable -Ast $script:AppAst
         @($fns.Keys | Where-Object { $_ -match 'Status' }).Count | Should -BeGreaterThan 0
         (Get-Content -LiteralPath (Join-Path $script:Root $script:AppScript) -Raw) | Should -Match ([regex]::Escape($script:StatusName))
+    }
+}
+
+Describe 'The footer click' {
+    It 'returns without opening Options while an action runs' {
+        @(Get-OpenOptionsProblem -Ast $script:AppAst) | Should -BeNullOrEmpty
     }
 }
 
@@ -446,6 +476,20 @@ function Show-OptionsDialog { Sync-FooterSite }
 function Invoke-ConnectSite { $t.Add_Tick({ Sync-FooterSite }) }
 $window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window) } catch { Add-LogLine $_ }; Sync-FooterSite })'
         @(Get-FooterCallProblem -Ast $ast).Count | Should -Be 0
+    }
+
+    It 'fails a footer click that opens Options while an action runs (bad sample)' {
+        $ast = New-AstSample '$window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window -OnOpenOptions { Show-OptionsDialog }) } catch { $null = $_ } })'
+        @(Get-OpenOptionsProblem -Ast $ast).Count | Should -Be 1
+        $ast = New-AstSample '$window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window -OnOpenOptions { Show-OptionsDialog; if ($script:IsBusy) { return } }) } catch { $null = $_ } })'
+        @(Get-OpenOptionsProblem -Ast $ast).Count | Should -Be 1
+        $ast = New-AstSample '$window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window) } catch { $null = $_ } })'
+        @(Get-OpenOptionsProblem -Ast $ast).Count | Should -Be 1
+    }
+
+    It 'passes a footer click that returns while an action runs' {
+        $ast = New-AstSample '$window.Add_Loaded({ try { [void](Initialize-SuiteFooter -Window $window -OnOpenOptions { if ($script:IsBusy) { return }; Show-OptionsDialog }) } catch { $null = $_ } })'
+        @(Get-OpenOptionsProblem -Ast $ast).Count | Should -Be 0
     }
 
     It 'fails a footer call outside a try block (bad sample)' {
