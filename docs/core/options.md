@@ -23,7 +23,7 @@ None. The dialog does not connect to the site.
 3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `e.g. sms01.example.com`.
 4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The watermark shows `e.g. ABC. Three letters or digits.` The site code is required.
 5. Select **OK**. **OK** is the default button: Enter selects it. Select **Cancel** to discard the change. Press Esc to cancel.
-6. Read the right end of the footer. It shows the saved site, for example `Site ABC · sms01.example.com`, or `Site not set`. The footer is read-only. Select the site text to open Options. You change the site code and the SMS Provider only in this dialog.
+6. Read the right end of the footer. It shows the saved site, for example `Site ABC`, a middle dot, and `sms01.example.com`, or `Site not set`. The footer is read-only. Select the site text to open Options. You change the site code and the SMS Provider only in this dialog.
 
 ![The Connection section of the Options dialog](../images/options-connection.png)
 

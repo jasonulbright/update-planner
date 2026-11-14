@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
+
 ## [2026.11.14.0008] - 2026-11-14
 
 ## 4.5:1 or more contrast on the inactive title bar in both themes
@@ -21,7 +25,7 @@ All notable changes to Update Planner are documented in this file.
 
 ### Added
 
-- Show the site code and the SMS Provider in the footer as one text, for example `Site ABC · sms01.example.com`. The footer shows `Site not set` while a value is empty. Select the text to open Options.
+- Show the site code and the SMS Provider in the footer as one text, for example `Site ABC`, a middle dot, and `sms01.example.com`. The footer shows `Site not set` while a value is empty. Select the text to open Options.
 - Add a guard test for the footer: one status element, no font setting on it, the footer calls, and no editable site field outside Options.
 
 ### Changed
