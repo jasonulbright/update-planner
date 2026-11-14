@@ -6,6 +6,8 @@ All notable changes to Update Planner are documented in this file.
 
 ### Fixed
 
+- Show button borders at 1 px in gray, with no heavy border in the text color.
+- Add guards for button styles, muted text brushes and the dialog theme call.
 - Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
 
 ## [2026.11.14.0008] - 2026-11-14
