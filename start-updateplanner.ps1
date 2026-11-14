@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Main window of Update Planner, a tool that plans software update rollouts in waves for a Configuration Manager site.
 

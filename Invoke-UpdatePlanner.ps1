@@ -1,4 +1,4 @@
-﻿[CmdletBinding(PositionalBinding = $false, SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+[CmdletBinding(PositionalBinding = $false, SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 [OutputType([pscustomobject])]
 param (
     [Parameter(Mandatory = $false)]
