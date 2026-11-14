@@ -1,6 +1,6 @@
 ﻿@{
     RootModule        = 'UpdatePlannerCommon.psm1'
-    ModuleVersion     = '2026.11.13.0007'
+    ModuleVersion     = '2026.11.14.0008'
     GUID              = '5b0f4a0e-6d0c-4c43-9f1b-2f6f2d1c7a41'
     Author            = 'Jason Ulbright'
     Description       = 'Reads Configuration Manager and WSUS software update state and builds a reviewable update plan with waves and dates. Optional step that creates the deployments.'
