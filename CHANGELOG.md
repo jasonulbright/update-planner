@@ -4,6 +4,14 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.14.0010] - 2026-11-14
+
+## 44 guide images retaken with gray button borders
+
+### Fixed
+
+- Retake the guide images with 1 px gray button borders.
+
 ## [2026.11.14.0009] - 2026-11-14
 
 ## 1 px gray borders on every button in both themes
