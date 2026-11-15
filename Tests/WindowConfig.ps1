@@ -57,34 +57,37 @@ function New-WindowSampleData {
 $script:MainMeasureScript = {
     $cfg = $Arguments.Config
     $s = $Arguments.Sample
-    $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark -Width $Arguments.W -Height $Arguments.H
-    $w.FindName('gridPlan').ItemsSource = @($s.Plan)
-    $w.FindName('gridSkipped').ItemsSource = @($s.Skipped)
-    $w.FindName('gridPreview').ItemsSource = @($s.Preview)
-    $w.FindName('gridResults').ItemsSource = @($s.Results)
-    $w.FindName('lstWaves').ItemsSource = @($s.Waves)
-    $w.FindName('txtReport').Text = [string]$s.Report
-    $w.FindName('txtPlanSummary').Text = [string]$s.Summary
-    $w.FindName('txtLog').Text = '10:00:00  Update Planner ready.'
-    $w.FindName('txtVersion').Text = 'v2026.11.07.0004'
-    # Contrast is read only at 1440x900. Clipped text and off-screen controls are read at both sizes.
-    $full = $Arguments.W -ge 1440
-    $out = @()
-    foreach ($view in $cfg.Views) {
-        foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $view.Name) { 'Visible' } else { 'Collapsed' } }
-        Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views `
-            -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $view.Name -BrushColors $Arguments.Brushes
-        $out += [PSCustomObject]@{
-            View        = $view.Name
-            Text        = if ($full) { @(Get-TextContrast $w) } else { @() }
-            Clipped     = @(Get-ClippedText $w)
-            Offscreen   = @(Get-OffscreenControls $w)
-            Interactive = if ($full) { @(Get-InteractiveContrast $w) } else { @() }
-            TitleBar    = if ($full) { Get-TitleBarContrast $w } else { $null }
+    $w = $null
+    try {
+        $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark -Width $Arguments.W -Height $Arguments.H
+        $w.FindName('gridPlan').ItemsSource = @($s.Plan)
+        $w.FindName('gridSkipped').ItemsSource = @($s.Skipped)
+        $w.FindName('gridPreview').ItemsSource = @($s.Preview)
+        $w.FindName('gridResults').ItemsSource = @($s.Results)
+        $w.FindName('lstWaves').ItemsSource = @($s.Waves)
+        $w.FindName('txtReport').Text = [string]$s.Report
+        $w.FindName('txtPlanSummary').Text = [string]$s.Summary
+        $w.FindName('txtLog').Text = '10:00:00  Update Planner ready.'
+        $w.FindName('txtVersion').Text = 'v2026.11.07.0004'
+        # Contrast is read only at 1440x900. Clipped text and off-screen controls are read at both sizes.
+        $full = $Arguments.W -ge 1440
+        $out = @()
+        foreach ($view in $cfg.Views) {
+            foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $view.Name) { 'Visible' } else { 'Collapsed' } }
+            Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views `
+                -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $view.Name -BrushColors $Arguments.Brushes
+            $out += [PSCustomObject]@{
+                View        = $view.Name
+                Text        = if ($full) { @(Get-TextContrast $w) } else { @() }
+                Clipped     = @(Get-ClippedText $w)
+                Offscreen   = @(Get-OffscreenControls $w)
+                Interactive = if ($full) { @(Get-InteractiveContrast $w) } else { @() }
+                TitleBar    = if ($full) { Get-TitleBarContrast $w } else { $null }
+            }
         }
+        , $out
     }
-    $w.Close()
-    , $out
+    finally { if ($w) { $w.Close() } }
 }
 
 # Runs in the STA runspace. Opens the Options dialog from its XAML text at its declared and minimum size and
@@ -97,27 +100,30 @@ $script:DialogMeasureScript = {
     $probe = $null
     $panes = @($Arguments.Panes)
     $rows = foreach ($size in $sizes) {
-        $w = Open-TestWindow -XamlText $Arguments.Xaml -Dark $Arguments.Dark -Width $size[0] -Height $size[1]
-        # Entered text, so the contrast of the input text is measured too. The shell fills the version.
-        $w.FindName('txtSiteCode').Text = 'ABC'
-        $w.FindName('txtSmsProvider').Text = 'provider.example.test'
-        $w.FindName('txtAboutVersion').Text = 'Update Planner v2026.11.07.0004'
-        # The shell themes the dialog with Set-DialogTheme, which reads the palette of Initialize-SuiteTheme.
-        $global:HarnessDark = $Arguments.Dark
-        Initialize-SuiteTheme -Window $w -IsDarkGetter { [bool]$global:HarnessDark } -Brushes (ConvertTo-BrushTable $Arguments.Brushes)
-        Set-DialogTheme -Dialog $w -IsDark $Arguments.Dark
-        foreach ($pane in $panes) {
-            foreach ($p in $panes) { $w.FindName($p).Visibility = if ($p -eq $pane) { 'Visible' } else { 'Collapsed' } }
-            Wait-Layout $w
-            [PSCustomObject]@{
-                Pane = $pane; Size = ('{0}x{1}' -f $size[0], $size[1])
-                Text = @(Get-TextContrast $w); Interactive = @(Get-InteractiveContrast $w)
-                Clipped = @(Get-ClippedText $w); Offscreen = @(Get-OffscreenControls $w)
-                Overflow = @(Get-PaneOverflow $w $panes)
-                TitleBar = Get-TitleBarContrast $w
+        $w = $null
+        try {
+            $w = Open-TestWindow -XamlText $Arguments.Xaml -Dark $Arguments.Dark -Width $size[0] -Height $size[1]
+            # Entered text, so the contrast of the input text is measured too. The shell fills the version.
+            $w.FindName('txtSiteCode').Text = 'ABC'
+            $w.FindName('txtSmsProvider').Text = 'provider.example.test'
+            $w.FindName('txtAboutVersion').Text = 'Update Planner v2026.11.07.0004'
+            # The shell themes the dialog with Set-DialogTheme, which reads the palette of Initialize-SuiteTheme.
+            $global:HarnessDark = $Arguments.Dark
+            Initialize-SuiteTheme -Window $w -IsDarkGetter { [bool]$global:HarnessDark } -Brushes (ConvertTo-BrushTable $Arguments.Brushes)
+            Set-DialogTheme -Dialog $w -IsDark $Arguments.Dark
+            foreach ($pane in $panes) {
+                foreach ($p in $panes) { $w.FindName($p).Visibility = if ($p -eq $pane) { 'Visible' } else { 'Collapsed' } }
+                Wait-Layout $w
+                [PSCustomObject]@{
+                    Pane = $pane; Size = ('{0}x{1}' -f $size[0], $size[1])
+                    Text = @(Get-TextContrast $w); Interactive = @(Get-InteractiveContrast $w)
+                    Clipped = @(Get-ClippedText $w); Offscreen = @(Get-OffscreenControls $w)
+                    Overflow = @(Get-PaneOverflow $w $panes)
+                    TitleBar = Get-TitleBarContrast $w
+                }
             }
         }
-        $w.Close()
+        finally { if ($w) { $w.Close() } }
     }
     , @($rows)
 }
@@ -144,29 +150,32 @@ $script:MessageProbeScript = {
             })
         $global:MessageProbeHooked = $true
     }
-    $owner = if ($Arguments.Kind -eq 'Main') {
-        Open-TestWindow -XamlPath $Arguments.XamlPath -Dark $Arguments.Dark -Width 1024 -Height 640 -Left 0 -Top 0
+    $owner = $null
+    try {
+        $owner = if ($Arguments.Kind -eq 'Main') {
+            Open-TestWindow -XamlPath $Arguments.XamlPath -Dark $Arguments.Dark -Width 1024 -Height 640 -Left 0 -Top 0
+        }
+        else {
+            Open-TestWindow -XamlText $Arguments.XamlText -Dark $Arguments.Dark -Width 640 -Height 400 -Left 160 -Top 90
+        }
+        $global:HarnessDark = $Arguments.Dark
+        Initialize-SuiteTheme -Window $owner -IsDarkGetter { [bool]$global:HarnessDark } -Brushes (ConvertTo-BrushTable $Arguments.Brushes)
+        Wait-Layout $owner
+        $global:MessageProbeOwner = $owner
+        $global:MessageProbeResult = $null
+        $global:MessageProbeArmed = $true
+        try { [void](Show-ThemedMessage -Owner $owner -Title $Arguments.Title -Message 'The site code is three letters or digits.' -Icon Warn) }
+        finally { $global:MessageProbeArmed = $false }
+        $r = $global:MessageProbeResult
+        $o = [PSCustomObject]@{
+            OwnerTitle = $owner.Title; OwnerLeft = $owner.Left; OwnerTop = $owner.Top; OwnerWidth = $owner.ActualWidth; OwnerHeight = $owner.ActualHeight
+            Shown = [bool]$r
+            Title = if ($r) { $r.Title } else { $null }
+            BoxOwnerTitle = if ($r) { $r.OwnerTitle } else { $null }
+            Left = if ($r) { $r.Left } else { $null }; Top = if ($r) { $r.Top } else { $null }
+            Width = if ($r) { $r.Width } else { $null }; Height = if ($r) { $r.Height } else { $null }
+        }
+        $o
     }
-    else {
-        Open-TestWindow -XamlText $Arguments.XamlText -Dark $Arguments.Dark -Width 640 -Height 400 -Left 160 -Top 90
-    }
-    $global:HarnessDark = $Arguments.Dark
-    Initialize-SuiteTheme -Window $owner -IsDarkGetter { [bool]$global:HarnessDark } -Brushes (ConvertTo-BrushTable $Arguments.Brushes)
-    Wait-Layout $owner
-    $global:MessageProbeOwner = $owner
-    $global:MessageProbeResult = $null
-    $global:MessageProbeArmed = $true
-    try { [void](Show-ThemedMessage -Owner $owner -Title $Arguments.Title -Message 'The site code is three letters or digits.' -Icon Warn) }
-    finally { $global:MessageProbeArmed = $false }
-    $r = $global:MessageProbeResult
-    $o = [PSCustomObject]@{
-        OwnerTitle = $owner.Title; OwnerLeft = $owner.Left; OwnerTop = $owner.Top; OwnerWidth = $owner.ActualWidth; OwnerHeight = $owner.ActualHeight
-        Shown = [bool]$r
-        Title = if ($r) { $r.Title } else { $null }
-        BoxOwnerTitle = if ($r) { $r.OwnerTitle } else { $null }
-        Left = if ($r) { $r.Left } else { $null }; Top = if ($r) { $r.Top } else { $null }
-        Width = if ($r) { $r.Width } else { $null }; Height = if ($r) { $r.Height } else { $null }
-    }
-    $owner.Close()
-    $o
+    finally { if ($owner) { $owner.Close() } }
 }

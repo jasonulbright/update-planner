@@ -28,12 +28,15 @@ BeforeAll {
         $key = if ($dark) { 'dark' } else { 'light' }
         $script:Measured[$key] = Invoke-WpfSta -Arguments @{ Dark = $dark; Config = $script:AppConfig; Brushes = $script:Brushes } -Script {
             $cfg = $Arguments.Config
-            $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark
-            Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $cfg.Views[0].Name -BrushColors $Arguments.Brushes
-            foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $cfg.Views[0].Name) { 'Visible' } else { 'Collapsed' } }
-            Wait-Layout $w
-            try { Get-SuiteButtonStateReport -Window $w -Dark $Arguments.Dark }
-            finally { $w.Close() }
+            $w = $null
+            try {
+                $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark
+                Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $cfg.Views[0].Name -BrushColors $Arguments.Brushes
+                foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $cfg.Views[0].Name) { 'Visible' } else { 'Collapsed' } }
+                Wait-Layout $w
+                Get-SuiteButtonStateReport -Window $w -Dark $Arguments.Dark
+            }
+            finally { if ($w) { $w.Close() } }
         }
     }
 }

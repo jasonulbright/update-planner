@@ -4,6 +4,16 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Check the body of every dialog against the theme in the chrome window test.
+- Guard that window tests open windows only inside try and finally.
+
+### Changed
+
+- Close every window that a window test call leaves open.
+- Sync the vendored SuiteCommon with the window body and cleanup helpers.
+
 ## [2026.11.14.0011] - 2026-11-14
 
 ## 44 guide images retaken with bordered dialog buttons
