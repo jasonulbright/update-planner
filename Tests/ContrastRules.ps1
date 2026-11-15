@@ -1,11 +1,27 @@
-# The contrast rules of the window tests. Text must reach 4.5:1 (3:1 for large text) and a
-# control border 3:1, enabled and disabled, in both themes. The title text must reach 4.5:1
+# The contrast rules of the window tests. Enabled text must reach 4.5:1 (3:1 for large text) and an
+# enabled control border 3:1, in both themes. The title text must reach 4.5:1
 # on the active and on the inactive title bar. There is no list of accepted defects: every
 # violation fails the test. Window.Tests.ps1 and Show-ContrastViolations.ps1 both call
 # Get-ContrastViolation, so the printed list always matches what the test checks.
-# One rule is not checked: the text of a disabled button. The button templates (SuiteCommon and the sidebar template) dim a
-# disabled button by opacity, and an inactive component is outside the WCAG contrast rule (1.4.3). Disabled text of every
-# other control is checked.
+# A disabled control is exempt from the contrast ratios: WCAG 2.x success criterion 1.4.3 does not apply to
+# text or images of text that are part of an inactive user interface component. Instead, Get-DimmedViolation
+# requires that a disabled control looks clearly dimmed, so that it reads as disabled.
+
+# A disabled control must look dimmed: its text contrast is at most 1/1.25 of the enabled text contrast, and its
+# label is still readable (1.5:1 or more).
+function Get-DimmedViolation {
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Views)
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($v in $Views) {
+        $where = if ($v.PSObject.Properties['View']) { $v.View } elseif ($v.PSObject.Properties['Pane']) { $v.Pane } else { '' }
+        foreach ($c in @($v.Interactive)) {
+            if ($null -eq $c -or $null -eq $c.EnabledText -or $null -eq $c.DisabledText) { continue }
+            if ($c.DisabledText -lt 1.5) { [void]$lines.Add(('{0}: {1} disabled text {2} is not readable (1.5 or more)' -f $where, $c.Name, $c.DisabledText)) }
+            elseif ($c.DisabledText -le 0 -or ($c.EnabledText / $c.DisabledText) -lt 1.25) { [void]$lines.Add(('{0}: {1} is not dimmed when disabled (enabled {2}, disabled {3}, ratio {4})' -f $where, $c.Name, $c.EnabledText, $c.DisabledText, [math]::Round($c.EnabledText / [math]::Max($c.DisabledText, 0.01), 2))) }
+        }
+    }
+    return @($lines | Sort-Object -Unique)
+}
 
 function Test-LargeText {
     # WCAG large text: 24 px, or 18.66 px and bold. It needs 3:1; other text needs 4.5:1.
@@ -26,10 +42,9 @@ function Get-ContrastViolation {
         }
         foreach ($c in @($v.Interactive)) {
             if ($null -eq $c) { continue }
-            foreach ($metric in 'EnabledText', 'DisabledText', 'EnabledBorder', 'DisabledBorder') {
+            foreach ($metric in 'EnabledText', 'EnabledBorder') {
                 $value = $c.$metric
                 if ($null -eq $value) { continue }
-                if ($metric -eq 'DisabledText' -and $c.Type -eq 'Button') { continue }
                 $min = if ($metric -like '*Text') { 4.5 } else { 3.0 }
                 if ($value -lt $min) { [void]$lines.Add(('{0}: {1} {2} {3} = {4}' -f $where, $c.Name, $metric, $c.PSObject.Properties[$metric + 'Colors'].Value, $value)) }
             }

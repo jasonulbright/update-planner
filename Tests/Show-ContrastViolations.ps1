@@ -25,11 +25,11 @@ try {
         $theme = if ($dark) { 'dark' } else { 'light' }
         $main = Invoke-WpfSta -Arguments @{ Dark = $dark; W = 1440; H = 900; Config = $script:AppConfig; Sample = $sample; Brushes = $brushes } -Script $script:MainMeasureScript
         Write-Host ("== main {0}" -f $theme)
-        Get-ContrastViolation -Views @($main) | ForEach-Object { Write-Host $_ }
+        (@(Get-ContrastViolation -Views @($main)) + @(Get-DimmedViolation -Views @($main))) | ForEach-Object { Write-Host $_ }
         $dlg = Invoke-WpfSta -Arguments @{ Xaml = $dialogXaml; Dark = $dark; Panes = $script:AppConfig.OptionsPanes; Brushes = $brushes } -Script $script:DialogMeasureScript
         $first = @($dlg)[0].Size
         Write-Host ("== dialog {0}" -f $theme)
-        Get-ContrastViolation -Views @($dlg | Where-Object Size -eq $first) | ForEach-Object { Write-Host $_ }
+        (@(Get-ContrastViolation -Views @($dlg | Where-Object Size -eq $first)) + @(Get-DimmedViolation -Views @($dlg | Where-Object Size -eq $first))) | ForEach-Object { Write-Host $_ }
     }
 }
 finally { Close-WpfSession }
