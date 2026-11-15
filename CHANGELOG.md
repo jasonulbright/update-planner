@@ -4,9 +4,18 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.14.0011] - 2026-11-14
+
+## 44 guide images retaken with bordered dialog buttons
+
 ### Changed
 
 - Retake the guide images with the shared dialog chrome borders.
+- Sync the vendored SuiteCommon with the 1 px dialog button borders.
+
+### Added
+
+- Add window tests for the button states and the dialog chrome.
 
 ## [2026.11.14.0010] - 2026-11-14
 
