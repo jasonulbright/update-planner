@@ -17,6 +17,8 @@ All notable changes to Update Planner are documented in this file.
 
 ### Changed
 
+- Retake the 44 guide images, README images included, with the current buttons and title bar.
+- Guard that every README image is a guide image that the capture tool produces.
 - Close every window that a window test call leaves open.
 - Sync the vendored SuiteCommon with the window body and cleanup helpers.
 - Sync the vendored SuiteCommon with the inactive title bar and the button templates.
