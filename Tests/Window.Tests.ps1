@@ -180,6 +180,8 @@ Describe 'Dialog windows' -Skip:(-not $script:WindowGuard.Allowed) {
         $views = @($script:DialogMeasured[$Theme] | Where-Object { $_.Size -eq $first })
         @($views | ForEach-Object { $_.Text }).Count | Should -BeGreaterThan 3
         (Get-ContrastViolation -Views $views) -join [Environment]::NewLine | Should -BeNullOrEmpty
+        $dimmed = @(Get-DimmedViolation -Views $views)
+        $dimmed.Count | Should -Be 0 -Because ('disabled controls must look dimmed: ' + ($dimmed -join '; '))
     }
 }
 
@@ -239,6 +241,8 @@ Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }
         @($m.Interactive).Count | Should -BeGreaterThan 3
         $copy = [PSCustomObject]@{ View = $m.View; Text = $m.Text; Interactive = $m.Interactive; TitleBar = $null }
         (Get-ContrastViolation -Views @($copy)) -join [Environment]::NewLine | Should -BeNullOrEmpty
+        $dimmed = @(Get-DimmedViolation -Views @($copy))
+        $dimmed.Count | Should -Be 0 -Because ('disabled controls must look dimmed: ' + ($dimmed -join '; '))
     }
 
     It 'keeps the title text readable on the active and the inactive title bar' {

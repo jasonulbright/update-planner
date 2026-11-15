@@ -4,6 +4,11 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Treat disabled controls as exempt from 4.5:1 text contrast and require them to look dimmed.
+- Dim disabled text boxes, combo boxes and date pickers.
+
 ## [2026.11.15.0012] - 2026-11-15
 
 ## 44 guide images retaken with blue pressed buttons and the light inactive title bar

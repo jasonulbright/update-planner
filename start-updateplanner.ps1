@@ -737,6 +737,28 @@ function Show-OptionsDialog {
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
             </Style>
+            <!-- A disabled input is dimmed, like a disabled button, so that it reads as disabled. -->
+            <Style TargetType="TextBox" BasedOn="{StaticResource MahApps.Styles.TextBox}">
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="ComboBox" BasedOn="{StaticResource MahApps.Styles.ComboBox}">
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="DatePicker" BasedOn="{StaticResource MahApps.Styles.DatePicker}">
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
             <Style x:Key="OptLabel" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="FontWeight" Value="Bold"/>
