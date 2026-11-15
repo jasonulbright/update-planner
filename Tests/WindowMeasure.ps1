@@ -1,3 +1,6 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification='The title bar measurement reads the theme state that the harness keeps in a global variable.')]
+param()
+
 # Measurement functions for the window tests. They run inside the STA runspace
 # (Invoke-WpfSta) and return plain data.
 
