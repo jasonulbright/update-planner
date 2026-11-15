@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Retake the guide images with the shared dialog chrome borders.
+
 ## [2026.11.14.0010] - 2026-11-14
 
 ## 44 guide images retaken with gray button borders
