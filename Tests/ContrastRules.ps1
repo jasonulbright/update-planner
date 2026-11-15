@@ -3,6 +3,9 @@
 # on the active and on the inactive title bar. There is no list of accepted defects: every
 # violation fails the test. Window.Tests.ps1 and Show-ContrastViolations.ps1 both call
 # Get-ContrastViolation, so the printed list always matches what the test checks.
+# One rule is not checked: the text of a disabled button. The button templates (SuiteCommon and the sidebar template) dim a
+# disabled button by opacity, and an inactive component is outside the WCAG contrast rule (1.4.3). Disabled text of every
+# other control is checked.
 
 function Test-LargeText {
     # WCAG large text: 24 px, or 18.66 px and bold. It needs 3:1; other text needs 4.5:1.
@@ -26,6 +29,7 @@ function Get-ContrastViolation {
             foreach ($metric in 'EnabledText', 'DisabledText', 'EnabledBorder', 'DisabledBorder') {
                 $value = $c.$metric
                 if ($null -eq $value) { continue }
+                if ($metric -eq 'DisabledText' -and $c.Type -eq 'Button') { continue }
                 $min = if ($metric -like '*Text') { 4.5 } else { 3.0 }
                 if ($value -lt $min) { [void]$lines.Add(('{0}: {1} {2} {3} = {4}' -f $where, $c.Name, $metric, $c.PSObject.Properties[$metric + 'Colors'].Value, $value)) }
             }
