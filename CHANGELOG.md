@@ -4,8 +4,14 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep accent and neutral buttons blue or neutral when hovered or pressed, never black.
+- Show the inactive light title bar in SuiteCommon blue with dark caption text.
+
 ### Added
 
+- Judge button states and title bar text in both themes, for the main window and a dialog.
 - Check the body of every dialog against the theme in the chrome window test.
 - Guard that window tests open windows only inside try and finally.
 
@@ -13,6 +19,8 @@ All notable changes to Update Planner are documented in this file.
 
 - Close every window that a window test call leaves open.
 - Sync the vendored SuiteCommon with the window body and cleanup helpers.
+- Sync the vendored SuiteCommon with the inactive title bar and the button templates.
+- Skip the text of disabled buttons in the contrast probe, because the templates dim them.
 
 ## [2026.11.14.0011] - 2026-11-14
 

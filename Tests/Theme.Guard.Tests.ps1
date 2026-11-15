@@ -415,22 +415,27 @@ Describe 'Every button takes the shared themed style (d)' {
         @($arrWithBackground | Sort-Object) | Should -Be @('DialogAccentButton', 'DialogButton')
     }
 
-    It 'defines the button template and the button style once in each document and no per-dialog button style besides them' {
+    It 'defines the button style once in each document, takes the button template from SuiteCommon and defines no button template of its own' {
         foreach ($objDoc in $script:arrOwnXamlDoc) {
             [xml]$xml = $objDoc.Text
             @($xml.SelectNodes("//*[local-name()='Style'][@*[local-name()='Key']='ThemedButtonStyle']")).Count | Should -Be 1 -Because $objDoc.Source
-            @($xml.SelectNodes("//*[local-name()='ControlTemplate'][@*[local-name()='Key']='ThemedButtonTemplate']")).Count | Should -Be 1 -Because $objDoc.Source
-            @($xml.SelectNodes("//*[local-name()='ControlTemplate'][@TargetType='Button' or @TargetType='ButtonBase']")).Count | Should -Be 1 -Because $objDoc.Source
+            # The only button template of the app is the sidebar template of the main window.
+            $arrOwnTemplate = @($xml.SelectNodes("//*[local-name()='ControlTemplate'][@TargetType='Button' or @TargetType='ButtonBase']") | ForEach-Object { $_.GetAttribute('Key', $script:strXamlNamespace) })
+            @($arrOwnTemplate | Where-Object { $_ -ne 'SidebarButtonTemplate' }) | Should -BeNullOrEmpty -Because $objDoc.Source
+            $objStyle = $xml.SelectSingleNode("//*[local-name()='Style'][@*[local-name()='Key']='ThemedButtonStyle']")
+            $objTemplate = @(Get-SetterChild -Node $objStyle -LeafPattern '^Template$')
+            $objTemplate.Count | Should -Be 1 -Because $objDoc.Source
+            $objTemplate[0].GetAttribute('Value') | Should -Be '{DynamicResource SuiteNeutralButtonTemplate}' -Because $objDoc.Source
         }
     }
 
-    It 'uses the same dialog button definition as the window button definition' {
-        $arrTemplate = foreach ($objDoc in $script:arrOwnXamlDoc) {
-            [xml]$xml = $objDoc.Text
-            $objNode = $xml.SelectSingleNode("//*[local-name()='ControlTemplate'][@*[local-name()='Key']='ThemedButtonTemplate']")
-            ($objNode.InnerXml -replace '\s+', ' ')
-        }
-        @($arrTemplate | Sort-Object -Unique).Count | Should -Be 1
+    It 'gives the primary dialog button the accent template of SuiteCommon as its first setter' {
+        $arrDoc = @($script:arrOwnXamlDoc | Where-Object { $_.Text -match 'DialogAccentButton' })
+        [xml]$xml = $arrDoc[0].Text
+        $objAccent = $xml.SelectSingleNode("//*[local-name()='Style'][@*[local-name()='Key']='DialogAccentButton']")
+        $objFirst = @($objAccent.ChildNodes | Where-Object { $_.NodeType -eq 'Element' })[0]
+        $objFirst.GetAttribute('Property') | Should -Be 'Template'
+        $objFirst.GetAttribute('Value') | Should -Be '{DynamicResource SuiteAccentButtonTemplate}'
     }
 
     It 'names the colors of the secondary dialog style from the theme resources only' {

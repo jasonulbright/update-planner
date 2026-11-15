@@ -204,11 +204,10 @@ $script:ViewButtons = @(
 $script:ActiveView = 'Plan'
 
 # Contrast fixes of the SuiteCommon palette. The sidebar button border is 2.06:1 at #555555 on the
-# dark window; #8A8A8A is 4.4:1. White title text is 2.6:1 on the light inactive title bar #4BA3E0;
-# #595959 is 7.0:1. Window.Tests.ps1 reads this table, so the test checks the same values.
+# dark window; #8A8A8A is 4.4:1. The inactive title bar is the SuiteCommon light blue with dark caption text.
+# Window.Tests.ps1 reads this table, so the test checks the same values.
 $script:SuiteBrushOverride = @{
     DarkButtonBorder = '#8A8A8A'
-    TitleBarInactive = '#595959'
 }
 $__brushConverter = [System.Windows.Media.BrushConverter]::new()
 $__suiteBrushes = @{}
@@ -700,47 +699,17 @@ function Show-OptionsDialog {
             </ResourceDictionary.MergedDictionaries>
             <!-- Contrast overrides, the same as in MainWindow.xaml. -->
             <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
-            <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
-            <!-- The one button template and the one button style, the same as in MainWindow.xaml. No color literal:
-                 the colors come from the MahApps theme resources. -->
-            <ControlTemplate x:Key="ThemedButtonTemplate" TargetType="Button">
-                <Border Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
-                    <ContentPresenter Name="Cp"
-                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      Margin="{TemplateBinding Padding}"
-                                      RecognizesAccessKey="True"
-                                      SnapsToDevicePixels="True"/>
-                </Border>
-                <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                    </Trigger>
-                    <Trigger Property="IsKeyboardFocused" Value="True">
-                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                        <Setter TargetName="Cp" Property="TextElement.Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
+            <!-- The one button style, the same as in MainWindow.xaml. The template is SuiteNeutralButtonTemplate of SuiteCommon
+                 (Set-DialogTheme gives it to the dialog). No color literal: the colors come from the MahApps theme resources. -->
             <Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
 
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
-                <Setter Property="Template" Value="{StaticResource ThemedButtonTemplate}"/>
+                <Setter Property="Template" Value="{DynamicResource SuiteNeutralButtonTemplate}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-                <Style.Triggers>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
-                    </Trigger>
-                </Style.Triggers>
             </Style>
             <Style x:Key="CategoryRowStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Height" Value="36"/>
@@ -758,22 +727,15 @@ function Show-OptionsDialog {
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
             </Style>
-            <!-- The accent fill is the theme highlight (#4A5763 dark, #00589F light): white text is 7:1 on both.
-                 The border is the theme foreground: the highlight alone is 2.1:1 on the dark dialog.
-                 The plain accent fill of the light theme is 4.49:1. -->
+            <!-- The accent fill is the theme accent: white text is 4.5:1 or more on it in both themes. Hover and pressed
+                 move one step darker (SuiteAccentButtonTemplate of SuiteCommon). -->
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Highlight}"/>
+                <Setter Property="Template" Value="{DynamicResource SuiteAccentButtonTemplate}"/>
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.AccentBase}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.AccentBase}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
-                <Style.Triggers>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
-                    </Trigger>
-                </Style.Triggers>
             </Style>
             <Style x:Key="OptLabel" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>

@@ -22,16 +22,12 @@
 
             <!-- Contrast overrides of the MahApps theme brushes. One value passes in both themes:
                  #7F7F7F is 4.0:1 on white and 3.8:1 on #252525 (control borders need 3:1);
-                 white title text is 7.0:1 on #595959 (the inactive title bar). -->
+                 the inactive title bar comes from SuiteCommon (Update-TitleBarBrushes). -->
             <SolidColorBrush x:Key="MahApps.Brushes.TextBox.Border" Color="#7F7F7F"/>
-            <SolidColorBrush x:Key="MahApps.Brushes.WindowTitle.NonActive" Color="#595959"/>
 
-            <!-- The one button template and the one button style. Every Button of the window takes ThemedButtonStyle
-                 or a style that is based on it. No color literal is allowed here: the colors come from the MahApps
-                 theme resources, so the same markup works in the dark and the light theme. Hover shows the theme foreground as border color.
-                 Pressed swaps the theme foreground and the theme background. A disabled button shows MahApps.Brushes.Gray.MouseOver text (4.5:1 or more in both
-                 themes) and a Gray2 border, because the MahApps disabled state fades the text below 4.5:1. -->
-            <ControlTemplate x:Key="ThemedButtonTemplate" TargetType="Button">
+            <!-- The sidebar button: its own fill and border (set by Update-SidebarButtonTheme) stay in hover, the border shows the theme
+                 foreground, the pressed state is the accent blue with white text, a disabled button is dimmed. -->
+            <ControlTemplate x:Key="SidebarButtonTemplate" TargetType="Button">
                 <Border Name="Bd"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
@@ -52,27 +48,28 @@
                         <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
-                        <Setter TargetName="Cp" Property="TextElement.Foreground" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
+                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MahApps.Brushes.AccentBase}"/>
+                        <Setter TargetName="Cp" Property="TextElement.Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
 
+            <!-- The one button style. Every Button of the window takes ThemedButtonStyle or a style that is based on it.
+                 The template is SuiteNeutralButtonTemplate of SuiteCommon (the window gets it from Update-TitleBarBrushes): hover and
+                 pressed move one step in the neutral family, a disabled button is dimmed. No color literal is allowed here: the colors
+                 come from the MahApps theme resources, so the same markup works in the dark and the light theme. -->
             <Style x:Key="ThemedButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
 
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
-                <Setter Property="Template" Value="{StaticResource ThemedButtonTemplate}"/>
+                <Setter Property="Template" Value="{DynamicResource SuiteNeutralButtonTemplate}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-                <Style.Triggers>
-                    <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.Gray.MouseOver}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
-                    </Trigger>
-                </Style.Triggers>
             </Style>
 
             <!-- Check box and radio button text keeps 4.5:1 when disabled. -->
@@ -120,6 +117,7 @@
             </Style>
 
             <Style x:Key="ViewButtonStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
+                <Setter Property="Template" Value="{StaticResource SidebarButtonTemplate}"/>
                 <Setter Property="Height" Value="42"/>
                 <Setter Property="Margin" Value="8,3,8,3"/>
                 <Setter Property="Padding" Value="12,0,12,0"/>
