@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.15.0013] - 2026-11-15
+
+## 9 disabled controls now dim
+
 ### Changed
 
 - Treat disabled controls as exempt from 4.5:1 text contrast and require them to look dimmed.
