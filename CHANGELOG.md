@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.15.0012] - 2026-11-15
+
+## 44 guide images retaken with blue pressed buttons and the light inactive title bar
+
 ### Fixed
 
 - Keep accent and neutral buttons blue or neutral when hovered or pressed, never black.
