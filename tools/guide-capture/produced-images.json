@@ -1,5 +1,5 @@
 {
-  "Count": 44,
+  "Count": 52,
   "Images": [
     "deploy-blocked.png",
     "deploy-cancelled.png",
@@ -10,6 +10,14 @@
     "deploy-light.png",
     "deploy-off.png",
     "deploy-on.png",
+    "light-state-dialog-accent-button-hover.png",
+    "light-state-dialog-accent-button-pressed.png",
+    "light-state-dialog-button-hover.png",
+    "light-state-dialog-button-pressed.png",
+    "light-state-inline-button-hover.png",
+    "light-state-inline-button-pressed.png",
+    "light-state-sidebar-button-hover.png",
+    "light-state-sidebar-button-pressed.png",
     "options-about.png",
     "options-bad-site-code.png",
     "options-connection.png",

@@ -24,6 +24,7 @@ Update Planner plans software update rollouts in waves for a Configuration Manag
 - [Network](reference/network.md): every outbound call.
 - [Files and logs](reference/files-and-logs.md): every folder and file that the tool writes.
 - [Keyboard](reference/keyboard.md): the Tab order and the dialog keys.
+- [Button states](reference/button-states.md): the hover and pressed look of each button style.
 - [Error messages](reference/error-messages.md): message, cause and fix.
 - [Glossary](reference/glossary.md): the terms of the tool.
 
