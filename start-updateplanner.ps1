@@ -788,10 +788,10 @@ function Show-OptionsDialog {
             <StackPanel x:Name="paneConnection" Visibility="Visible">
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Margin="0,4,0,2" Text="SMS Provider FQDN"/>
-                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
+                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4" Height="26"
                          Controls:TextBoxHelper.Watermark="e.g. sms01.example.com"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Text="Site Code"/>
-                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
+                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4" Height="26"
                          Controls:TextBoxHelper.Watermark="e.g. ABC. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
                 <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
@@ -879,6 +879,8 @@ $window.Add_Closing({
 })
 
 $window.Add_Loaded({
+    # The first start, with no saved window state, opens maximized: the design size is a 1080p work area.
+    if (-not (Test-Path -LiteralPath $global:WindowStatePath)) { $window.WindowState = [System.Windows.WindowState]::Maximized }
     Restore-WindowState -Window $window -Path $global:WindowStatePath -OnStateLoaded {
         param($s)
         if ($s.ActiveView -in @('Plan', 'Report', 'Deploy')) { Set-ActiveView -View ([string]$s.ActiveView) }

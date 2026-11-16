@@ -1,6 +1,6 @@
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.1.0' }
 # Window tests. The main window and the Options dialog (built from XAML text in the start script)
-# are opened off screen on an STA thread, in both themes and at 1024x720 and 1440x900, and measured.
+# are opened off screen on an STA thread, in both themes and at 1024x720 and the work area of the session, and measured.
 # The message box test shows its owner on screen. The app-specific names live in WindowConfig.ps1.
 # The tests that open a window run only with SUITE_ALLOW_WINDOW_TESTS=1 (CI sets it).
 
@@ -11,7 +11,8 @@ BeforeDiscovery {
     $script:WindowGuard = Test-WindowTestsAllowed
     if (-not $script:WindowGuard.Allowed) { Write-Host ('Window tests skipped: {0}' -f $script:WindowGuard.Reason) }
     $script:Matrix = foreach ($dark in $true, $false) {
-        foreach ($size in @(@(1024, 720), @(1440, 900))) {
+        $design = Get-DesignSize
+        foreach ($size in @(@(1024, 720), @($design.W, $design.H))) {
             @{ Dark = $dark; Theme = $(if ($dark) { 'dark' } else { 'light' }); W = $size[0]; H = $size[1]; Size = ('{0}x{1}' -f $size[0], $size[1]) }
         }
     }
@@ -23,6 +24,7 @@ BeforeAll {
     . "$PSScriptRoot\WindowHarness.ps1"
     . "$PSScriptRoot\ContrastRules.ps1"
     . "$PSScriptRoot\WindowConfig.ps1"
+    $script:Design = Get-DesignSize
     $script:Root = Split-Path -Parent $PSScriptRoot
     $script:ShellPath = Join-Path $script:Root $script:AppConfig.Shell
     $script:XamlPath = Join-Path $script:Root $script:AppConfig.Xaml
@@ -69,8 +71,8 @@ BeforeAll {
     if ($script:WindowGuard.Allowed) {
         $sample = New-WindowSampleData
         foreach ($case in @(
-                @{ Dark = $true; W = 1024; H = 720 }, @{ Dark = $true; W = 1440; H = 900 },
-                @{ Dark = $false; W = 1024; H = 720 }, @{ Dark = $false; W = 1440; H = 900 })) {
+                @{ Dark = $true; W = 1024; H = 720 }, @{ Dark = $true; W = $script:Design.W; H = $script:Design.H },
+                @{ Dark = $false; W = 1024; H = 720 }, @{ Dark = $false; W = $script:Design.W; H = $script:Design.H })) {
             $key = '{0}|{1}x{2}' -f $(if ($case.Dark) { 'dark' } else { 'light' }), $case.W, $case.H
             $case.Config = $script:AppConfig
             $case.Sample = $sample
@@ -236,7 +238,7 @@ Describe 'Layout <Theme> <Size>' -ForEach $script:Matrix -Skip:(-not $script:Win
 
 Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }) -Skip:(-not $script:WindowGuard.Allowed) {
     It 'shows every text and control of the <View> view at the contrast standard, enabled and disabled' -ForEach $script:ViewCases {
-        $m = ($script:Measured['{0}|1440x900' -f $Theme] | Where-Object View -eq $View)
+        $m = ($script:Measured['{0}|{1}' -f $Theme, $script:Design.Key] | Where-Object View -eq $View)
         @($m.Text).Count | Should -BeGreaterThan 3
         @($m.Interactive).Count | Should -BeGreaterThan 3
         $copy = [PSCustomObject]@{ View = $m.View; Text = $m.Text; Interactive = $m.Interactive; TitleBar = $null }
@@ -246,7 +248,7 @@ Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }
     }
 
     It 'keeps the title text readable on the active and the inactive title bar' {
-        $tb = ($script:Measured['{0}|1440x900' -f $Theme] | Select-Object -First 1).TitleBar
+        $tb = ($script:Measured['{0}|{1}' -f $Theme, $script:Design.Key] | Select-Object -First 1).TitleBar
         $tb.Active | Should -BeGreaterOrEqual 4.5
         $tb.Inactive | Should -BeGreaterOrEqual 4.5
     }

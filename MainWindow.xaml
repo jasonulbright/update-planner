@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
     Title="Update Planner"
-    Width="1320" Height="820"
+    Width="1920" Height="1032"
     MinWidth="1024" MinHeight="640"
     WindowStartupLocation="CenterScreen"
     TitleCharacterCasing="Normal"
@@ -141,8 +141,8 @@
 
             <Style x:Key="ViewButtonStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
                 <Setter Property="Template" Value="{StaticResource SidebarButtonTemplate}"/>
-                <Setter Property="Height" Value="42"/>
-                <Setter Property="Margin" Value="8,3,8,3"/>
+                <Setter Property="Height" Value="36"/>
+                <Setter Property="Margin" Value="8,2,8,2"/>
                 <Setter Property="Padding" Value="12,0,12,0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="FontSize" Value="13"/>
@@ -152,7 +152,7 @@
             <Style x:Key="OptionsButtonStyle" TargetType="Button" BasedOn="{StaticResource ViewButtonStyle}"/>
 
             <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource ThemedButtonStyle}">
-                <Setter Property="Height" Value="28"/>
+                <Setter Property="Height" Value="26"/>
                 <Setter Property="MinWidth" Value="100"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -183,7 +183,8 @@
                 <Setter Property="GridLinesVisibility" Value="Horizontal"/>
                 <Setter Property="RowHeaderWidth" Value="0"/>
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="ColumnHeaderHeight" Value="30"/>
+                <Setter Property="ColumnHeaderHeight" Value="26"/>
+                <Setter Property="RowHeight" Value="24"/>
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeBackground}"/>
                 <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
@@ -278,7 +279,7 @@
 
                         <Button x:Name="btnOptions" Content="Options"
                                 Style="{StaticResource OptionsButtonStyle}"
-                                Margin="8,24,8,3"
+                                Margin="8,20,8,2"
                                 ToolTip="Set the site code and the SMS Provider."/>
                     </StackPanel>
                 </ScrollViewer>
@@ -297,7 +298,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray10}" Padding="16,12,16,10">
+            <Border Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray10}" Padding="16,8,16,8">
                 <StackPanel>
                     <TextBlock x:Name="txtModuleTitle" Text="Plan" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
@@ -309,7 +310,7 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="1" Padding="16,10,16,10">
+            <Border Grid.Row="1" Padding="16,8,16,8">
                 <DockPanel LastChildFill="False">
                     <Button x:Name="btnBuildPlan" DockPanel.Dock="Left" Content="Build Plan"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120"
@@ -356,7 +357,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ListBox x:Name="lstWaves" Grid.Column="0" Height="116" FontSize="12"
+                                <ListBox x:Name="lstWaves" Grid.Column="0" MinHeight="116" MaxHeight="232" FontSize="12"
                                          ItemContainerStyle="{StaticResource ThemedListBoxItemStyle}"
                                          Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                          BorderThickness="1"
@@ -389,20 +390,20 @@
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
                                 <TextBlock Text="Wave 1 Start Date" Style="{StaticResource FieldLabelStyle}"/>
-                                <DatePicker x:Name="dpStartDate" FontSize="12"/>
+                                <DatePicker x:Name="dpStartDate" FontSize="12" Height="26"/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,10">
                                 <TextBlock Text="Days Between Waves" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtSpacing" FontSize="12" Padding="6,4,6,4" Text="7"/>
+                                <TextBox x:Name="txtSpacing" FontSize="12" Padding="6,4,6,4" Height="26" Text="7"/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
                                 <TextBlock Text="Days to Deadline" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtDeadline" FontSize="12" Padding="6,4,6,4" Text="3"/>
+                                <TextBox x:Name="txtDeadline" FontSize="12" Padding="6,4,6,4" Height="26" Text="3"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10">
                                 <TextBlock Text="Lowest Severity" Style="{StaticResource FieldLabelStyle}"/>
-                                <ComboBox x:Name="cboSeverity" FontSize="12" ItemContainerStyle="{StaticResource ThemedComboBoxItemStyle}">
+                                <ComboBox x:Name="cboSeverity" FontSize="12" Height="26" ItemContainerStyle="{StaticResource ThemedComboBoxItemStyle}">
                                     <ComboBoxItem Content="All" IsSelected="True"/>
                                     <ComboBoxItem Content="Low"/>
                                     <ComboBoxItem Content="Moderate"/>
@@ -412,7 +413,7 @@
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,10">
                                 <TextBlock Text="Most Updates per Wave" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtMaxUpdates" FontSize="12" Padding="6,4,6,4" Text="1000"/>
+                                <TextBox x:Name="txtMaxUpdates" FontSize="12" Padding="6,4,6,4" Height="26" Text="1000"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,10" VerticalAlignment="Bottom">
                                 <CheckBox x:Name="chkWsus" Content="Include WSUS Counts" FontSize="12"
@@ -489,9 +490,9 @@
                 <Grid x:Name="viewApply" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" MinHeight="96"/>
                         <RowDefinition Height="5"/>
-                        <RowDefinition Height="170"/>
+                        <RowDefinition Height="*" MinHeight="96"/>
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Padding="8,0,8,10">
