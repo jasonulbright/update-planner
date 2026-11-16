@@ -4,6 +4,17 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Compact density for a 1080p work area: 36 px sidebar, 26 px controls, 24 px rows.
+- Open maximized on first start; the Deploy view shares its free height between both grids.
+- Capture the maximized window; the capture reports a verdict and the images it produced.
+
+### Added
+
+- Test the density and the vacant area of every view at the work area.
+- List the guide images that no capture run produced.
+
 ## [2026.11.15.0013] - 2026-11-15
 
 ## 9 disabled controls now dim

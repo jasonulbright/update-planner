@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Run it when the window test reports a contrast violation, to see the full list with the
-    colours. Opens the windows off screen at 1440x900, as Window.Tests.ps1 does. It runs only
+    colours. Opens the windows off screen at the design size, as Window.Tests.ps1 does. It runs only
     with SUITE_ALLOW_WINDOW_TESTS=1: window tests run in CI or on the lab, not on a workstation.
 #>
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Console tool.')]
@@ -23,7 +23,7 @@ $sample = New-WindowSampleData
 try {
     foreach ($dark in $true, $false) {
         $theme = if ($dark) { 'dark' } else { 'light' }
-        $main = Invoke-WpfSta -Arguments @{ Dark = $dark; W = 1440; H = 900; Config = $script:AppConfig; Sample = $sample; Brushes = $brushes } -Script $script:MainMeasureScript
+        $main = Invoke-WpfSta -Arguments @{ Dark = $dark; W = (Get-DesignSize).W; H = (Get-DesignSize).H; Config = $script:AppConfig; Sample = $sample; Brushes = $brushes } -Script $script:MainMeasureScript
         Write-Host ("== main {0}" -f $theme)
         (@(Get-ContrastViolation -Views @($main)) + @(Get-DimmedViolation -Views @($main))) | ForEach-Object { Write-Host $_ }
         $dlg = Invoke-WpfSta -Arguments @{ Xaml = $dialogXaml; Dark = $dark; Panes = $script:AppConfig.OptionsPanes; Brushes = $brushes } -Script $script:DialogMeasureScript

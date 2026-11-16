@@ -18,7 +18,7 @@ Use this page on a new installation, or when you connect the tool to a different
 - Network access from this computer to the SMS Provider computer, for the Configuration Manager console connection. PowerShell remoting (WinRM) to that computer is also necessary for WSUS counts (**Include WSUS Counts**).
 - A Windows account that is a local administrator of the SMS Provider computer. A domain admin account of that kind needs no Configuration Manager role. An account with fewer rights is not tested.
 - The Configuration Manager console on this computer. The tool reads the site with the ConfigurationManager PowerShell module, which comes only with the console. Without the console, the tool stops at start with a message (see below).
-- A window of at least 1024 by 640 pixels. The window opens at 1320 by 820.
+- A window of at least 1024 by 640 pixels. The window opens maximized on the first start, at 1920 by 1032 (the work area of a 1080p screen).
 
 The tool connects with the Windows account that runs it. It stores no password and has no credential field.
 
