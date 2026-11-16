@@ -148,6 +148,8 @@ Describe 'Capture scripts' {
         $shots = @([regex]::Matches($steps, "\bShot\s+\`$\w+\s+'([a-z0-9-]+)'") | ForEach-Object { $_.Groups[1].Value })
         $shots += @([regex]::Matches($steps, "\bShot\s+\`$dlg\s+\(\`$shot \+ '-selected'\)") | ForEach-Object { 'plan-picker-selected' })
         $shots += @([regex]::Matches($steps, "Add-Wave [^\r\n]*'(plan-[a-z-]+)'") | ForEach-Object { $_.Groups[1].Value })
+        # Save-StateShot takes the name of a button and shoots its hover and pressed state.
+        $shots += @([regex]::Matches($steps, "\bSave-StateShot\s+\`$\w+\s+\(Get-El[^\r\n]*?\)\s+'([a-z-]+)'") | ForEach-Object { 'light-state-' + $_.Groups[1].Value + '-hover'; 'light-state-' + $_.Groups[1].Value + '-pressed' })
         $images = @(Get-ChildItem -LiteralPath (Join-Path $script:Root 'docs\images') -Filter '*.png' | ForEach-Object { $_.BaseName })
         @($images | Where-Object { $shots -notcontains $_ }) | Should -BeNullOrEmpty
     }
