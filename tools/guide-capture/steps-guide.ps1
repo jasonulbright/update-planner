@@ -161,7 +161,7 @@ Section 'options clears plan' {
 }
 # Evidence for the light theme (D-21): the text color on the blue fill and the fill step of a button in the normal, hover and
 # pressed state. A step that fails logs WARN and goes on. The pressed state is held with the mouse and released off the button.
-function State-Shots($Scope, $El, [string]$Name) {
+function Save-StateShot($Scope, $El, [string]$Name) {
   Sample-El $El ($Name + ' normal'); Move-To $El; Start-Sleep -Milliseconds 700
   Sample-El $El ($Name + ' hover'); Shot $Scope ('light-state-' + $Name + '-hover') -Hover
   Hold-Press $El; Sample-El $El ($Name + ' pressed'); Shot $Scope ('light-state-' + $Name + '-pressed') -Hover; Release-Press
@@ -169,11 +169,11 @@ function State-Shots($Scope, $El, [string]$Name) {
 Section 'light' {
   Toggle-El (Get-El $win 'toggleTheme'); Start-Sleep -Seconds 1
   Extra 'sidebar active' { Sample-El (Get-El $win 'btnViewPlan') 'sidebar active' }
-  Extra 'inline button states' { Invoke-El (Get-El $win 'btnViewPlan'); State-Shots $win (Get-El $win 'btnLoadCollections') 'inline-button' }
-  Extra 'sidebar button states' { State-Shots $win (Get-El $win 'btnViewReport') 'sidebar-button' }
+  Extra 'inline button states' { Invoke-El (Get-El $win 'btnViewPlan'); Save-StateShot $win (Get-El $win 'btnLoadCollections') 'inline-button' }
+  Extra 'sidebar button states' { Save-StateShot $win (Get-El $win 'btnViewReport') 'sidebar-button' }
   Extra 'dialog button states' {
     Invoke-El (Get-El $win 'btnOptions'); $od = Find-Top 'Options' 10
-    State-Shots $od (Get-El $od 'btnOk') 'dialog-accent-button'; State-Shots $od (Get-El $od 'btnCancel') 'dialog-button'
+    Save-StateShot $od (Get-El $od 'btnOk') 'dialog-accent-button'; Save-StateShot $od (Get-El $od 'btnCancel') 'dialog-button'
     Invoke-El (Get-El $od 'btnCancel'); Start-Sleep -Milliseconds 500
   }
   Invoke-El (Get-El $win 'btnBuildPlan'); Start-Sleep -Seconds 2; $null = Wait-Until { (Get-El $win 'btnBuildPlan').Current.IsEnabled } 180
