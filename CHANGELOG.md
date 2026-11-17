@@ -16,6 +16,7 @@ All notable changes to Update Planner are documented in this file.
 - Test the density and the vacant area of every view at the work area.
 - List the guide images that no capture run produced.
 - Show the hover and pressed look of each button in the guide.
+- Add the test plan.
 
 ### Fixed
 
