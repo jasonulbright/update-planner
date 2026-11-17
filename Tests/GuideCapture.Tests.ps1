@@ -77,7 +77,7 @@ Describe 'Capture scripts' {
         [System.IO.File]::ReadAllText($script:InvokePath) | Should -Match '-ArgumentList \$root, \$LogonUser, \$captureJson, \$taskName'
     }
 
-    It 'takes the capture lock with New-Item and an IOException catch, and treats a lock older than 60 minutes as stale' {
+    It 'takes the capture lock with New-Item and an IOException catch, and treats a lock as stale only after 30 minutes with no running owner' {
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:InvokePath, [ref]$null, [ref]$null)
         $newItem = @($ast.FindAll({
                     param($n)
@@ -93,8 +93,10 @@ Describe 'Capture scripts' {
         $catch.Count | Should -Be 1
         $text = [System.IO.File]::ReadAllText($script:InvokePath)
         $text | Should -Match "\`$lockPath = 'C:\\guide\\capture\.lock'"
-        $text | Should -Match '-ArgumentList \$lockPath, \$lockToken, 60, \$LockWaitMinutes'
-        $text | Should -Match 'TotalMinutes -gt \$staleMinutes'
+        $text | Should -Match '-ArgumentList \$lockPath, \$lockToken'
+        $text | Should -Match '\[int\]\$age -gt 30 -and \$aliveLab -ne ''True'' -and -not \(Get-Process -Id \$ownerPid'
+        $text | Should -Match 'The stale lab lock .* was removed'
+        $text | Should -Match '''unknown: '' \+ \$held'
     }
 
     It 'works in its own folder and its own task, removes only its own files and the lock, and never removes C:\guide' {
@@ -105,7 +107,6 @@ Describe 'Capture scripts' {
         $text | Should -Not -Match 'TaskName GuideShots\b'
         $removals = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Remove-Item' }, $true))
         foreach ($c in $removals) { $c.Extent.Text | Should -Not -Match "C:\\guide\b(?!\\)" -Because $c.Extent.Text }
-        $text | Should -Match 'Remove-Item -LiteralPath \$path -Force'
     }
 
     It 'stops a running capture in the finally block before it removes the task, the folder and the lock' {
@@ -126,11 +127,8 @@ Describe 'Capture scripts' {
         $tail | Should -Match '-like "\*\$r\\\*"'
     }
 
-    It 'does not spin on a stale lock, re-reads the age before the delete and touches the lock while it runs' {
+    It 'does not spin, never removes a live owner lock and touches the lock while it runs' {
         $text = [System.IO.File]::ReadAllText($script:InvokePath)
-        $text | Should -Match '\$again = Get-Item -LiteralPath \$path'
-        $text | Should -Match 'if \(-not \(Test-Path -LiteralPath \$path\)\) \{ continue \}'
-        $text | Should -Not -Match '(?s)Remove-Item -LiteralPath \$path -Force -ErrorAction SilentlyContinue\s*\r?\n\s*continue'
         $text | Should -Match '\.LastWriteTime = Get-Date'
     }
 
