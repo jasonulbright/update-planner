@@ -17,6 +17,10 @@ All notable changes to Update Planner are documented in this file.
 - List the guide images that no capture run produced.
 - Show the hover and pressed look of each button in the guide.
 
+### Fixed
+
+- Guard the buttons of the vendored SuiteCommon dialogs: the check no longer skips them, and the vendored SuiteCommon gives its dialogs ThemedButtonStyle.
+
 ## [2026.11.15.0013] - 2026-11-15
 
 ## 9 disabled controls now dim
