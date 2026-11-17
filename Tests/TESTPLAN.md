@@ -16,6 +16,9 @@ Window tests: `Window.Tests.ps1` and the other `*.Window.Tests.ps1` files open w
 | Area | File | Contents |
 |---|---|---|
 | Module | `UpdatePlannerCommon.Tests.ps1` | The module functions with stubbed ConfigMgr commands, including `-WhatIf` on the plan and deployment writes |
+| Shell logic | `Shell.Logic.Tests.ps1` | The functions of `start-updateplanner.ps1`, cut from its syntax tree and run on stand-in controls: preferences file, status bar, control state, wave list, report text, action log |
+| Script contract | `Script.Contract.Tests.ps1` | Every call with named parameters in the start script and the module matches the real function signature |
+| Start-up | `Startup.Tests.ps1` | No console: plain message, console check before the window, exit code 2, no site call on bad input |
 | Module and window | `UpdatePlannerWindow.Tests.ps1` | The module calls that the window makes |
 | Windows | `Window.Tests.ps1` | Main window and Options dialog, both themes, 1024x720 and the work area: names, titles, no clipped text, nothing off screen, contrast |
 | Chrome | `Chrome.Window.Tests.ps1` | Chrome and buttons of the main window and of every dialog, both themes |
@@ -31,5 +34,5 @@ Window tests: `Window.Tests.ps1` and the other `*.Window.Tests.ps1` files open w
 
 - The tests stub the ConfigMgr commands. No test calls a real site. The module calls are not run in the lab.
 - The refresh, the plan and the deploy handlers run inside the window with a site. The tests cover the module calls that they make, not the clicks.
-- Shell logic, script contract and startup tests do not exist yet. The start script is parsed by the guards only.
+- The window code of the start script (event handlers, the background run, the dialogs) is not run by the shell logic tests. The window tests open it.
 - The settings save in SuiteCommon is not atomic. The fix belongs in `app-packager-suite`.

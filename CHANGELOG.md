@@ -17,6 +17,7 @@ All notable changes to Update Planner are documented in this file.
 - List the guide images that no capture run produced.
 - Show the hover and pressed look of each button in the guide.
 - Add the test plan.
+- Test the shell logic, the script calls and the start-up without the console (Shell.Logic, Script.Contract and Startup tests).
 
 ### Fixed
 
