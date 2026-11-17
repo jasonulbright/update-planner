@@ -4,7 +4,7 @@ Measured 2026-11-17 with `Invoke-Checks.ps1` (Pester 5.7.1, PSScriptAnalyzer 1.2
 
 | | Windows PowerShell 5.1 | PowerShell 7 |
 |---|---|---|
-| Passed | 432 | 422 |
+| Passed | 495 | 485 |
 | Skipped (window tests, opt-in off) | 128 | 127 |
 
 Run: `.\Invoke-Checks.ps1` (lint, then tests). It runs in CI on both hosts (`.github/workflows/ci.yml`).
