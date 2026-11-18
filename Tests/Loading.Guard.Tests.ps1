@@ -14,6 +14,7 @@ Describe 'The plan build can be cancelled and reports partial data' {
     }
 
     It 'sets the cancel flag from the button and keeps a cancel flag and a note list in the state of the work' {
+        $script:Shell | Should -Match '\$btnCancelWork\s+= \$window\.FindName\(''btnCancelWork''\)' -Because 'a button that the script uses must be looked up, or the script stops at start'
         $script:Shell | Should -Match '\$btnCancelWork\.Add_Click'
         $script:Shell | Should -Match "\`$script:BgState\['Cancel'\] = \`$true"
         $script:Shell | Should -Match 'Cancel = \$false; Notes = \[System\.Collections\.ArrayList\]::Synchronized'
@@ -27,5 +28,14 @@ Describe 'The plan build can be cancelled and reports partial data' {
 
     It 'treats a cancel as a cancel, not as a failed step' {
         $script:Shell | Should -Match "ErrorMsg -like '\*cancelled\*'"
+    }
+}
+
+Describe 'The start script looks up every control that it uses' {
+    It 'finds every $btn control that has an Add_Click handler in a FindName call' {
+        $names = [regex]::Matches($script:Shell, '(?m)^\$(btn\w+)\.Add_Click') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+        $names.Count | Should -BeGreaterThan 5
+        $missing = foreach ($n in $names) { if ($script:Shell -notmatch ('\$' + $n + '\s*= \$window\.FindName')) { $n } }
+        @($missing) | Should -BeNullOrEmpty
     }
 }

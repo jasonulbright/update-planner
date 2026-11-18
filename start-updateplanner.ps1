@@ -161,6 +161,7 @@ $gridResults   = $window.FindName('gridResults')
 $progressOverlay  = $window.FindName('progressOverlay')
 $txtProgressTitle = $window.FindName('txtProgressTitle')
 $txtProgressStep  = $window.FindName('txtProgressStep')
+$btnCancelWork    = $window.FindName('btnCancelWork')
 
 $lblLogOutput = $window.FindName('lblLogOutput')
 $txtLog       = $window.FindName('txtLog')
