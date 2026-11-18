@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.18.0014] - 2026-11-18
+
+## 15 changes: per-collection update status, notes, Cancel, 1080p layout
+
 ### Changed
 
 - Compact density for a 1080p work area: 36 px sidebar, 26 px controls, 24 px rows.
