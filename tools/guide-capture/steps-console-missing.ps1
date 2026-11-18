@@ -12,5 +12,5 @@ Start-Sleep -Seconds 1
 Shot $m 'start-console-missing'
 Log ('message window size: ' + $m.Current.BoundingRectangle.Width + 'x' + $m.Current.BoundingRectangle.Height)
 Focus-Win $m; Send-Keys '{ENTER}'; Start-Sleep -Seconds 2
-Log ('app processes left: ' + @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -like '*start-updateplanner.ps1*' }).Count)
+Log ('app processes left: ' + [int]($script:AppProcs['start-updateplanner.ps1'] -and -not $script:AppProcs['start-updateplanner.ps1'].HasExited))
 Stop-App 'start-updateplanner.ps1'

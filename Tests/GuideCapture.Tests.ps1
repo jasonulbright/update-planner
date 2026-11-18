@@ -115,7 +115,7 @@ Describe 'Capture scripts' {
         $iFinally | Should -BeGreaterThan 0
         $tail = $text.Substring($iFinally)
         $iStop = $tail.IndexOf('Stop-ScheduledTask')
-        $iKill = $tail.IndexOf('Stop-Process')
+        $iKill = $tail.IndexOf('stopRecorded')
         $iUnregister = $tail.IndexOf('Unregister-ScheduledTask')
         $iFolder = $tail.IndexOf('Remove-Item $r -Recurse')
         $iLock = $tail.IndexOf('Remove-Item -LiteralPath $path -Force')
@@ -124,7 +124,7 @@ Describe 'Capture scripts' {
         $iUnregister | Should -BeGreaterThan $iKill
         $iFolder | Should -BeGreaterThan $iUnregister
         $iLock | Should -BeGreaterThan $iFolder
-        $tail | Should -Match '-like "\*\$r\\\*"'
+        $tail | Should -Match 'Join-Path \$r ''ui\\run\.pids'''
     }
 
     It 'does not spin, never removes a live owner lock and touches the lock while it runs' {
