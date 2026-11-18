@@ -256,7 +256,6 @@ Describe 'Get-UpdatePlannerState' {
         Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_UpdateComplianceStatus*' } {
             [pscustomobject]@{ MachineID = 100; CI_ID = 1 }
             [pscustomobject]@{ MachineID = 101; CI_ID = 1 }
-            [pscustomobject]@{ MachineID = 999; CI_ID = 1 }
         }
         Mock -ModuleName UpdatePlannerCommon Get-CMCollection {
             [pscustomobject]@{ CollectionID = 'ABC00001'; Name = 'Pilot'; CollectionType = 2; MemberCount = 2 }
@@ -295,7 +294,7 @@ Describe 'Get-UpdatePlannerState' {
     }
 
     It 'closes the site drive when a read fails' {
-        Mock -ModuleName UpdatePlannerCommon Get-CMSoftwareUpdate { throw 'provider error' }
+        Mock -ModuleName UpdatePlannerCommon Get-CMCollection { throw 'provider error' }
         { Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot' } | Should -Throw '*provider error*'
         Should -Invoke -ModuleName UpdatePlannerCommon Disconnect-UpSite -Times 1 -Exactly -Scope It
     }
@@ -337,6 +336,57 @@ Describe 'Get-UpdatePlannerState' {
         [void](Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot')
         Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateGroup -Times 0 -Scope It
         Should -Invoke -ModuleName UpdatePlannerCommon New-CMSoftwareUpdateDeployment -Times 0 -Scope It
+    }
+
+    It 'limits the update status query to the members of the target collection and reads no member' {
+        Mock -ModuleName UpdatePlannerCommon Get-CMCollectionMember { throw 'members must not be read' }
+        $objState = Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot'
+        $objState.Collections[0].MemberCount | Should -Be 2
+        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -Times 1 -Exactly -Scope It -ParameterFilter { $Query -like '*INNER JOIN SMS_CM_RES_COLL_ABC00001 AS c ON c.ResourceID = ucs.MachineID WHERE ucs.Status = 2' }
+        Should -Invoke -ModuleName UpdatePlannerCommon Get-CMCollectionMember -Times 0 -Scope It
+    }
+
+    It 'is complete and has no note when every slice reads' {
+        $objState = Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot'
+        $objState.IsComplete | Should -BeTrue
+        @($objState.Notes).Count | Should -Be 0
+    }
+
+    It 'gives a note for a slice that fails for good and still returns the rest' {
+        Mock -ModuleName UpdatePlannerCommon Get-CMSoftwareUpdateDeployment { throw 'Invalid query' }
+        $objState = Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot'
+        $objState.IsComplete | Should -BeFalse
+        @($objState.Notes).Count | Should -Be 1
+        $objState.Notes[0] | Should -Match 'Software update deployments failed after 1 attempt'
+        $objState.Summary.TotalUpdates | Should -Be 2
+        @($objState.Collections).Count | Should -Be 1
+        @($objState.Deployments).Count | Should -Be 0
+    }
+
+    It 'gives a note for the update status of a collection and keeps the collection' {
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_UpdateComplianceStatus*' } { throw 'Invalid query' }
+        $objState = Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot'
+        $objState.IsComplete | Should -BeFalse
+        $objState.Notes[0] | Should -Match 'Update status of collection ABC00001 failed'
+        @($objState.Collections).Count | Should -Be 1
+        $objState.Collections[0].NeededByUpdate.Count | Should -Be 0
+    }
+
+    It 'retries a transient fault of one slice and gives no note' {
+        $env:UP_TEST_HIT = '0'
+        Mock -ModuleName UpdatePlannerCommon Get-CMSoftwareUpdateDeployment { $env:UP_TEST_HIT = [string]([int]$env:UP_TEST_HIT + 1); if ($env:UP_TEST_HIT -eq '1') { throw 'The operation has timed out.' }; [pscustomobject]@{ AssignmentID = 5; AssignmentName = 'X'; TargetCollectionID = 'ABC00001'; AssignedCIs = @(1); EnforcementDeadline = $null } }
+        $objState = Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot'
+        $objState.IsComplete | Should -BeTrue
+        @($objState.Deployments).Count | Should -Be 1
+        $env:UP_TEST_HIT | Should -Be '2'
+        Remove-Item -Path Env:UP_TEST_HIT -ErrorAction SilentlyContinue
+    }
+
+    It 'shows the step in the state of the work and stops when the cancel flag is set' {
+        $hashState = [hashtable]::Synchronized(@{ Notes = (New-Object -TypeName 'System.Collections.ArrayList'); Step = ''; Cancel = $true })
+        { Get-UpdatePlannerState -ComputerName $script:strProvider -SiteCode 'ABC' -TargetCollection 'Pilot' -State $hashState } | Should -Throw '*cancelled*'
+        Should -Invoke -ModuleName UpdatePlannerCommon Disconnect-UpSite -Times 1 -Exactly -Scope It
+        $hashState['Step'] | Should -Be 'Reading the synchronization status...'
     }
 
     It 'uses no CIM command' {
