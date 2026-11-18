@@ -17,11 +17,11 @@ A plan. Before **Build Plan**, the page shows "Build a plan to see the report." 
 
 ## Steps
 
-### Read the report
+### View the report
 
 1. Select **Report** in the sidebar.
 2. Select **Markdown** or **HTML Source**.
-3. Read the text. Use the scroll bar to move in it.
+3. Review the text. Use the scroll bar to move in it.
 
 ![The Report page with the Markdown text of the plan](../images/report-markdown.png)
 

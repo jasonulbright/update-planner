@@ -30,7 +30,7 @@ None.
 | Provider | The SMS Provider: the computer that gives access to the site data. |
 | Skipped update | An update that the plan did not put in a wave. The grid lists the reason. |
 | Superseded | An update that a newer update replaces. |
-| Wave | One step of the rollout. A wave has a collection, a start date, a deadline and a list of updates. |
+| Wave | The term that Update Planner uses for one step of a rollout: a device collection with a start date, a deadline and a list of updates. ConfigMgr has no object called a wave. The closest object is a phase of a phased deployment. |
 | Wave collection | A device collection that is one wave. The first collection in the list is wave 1. |
 
 ## Steps

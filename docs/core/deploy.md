@@ -26,7 +26,7 @@ The tool never edits or deletes an existing deployment or group. It does not cre
 
 1. Build a plan.
 2. Select **Deploy** in the sidebar.
-3. Read the upper grid. It has one row for each wave that holds updates.
+3. Review the upper grid. It has one row for each wave that holds updates.
 
 ![The Deploy page with the Enable Actions switch off](../images/deploy-off.png)
 
@@ -36,8 +36,8 @@ Each deployment, and its software update group, is named `UpdatePlanner <plan ID
 
 1. Select the **Enable Actions** switch. It shows **On**.
 2. Select **Dry Run**. The overlay shows "Running the deploy step with -WhatIf...". A dry run does not open the site drive.
-3. Read the lower grid. Each row shows **Dry run** in **Result** and the message "Would create this deployment. Nothing was created."
-4. Read the log. It ends with "DryRun: 3 results, 0 created, 0 failed."
+3. Review the lower grid. Each row shows **Dry run** in **Result** and the message "Would create this deployment. Nothing was created."
+4. Review the log. It ends with "DryRun: 3 results, 0 created, 0 failed."
 
 ![The Deploy page with the switch on and both buttons on](../images/deploy-on.png)
 
@@ -50,7 +50,7 @@ A dry run writes one record to the action log. See [Files and logs](../reference
 ### Create the deployments
 
 1. Select **Deploy...**. The tool first checks the plan (see [Deploy to a built-in collection](#deploy-to-a-built-in-collection)). Then a confirmation with the title **Create Deployments** shows.
-2. Read the text. The tool builds it as follows. `<n>` is the number of waves that hold updates. There is one line for each of these waves.
+2. Review the text. The tool builds it as follows. `<n>` is the number of waves that hold updates. There is one line for each of these waves.
 
    ```text
    Create <n> software update groups and <n> deployments on site <site code> (provider <SMS Provider>)?

@@ -286,7 +286,7 @@ function Update-ControlState {
 
 # === View switching ===
 $script:ViewMeta = @{
-    'Plan'   = @{ Title = 'Plan';   Subtitle = 'Add the wave collections in the order of the rollout, set the dates, then click Build Plan. Building a plan changes nothing on the site.' }
+    'Plan'   = @{ Title = 'Plan';   Subtitle = 'Add the wave collections in the order of the rollout, set the dates, then select Build Plan. Building a plan changes nothing on the site.' }
     'Report' = @{ Title = 'Report'; Subtitle = 'The plan as the Markdown review text or as an HTML report.' }
     'Deploy' = @{ Title = 'Deploy'; Subtitle = 'Turn on Enable Actions to use the dry run and the deployment step. Every deployment asks for a confirmation.' }
 }
@@ -574,7 +574,7 @@ $btnBuildPlan.Add_Click({
         param($plan)
         foreach ($note in @($plan.LoadNotes)) { Add-LogLine ('Build Plan: {0}' -f $note) }
         if (-not $plan.LoadComplete) {
-            Add-LogLine 'Build Plan: the plan is built from incomplete data. Read the notes above and build it again before you apply it.'
+            Add-LogLine 'Build Plan: the plan is built from incomplete data. Review the notes above and build it again before you apply it.'
             Set-StatusText 'Plan built from incomplete data. See the log.'
         }
         Show-Plan -Plan $plan
@@ -813,10 +813,10 @@ function Show-OptionsDialog {
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Margin="0,4,0,2" Text="SMS Provider FQDN"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4" Height="26"
-                         Controls:TextBoxHelper.Watermark="e.g. sms01.example.com"/>
+                         Controls:TextBoxHelper.Watermark="For example, sms01.example.com"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Text="Site Code"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4" Height="26"
-                         Controls:TextBoxHelper.Watermark="e.g. ABC. Three letters or digits." Width="240" HorizontalAlignment="Left"/>
+                         Controls:TextBoxHelper.Watermark="For example, ABC" Width="240" HorizontalAlignment="Left"/>
                 <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
@@ -919,7 +919,7 @@ $window.Add_Loaded({
     try { [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { if ($script:IsBusy) { return }; Show-OptionsDialog }) }
     catch { Write-Log ('Footer: {0}' -f $_.Exception.Message) -Level ERROR -Quiet; Add-LogLine 'The footer failed. The log file has the details.' }
     Sync-FooterSite
-    Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then click Build Plan.'
+    Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then select Build Plan.'
 })
 
 # Suite update notice: one shared daily lookup across the suite tools; the launcher installs.

@@ -2,6 +2,8 @@
 
 Update Planner plans software update rollouts in waves for a Configuration Manager site. This page links every page of the documentation.
 
+Update Planner uses the term wave for one step of a rollout. A wave is one device collection with a start date, a deadline and a list of updates. ConfigMgr has no object called a wave. The closest ConfigMgr object is a phase of a phased deployment.
+
 ## Start
 
 - [Getting started](getting-started.md): install, set the connection, build the first plan.
@@ -38,14 +40,14 @@ Update Planner plans software update rollouts in waves for a Configuration Manag
 
 ## Retake the captures
 
-One command regenerates every image in `docs/images`. Run it from the repository folder on the workstation. It copies the tool to a lab workstation, runs the capture steps in an interactive session there (a scheduled task), copies the images back and removes its files and the task from the lab workstation.
+One command regenerates every image in `docs/images`. Run it from the repository folder on your computer. It copies the tool to a lab device, runs the capture steps in an interactive session there (a scheduled task), copies the images back and removes its files and the task from the lab device.
 
 ```powershell
-.\tools\guide-capture\Invoke-GuideCapture.ps1 -CredentialScript <credential script> -Target <lab workstation> -LogonUser <domain\account> -SiteCode <site code> -SmsProvider <provider FQDN> -Waves '<collection 1>', '<collection 2>', '<collection 3>'
+.\tools\guide-capture\Invoke-GuideCapture.ps1 -CredentialScript <credential script> -Target <lab device> -LogonUser <domain\account> -SiteCode <site code> -SmsProvider <provider FQDN> -Waves '<collection 1>', '<collection 2>', '<collection 3>'
 ```
 
-- The credential script is outside the repository. It sets `$LabCredential` to a PSCredential with PowerShell remoting rights on the lab workstation.
-- The lab workstation needs the Configuration Manager console and a lab site with at least three device collections.
+- The credential script is outside the repository. It sets `$LabCredential` to a PSCredential with PowerShell remoting rights on the lab device.
+- The lab device needs the Configuration Manager console and a lab site with at least three device collections.
 - The capture reads the site and runs a dry run. It opens the deploy confirmation and selects **No**. It never creates a deployment.
 - The command replaces an image only when every step passed. It stops with the failed steps when a step failed.
 - The command replaces only the images that are already in `docs/images`. Add `-AddNew` to also copy the images of a new page.

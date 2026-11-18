@@ -17,20 +17,20 @@ A plan. Both grids are empty until you select **Build Plan**.
 
 ## Steps
 
-### Read the planned updates
+### View the planned updates
 
 1. Select **Build Plan** on the Plan page.
 2. Select the **Planned Updates** tab.
-3. Read one row for each update in each wave.
+3. Review the grid. It has one row for each update in each wave.
 
 ![The Planned Updates grid with eight rows](../images/plan-planned.png)
 
 A title that is longer than its column ends with an ellipsis. Hold the pointer over the title to read the full title in a tooltip. The Markdown and the HTML report hold the full titles.
 
-### Read the skipped updates
+### View the skipped updates
 
 1. Select the **Skipped Updates** tab. The tab header shows the number of skipped updates that the plan lists, for example **Skipped Updates (8)**.
-2. Read the **Reason** of each row.
+2. Review the **Reason** of each row.
 
 ![The Skipped Updates grid with eight superseded updates](../images/plan-skipped.png)
 
@@ -96,7 +96,7 @@ The order inside a wave is severity (high to low), then the number of devices ac
 
 | Message | Cause | Fix |
 |---|---|---|
-| The Planned Updates grid is empty and the summary says 0 planned assignments. | No device in a wave collection needs an update, or the lowest severity is too high. | Read the **Skipped Updates** grid and the site totals in the summary. Add a wave collection with devices, or lower **Lowest Severity**. |
+| The Planned Updates grid is empty and the summary says 0 planned assignments. | No device in a wave collection needs an update, or the lowest severity is too high. | Review the **Skipped Updates** grid and the site totals in the summary. Add a wave collection with devices, or lower **Lowest Severity**. |
 | The skipped update has no wave. | The skip applies to the whole plan, not to one wave. | None. |
 
 ## Links

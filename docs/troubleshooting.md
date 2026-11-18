@@ -16,7 +16,7 @@ None. Some fixes need rights on the site.
 
 ## Steps
 
-1. Read the message. A message in `<angle brackets>` shows a value that the tool inserts.
+1. Review the message. A message in `<angle brackets>` shows a value that the tool inserts.
 2. Find the message in the tables below.
 3. Do the fix.
 4. Select **Build Plan** again.
@@ -40,7 +40,7 @@ None. Some fixes need rights on the site.
 
 | Message or symptom | Cause | Fix |
 |---|---|---|
-| The plan has 0 planned assignments. | No device in the wave collections needs an update, or **Lowest Severity** is too high. | Read **Skipped Updates** and the site totals in the summary. |
+| The plan has 0 planned assignments. | No device in the wave collections needs an update, or **Lowest Severity** is too high. | Review the **Skipped Updates** grid and the site totals in the summary. |
 | An update that you expect is missing. | The update is superseded, expired, below the severity, already deployed to the collection, or over the wave limit. | Find the update in **Skipped Updates**. To check whether an update is expired, find it with `Get-CMSoftwareUpdate -Fast` on the site drive and read `IsExpired`. See [Plan grids](core/plan-grids.md). |
 | The report has no WSUS line. | **Include WSUS Counts** is cleared, or the WSUS read failed (PowerShell remoting to the provider, or `Get-WsusServer` on it). The plan builds without the counts. | Select **Include WSUS Counts** and build the plan again. Check PowerShell remoting and the right to run `Get-WsusServer` on the provider. |
 | A wave shows fewer updates than the site has. | The wave collection needs only part of them. | None. A wave holds only the updates that its devices need. |

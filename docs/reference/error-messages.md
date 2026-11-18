@@ -43,7 +43,7 @@ None.
 | Add at least one wave collection. | Dialog **Build Plan** | The wave list is empty. | Add a wave collection. |
 | A collection is in the wave list more than once. | Dialog **Build Plan** | The saved wave list holds the same collection twice. | Remove the duplicate. |
 | <name> is already in the wave list. | Log | You added a collection that is in the list. | None. |
-| The step failed. The log file has the details. | Log and status bar | A step failed. The log file holds the error text of the site or of the ConfigurationManager module. | Read the log file. Check the SMS Provider name and the rights. |
+| The step failed. The log file has the details. | Log and status bar | A step failed. The log file holds the error text of the site or of the ConfigurationManager module. | Review the log file. Check the SMS Provider name and the rights. |
 | The step failed. Check the site code, the SMS Provider and your account rights in Options. The log file has the details. | Message box **Step Failed** | The same. | The same. |
 | Cannot open site `<site code>` on `<provider>`. Check the site code and the SMS Provider name in Options, and the account rights. `<text>` | Log file | The site drive did not open: a wrong site code or provider name, no route to the provider, or no rights. | Check the values in **Options** and the account rights. |
 | Target collection "`<collection ID>`" matched 0 collections. It must match exactly one. | Log file | A wave collection no longer exists on the site, for example after a change of site. | Remove the wave. Add the collection again. |
