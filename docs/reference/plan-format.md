@@ -14,7 +14,7 @@ Use this page to read the plan file in a script or to load it in Deployment Help
 
 None.
 
-Update Planner writes its plan as a Suite ring plan, version 1. The file has the fields of a Deployment Helper ring plan (`Rings\<name>.json`) and some extra fields. Deployment Helper loads the file as a ring plan and ignores the extra fields. The schema is [schema/ring-plan.schema.json](../schema/ring-plan.schema.json). The same schema and the same test file are in the Deployment Helper repository.
+Deployment Helper uses the term ring for one wave of a rollout. In ConfigMgr, the closest object is a phase of a phased deployment. Windows servicing plans use the term deployment ring in a different sense. Update Planner writes its plan as a Suite ring plan, version 1. The file has the fields of a Deployment Helper ring plan (`Rings\<name>.json`) and some extra fields. Deployment Helper loads the file as a ring plan and ignores the extra fields. The schema is [schema/ring-plan.schema.json](../schema/ring-plan.schema.json). The same schema and the same test file are in the Deployment Helper repository.
 
 ## Fields
 

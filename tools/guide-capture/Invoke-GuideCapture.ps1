@@ -3,12 +3,12 @@
     Regenerates every image of the user guide with one command.
 
 .DESCRIPTION
-    Copies this app to a lab workstation, runs the capture steps in an interactive
+    Copies this app to a lab device, runs the capture steps in an interactive
     session of a lab account (scheduled task, interactive logon), copies the PNG
     files back, and removes the task and the copy. Only the images that already
     exist in docs\images are replaced, and only when every step passed.
 
-    One capture runs at a time on a lab workstation. The script takes the lock file
+    One capture runs at a time on a lab device. The script takes the lock file
     C:\guide\capture.lock (New-Item fails when the file exists) and waits while another
     capture holds it. The script touches the lock every 5 seconds while its capture runs, so a
     live capture never looks stale. A lock older than 60 minutes is stale and the script removes it.
@@ -20,7 +20,7 @@
     steps-console-missing.ps1 starts a copy of the app whose console lookup returns
     nothing (1 image).
 
-    The lab workstation needs the Configuration Manager console, a reachable SMS
+    The lab device needs the Configuration Manager console, a reachable SMS
     Provider and PowerShell remoting for the account of the credential script. The
     capture reads the site and runs a dry run. It opens the deploy confirmation and
     selects No. It never creates a deployment.

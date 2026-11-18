@@ -303,7 +303,7 @@
                 <StackPanel>
                     <TextBlock x:Name="txtModuleTitle" Text="Plan" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
-                               Text="Add the wave collections in the order of the rollout, set the dates, then click Build Plan. Building a plan changes nothing on the site."
+                               Text="Add the wave collections in the order of the rollout, set the dates, then select Build Plan. Building a plan changes nothing on the site."
                                FontSize="11"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource MahApps.Brushes.Gray1}"
@@ -315,10 +315,10 @@
                 <DockPanel LastChildFill="False">
                     <Button x:Name="btnBuildPlan" DockPanel.Dock="Left" Content="Build Plan"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="120"
-                            ToolTip="Read the site and build the plan without a change to the site."/>
+                            ToolTip="Get the software updates, collections and deployments from the site and build the plan. The site does not change."/>
                     <Button x:Name="btnLoadCollections" DockPanel.Dock="Left" Content="Load Collections"
                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="140"
-                            ToolTip="Read the device collections and the console folders from the site."/>
+                            ToolTip="Get the device collections and the console folders from the site."/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="btnExportJson" Content="Export JSON"
                                 Style="{StaticResource SquareInlineButtonStyle}"

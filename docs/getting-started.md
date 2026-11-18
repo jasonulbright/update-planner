@@ -64,7 +64,7 @@ A provider with no site code gives the same message.
 1. On the **Plan** page, select **Load Collections**. The tool reads the device collections and the console folders. The log shows "Loaded 26 device collections in 1 folders (site ABC)." with the numbers of your site.
 2. Select **Add...**. Select a collection in the picker and select **OK**. Repeat for each wave. The first collection is wave 1.
 3. Select **Build Plan**.
-4. Read the plan in the **Planned Updates** grid.
+4. Review the plan in the **Planned Updates** grid.
 
 ![The Plan page after Build Plan, with three wave collections and eight planned updates](images/plan-planned.png)
 

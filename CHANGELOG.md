@@ -4,6 +4,11 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Use ConfigMgr terms in the window text and the guide.
+- Define the terms wave and ring in the README and the guide.
+
 ## [2026.11.18.0014] - 2026-11-18
 
 ## 15 changes: per-collection update status, notes, Cancel, 1080p layout

@@ -23,7 +23,7 @@ The page turns a list of device collections and five settings into a plan. Colle
 ### Load the collections
 
 1. Select **Load Collections**. A progress overlay shows "Reading device collections and console folders...".
-2. Read the log. It ends with "Loaded 26 device collections in 1 folders (site ABC)." with your numbers.
+2. Review the log. It ends with "Loaded 26 device collections in 1 folders (site ABC)." with your numbers.
 
 **Add...** loads the collections by itself the first time. **Options** loads them again when you change the provider or the site code.
 
@@ -74,8 +74,8 @@ The order of the list is the order of the waves. Build the plan again after a ch
 ### Build the plan
 
 1. Select **Build Plan**. The overlay shows "Connecting to the SMS Provider...", then "Reading updates, collections and deployments...", then "Building the waves...".
-2. Read the summary under the settings. It shows the plan ID, the site code, the number of waves, the planned assignments and the skipped updates. It also shows the site totals: updates, needed, superseded, expired and existing deployments.
-3. Read the **Planned Updates** and **Skipped Updates** grids. See [Plan grids](plan-grids.md).
+2. Review the summary under the settings. It shows the plan ID, the site code, the number of waves, the planned assignments and the skipped updates. It also shows the site totals: updates, needed, superseded, expired and existing deployments.
+3. Review the **Planned Updates** and **Skipped Updates** grids. See [Plan grids](plan-grids.md).
 
 ![The overlay that shows while the tool builds the plan](../images/plan-building.png)
 

@@ -7,6 +7,8 @@
 
 Plan software update rollouts for a Configuration Manager site. Pick the wave collections, set the dates, and get a plan: which updates go to which collection, in which order, in which wave, and on which dates. Review the plan as a grid or as a report, export it, and create the deployments only when you choose to.
 
+Update Planner uses the term wave for one step of a rollout. A wave is one device collection with a start date, a deadline and a list of updates. ConfigMgr has no object called a wave. The closest ConfigMgr object is a phase of a phased deployment.
+
 ![Update Planner](docs/images/plan-planned.png)
 
 ## User guide
@@ -44,9 +46,9 @@ The tool connects with the Windows account that runs it. It stores no password a
    ```powershell
    powershell -ExecutionPolicy Bypass -File start-updateplanner.ps1
    ```
-3. Click **Options** and set the SMS Provider FQDN and the site code. Both are required. The footer then shows the site at the right end, for example `Site ABC`, a middle dot, and `sms01.example.com`. The footer is read-only. Click the site text to open Options.
-4. On the **Plan** view, click **Add...**. The first click loads the device collections. Pick each wave collection in rollout order.
-5. Set the dates and click **Build Plan**.
+3. Select **Options** and set the SMS Provider FQDN and the site code. Both are required. The footer then shows the site at the right end, for example `Site ABC`, a middle dot, and `sms01.example.com`. The footer is read-only. Select the site text to open Options.
+4. On the **Plan** view, select **Add...**. The first time, the picker loads the device collections. Pick each wave collection in rollout order.
+5. Set the dates and select **Build Plan**.
 
 Inside the AppPackager Suite, the launcher hands its site code and provider to the tool.
 

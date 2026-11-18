@@ -29,7 +29,7 @@ The script reads the site, writes `update-plan.json` and `update-plan.md`, and c
    .\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'ABC00014', 'ABC00016'
    ```
 
-3. Read the output. It shows the path of the two files.
+3. Review the output. It shows the path of the two files.
 
 ```text
 JsonPath                             MarkdownPath
@@ -47,7 +47,7 @@ The script writes the files to the current folder unless you set `-OutputPath`. 
    .\Invoke-UpdatePlanner.ps1 -ComputerName sms01.example.com -SiteCode ABC -TargetCollection 'ABC00014' -Apply -WhatIf
    ```
 
-2. Read the lines that begin with `What if: Performing the operation "Create software update group and deployment" on target`.
+2. Review the lines that begin with `What if: Performing the operation "Create software update group and deployment" on target`.
 
 The script still writes the plan files and overwrites earlier files with the same names. It creates no deployment.
 
@@ -83,7 +83,7 @@ The script has no parameter for the most updates in a wave. It uses 1000.
 | 0 | The script finished. |
 | 1 | A step failed. The message is on the error stream. |
 
-With `-Apply`, read the `Status` and the `Message` of each result object. A failed wave has `Status` `Failed`. The script exit code does not show this. To report a failed wave to a scheduled task, call the script from a wrapper that checks the results and exits with a code other than 0.
+With `-Apply`, review the `Status` and the `Message` of each result object. A failed wave has `Status` `Failed`. The script exit code does not show this. To report a failed wave to a scheduled task, call the script from another script that checks the results and exits with a code other than 0.
 
 ## Limits
 
