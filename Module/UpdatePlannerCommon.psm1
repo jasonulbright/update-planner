@@ -704,11 +704,26 @@ function Get-UpdatePlannerState {
         [string[]]$TargetCollection,
 
         [Parameter(Mandatory = $false)]
-        [switch]$IncludeWsus
+        [switch]$IncludeWsus,
+
+        [Parameter(Mandatory = $false)]
+        [System.Collections.IDictionary]$State
     )
 
     process {
         $objConnection = $null
+        # Every slice is read through Invoke-SuiteCMRead (retry of transient faults). A slice that fails for good adds one
+        # note and the rest still loads; the result says IsComplete = $false then. State (optional) carries Notes, Step and
+        # Cancel of the background work. Assigned in a statement: an empty list would unroll to $null in an if expression.
+        $listNote = New-Object -TypeName 'System.Collections.ArrayList'
+        if ($null -ne $State -and $null -ne $State['Notes']) { $listNote = $State['Notes'] }
+        $scriptStep = {
+            param($Text)
+            if ($null -ne $State) {
+                $State['Step'] = $Text
+                if ($State['Cancel']) { throw (New-Object -TypeName 'System.OperationCanceledException' -ArgumentList 'The read of the site state was cancelled.') }
+            }
+        }
         try {
             $hashtableConnect = @{ ComputerName = $ComputerName; SiteCode = $SiteCode }
             if ($PSBoundParameters.ContainsKey('Credential')) {
@@ -717,7 +732,10 @@ function Get-UpdatePlannerState {
             Write-Verbose -Message ('Opening site drive {0}: on {1}' -f $SiteCode, $ComputerName)
             $objConnection = Connect-UpSite @hashtableConnect
 
-            $objSyncRow = Get-CMSoftwareUpdateSyncStatus -ErrorAction Stop | Select-Object -First 1
+            & $scriptStep 'Reading the synchronization status...'
+            $objSyncRow = Invoke-SuiteCMRead -Description 'Software update synchronization status' -Notes $listNote -Default $null -ScriptBlock {
+                Get-CMSoftwareUpdateSyncStatus -ErrorAction Stop | Select-Object -First 1
+            }
             $objSync = $null
             if ($null -ne $objSyncRow) {
                 $objSync = [pscustomobject]@{
@@ -729,7 +747,9 @@ function Get-UpdatePlannerState {
             }
 
             $listUpdate = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objRow in (Get-CMSoftwareUpdate -Fast -ErrorAction Stop)) {
+            & $scriptStep 'Reading the software updates...'
+            $arrUpdateRow = @(Invoke-SuiteCMRead -Description 'Software updates' -Notes $listNote -Default @() -ScriptBlock { Get-CMSoftwareUpdate -Fast -ErrorAction Stop })
+            foreach ($objRow in $arrUpdateRow) {
                 $listUpdate.Add([pscustomobject]@{
                         CIId = [int]$objRow.CI_ID
                         ArticleId = [string]$objRow.ArticleID
@@ -745,25 +765,17 @@ function Get-UpdatePlannerState {
                     })
             }
 
-            # Status 2 means "update is required" on a device. No cmdlet returns this per
-            # device status, so this is the one documented fallback (Invoke-CMWmiQuery).
-            $hashtableRequired = @{}
-            foreach ($objRow in (Invoke-UpSiteQuery -Query 'SELECT MachineID, CI_ID FROM SMS_UpdateComplianceStatus WHERE Status = 2')) {
-                $strKey = [string]$objRow.CI_ID
-                if (-not $hashtableRequired.ContainsKey($strKey)) {
-                    $hashtableRequired[$strKey] = New-Object -TypeName 'System.Collections.Generic.HashSet[int]'
-                }
-                [void]$hashtableRequired[$strKey].Add([int]$objRow.MachineID)
-            }
-
             $listCollection = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
             foreach ($strTarget in $TargetCollection) {
+                & $scriptStep ('Reading the target collection {0}...' -f $strTarget)
                 $arrFound = @()
                 if ($strTarget -match '^[A-Za-z0-9]{8}$') {
-                    $arrFound = @(Get-CMCollection -Id $strTarget -ErrorAction SilentlyContinue)
+                    $arrFound = @(Invoke-SuiteCMRead -Description ('Collection {0}' -f $strTarget) -Notes $listNote -Default @() -ScriptBlock { Get-CMCollection -Id $strTarget -ErrorAction Stop })
+                    # The ID lookup is a first try: a name that looks like an ID is looked up by name next, and the note of a miss is dropped.
+                    if ($arrFound.Count -eq 0 -and $listNote.Count -gt 0 -and [string]$listNote[$listNote.Count - 1] -like ('Collection {0} failed*' -f $strTarget)) { $listNote.RemoveAt($listNote.Count - 1) }
                 }
                 if ($arrFound.Count -eq 0) {
-                    $arrFound = @(Get-CMCollection -Name $strTarget -DisableWildcardHandling -WarningAction SilentlyContinue -ErrorAction Stop)
+                    $arrFound = @(Invoke-SuiteCMRead -Description ('Collection {0}' -f $strTarget) -ScriptBlock { Get-CMCollection -Name $strTarget -DisableWildcardHandling -WarningAction SilentlyContinue -ErrorAction Stop })
                 }
                 if ($arrFound.Count -ne 1) {
                     throw ('Target collection "{0}" matched {1} collections. It must match exactly one.' -f $strTarget, $arrFound.Count)
@@ -773,27 +785,22 @@ function Get-UpdatePlannerState {
                     throw ('Target collection "{0}" is not a device collection.' -f $strTarget)
                 }
                 $strCollectionId = [string]$objFound.CollectionID
-                $hashtableMember = New-Object -TypeName 'System.Collections.Generic.HashSet[int]'
-                foreach ($objMember in (Get-CMCollectionMember -CollectionId $strCollectionId -ErrorAction Stop)) {
-                    [void]$hashtableMember.Add([int]$objMember.ResourceID)
-                }
+                # The member count comes with the collection: the members are not read. The devices that need an update
+                # are counted by the provider with a join on the members of this collection (status 2 = update required;
+                # no cmdlet returns this per device status, so this is the documented fallback, Invoke-CMWmiQuery).
+                & $scriptStep ('Reading the update status of {0}...' -f [string]$objFound.Name)
+                $strQuery = ('SELECT ucs.MachineID, ucs.CI_ID FROM SMS_UpdateComplianceStatus AS ucs INNER JOIN SMS_CM_RES_COLL_{0} AS c ON c.ResourceID = ucs.MachineID WHERE ucs.Status = 2' -f $strCollectionId)
                 $hashtableNeeded = @{}
-                foreach ($strKey in $hashtableRequired.Keys) {
-                    $intCount = 0
-                    foreach ($intResource in $hashtableRequired[$strKey]) {
-                        if ($hashtableMember.Contains($intResource)) {
-                            $intCount++
-                        }
-                    }
-                    if ($intCount -gt 0) {
-                        $hashtableNeeded[$strKey] = $intCount
-                    }
+                $arrRequired = @(Invoke-SuiteCMRead -Description ('Update status of collection {0}' -f $strCollectionId) -Notes $listNote -Default @() -ScriptBlock { Invoke-UpSiteQuery -Query $strQuery })
+                foreach ($objRow in $arrRequired) {
+                    $strKey = [string]$objRow.CI_ID
+                    if ($hashtableNeeded.ContainsKey($strKey)) { $hashtableNeeded[$strKey]++ } else { $hashtableNeeded[$strKey] = 1 }
                 }
-                $arrWindow = @(Get-UpCollectionWindow -CollectionId $strCollectionId)
+                $arrWindow = @(Invoke-SuiteCMRead -Description ('Maintenance windows of collection {0}' -f $strCollectionId) -Notes $listNote -Default @() -ScriptBlock { Get-UpCollectionWindow -CollectionId $strCollectionId })
                 $listCollection.Add([pscustomobject]@{
                         CollectionId = $strCollectionId
                         Name = [string]$objFound.Name
-                        MemberCount = $hashtableMember.Count
+                        MemberCount = [int]$objFound.MemberCount
                         MaintenanceWindowCount = $arrWindow.Count
                         MaintenanceWindows = $arrWindow
                         NeededByUpdate = $hashtableNeeded
@@ -801,7 +808,9 @@ function Get-UpdatePlannerState {
             }
 
             $listDeployment = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objRow in (Get-CMSoftwareUpdateDeployment -ErrorAction Stop)) {
+            & $scriptStep 'Reading the existing deployments...'
+            $arrDeploymentRow = @(Invoke-SuiteCMRead -Description 'Software update deployments' -Notes $listNote -Default @() -ScriptBlock { Get-CMSoftwareUpdateDeployment -ErrorAction Stop })
+            foreach ($objRow in $arrDeploymentRow) {
                 $listDeployment.Add([pscustomobject]@{
                         AssignmentId = [int]$objRow.AssignmentID
                         Name = [string]$objRow.AssignmentName
@@ -852,6 +861,8 @@ function Get-UpdatePlannerState {
                 Updates = $listUpdate.ToArray()
                 Collections = $listCollection.ToArray()
                 Deployments = $listDeployment.ToArray()
+                Notes = @($listNote)
+                IsComplete = ($listNote.Count -eq 0)
                 Summary = [pscustomobject]@{
                     TotalUpdates = $listUpdate.Count
                     NeededUpdates = $intNeeded

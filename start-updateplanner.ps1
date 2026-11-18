@@ -413,12 +413,13 @@ function Start-BackgroundWork {
     )
     Initialize-BgRunspace
     Stop-BackgroundWork
-    $script:BgState = [hashtable]::Synchronized(@{ Step = $Step; Done = $false; Result = $null; ErrorMsg = $null })
+    $script:BgState = [hashtable]::Synchronized(@{ Step = $Step; Done = $false; Result = $null; ErrorMsg = $null; Cancel = $false; Notes = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList)) })
     $script:BgOnDone = $OnDone
     $script:IsBusy = $true
     Update-ControlState
     $txtProgressTitle.Text = $Title
     $txtProgressStep.Text  = $Step
+    $btnCancelWork.IsEnabled = $true
     $progressOverlay.Visibility = [System.Windows.Visibility]::Visible
     Set-StatusText ($Title + '...')
 
@@ -445,6 +446,11 @@ function Start-BackgroundWork {
             $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
             $script:IsBusy = $false
             Update-ControlState
+            if ($script:BgState.Cancel -and $script:BgState.ErrorMsg -like '*cancelled*') {
+                Add-LogLine 'Cancelled. Nothing was changed.'
+                Set-StatusText 'Cancelled.'
+                return
+            }
             if ($script:BgState.ErrorMsg) {
                 # The window shows a fixed message. The exception text goes to the log file only.
                 try { Write-Log -Message ('Step failed: {0}' -f $script:BgState.ErrorMsg) -Level ERROR -Quiet } catch { $null = $_ }
@@ -523,6 +529,15 @@ function Show-Plan {
     Update-StatusBarSummary
 }
 
+$btnCancelWork.Add_Click({
+    if ($script:BgState -and -not $script:BgState.Done) {
+        $script:BgState['Cancel'] = $true
+        $btnCancelWork.IsEnabled = $false
+        Add-LogLine 'Cancel requested. The read stops before its next step.'
+        Set-StatusText 'Cancelling...'
+    }
+})
+
 $btnBuildPlan.Add_Click({
     $setting = Resolve-UpdatePlannerSetting `
         -ComputerName ([string]$global:Prefs.SMSProvider) -SiteCode ([string]$global:Prefs.SiteCode) `
@@ -548,11 +563,19 @@ $btnBuildPlan.Add_Click({
         param($A, $S)
         $p = @{ ComputerName = $A.Provider; SiteCode = $A.SiteCode; TargetCollection = $A.Target; IncludeWsus = $A.Wsus }
         $S.Step = 'Reading updates, collections and deployments...'
-        $state = Get-UpdatePlannerState @p
+        $state = Get-UpdatePlannerState @p -State $S
         $S.Step = 'Building the waves...'
-        New-UpdatePlan -State $state -StartDate $A.Start -WaveSpacingDays $A.Spacing -DeadlineDays $A.Deadline -MinimumSeverity $A.Severity -MaxUpdatesPerWave $A.Max
+        $plan = New-UpdatePlan -State $state -StartDate $A.Start -WaveSpacingDays $A.Spacing -DeadlineDays $A.Deadline -MinimumSeverity $A.Severity -MaxUpdatesPerWave $A.Max
+        $plan | Add-Member -NotePropertyName LoadNotes -NotePropertyValue @($state.Notes) -Force
+        $plan | Add-Member -NotePropertyName LoadComplete -NotePropertyValue ([bool]$state.IsComplete) -Force
+        $plan
     } -OnDone {
         param($plan)
+        foreach ($note in @($plan.LoadNotes)) { Add-LogLine ('Build Plan: {0}' -f $note) }
+        if (-not $plan.LoadComplete) {
+            Add-LogLine 'Build Plan: the plan is built from incomplete data. Read the notes above and build it again before you apply it.'
+            Set-StatusText 'Plan built from incomplete data. See the log.'
+        }
         Show-Plan -Plan $plan
         Add-LogLine ('Plan {0}: {1} waves, {2} assignments, {3} skipped.' -f $plan.PlanId, $plan.Summary.WavesPlanned, $plan.Summary.UpdateAssignmentsPlanned, $plan.Summary.SkippedListed)
     }
