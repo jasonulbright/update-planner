@@ -190,8 +190,9 @@ Section 'light' {
 Section 'persist' {
   Invoke-El (Get-El $win 'btnViewApply'); Start-Sleep -Milliseconds 500
   Invoke-El (Get-El $win 'Close'); Start-Sleep -Seconds 3
-  Log ('app still running: ' + @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -like '*start-updateplanner.ps1*' }).Count)
+  Log ('app still running: ' + [int]($script:AppProcs['start-updateplanner.ps1'] -and -not $script:AppProcs['start-updateplanner.ps1'].HasExited))
   $win = Start-App 'start-updateplanner.ps1' 'Update Planner'; Shot $win 'start-reopen-saved-state'
 }
+# The browser windows that the app opened are its child processes. Stop those by process id; a browser that was already running stays.
+Stop-AppChildren 'start-updateplanner.ps1'
 Stop-App 'start-updateplanner.ps1'
-Get-Process msedge -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -gt (Get-Date).AddMinutes(-30) } | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }

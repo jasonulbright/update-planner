@@ -9,6 +9,10 @@ All notable changes to Update Planner are documented in this file.
 - Use ConfigMgr terms in the window text and the guide.
 - Define the terms wave and ring in the README and the guide.
 
+### Fixed
+
+- The guide capture tool stops only the processes that it started, by process id. It no longer stops PowerShell processes by command-line pattern, which could end the window of another session. A new guard test fails when a tool script stops a process by a pattern.
+
 ## [2026.11.18.0014] - 2026-11-18
 
 ## 15 changes: per-collection update status, notes, Cancel, 1080p layout
