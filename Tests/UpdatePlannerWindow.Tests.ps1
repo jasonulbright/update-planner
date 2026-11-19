@@ -254,7 +254,7 @@ Describe 'Get-UpdatePlannerCollection' {
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { [pscustomobject]@{ InstanceKey = 'ABC00010'; ContainerNodeID = 5 } }
         Mock -ModuleName UpdatePlannerCommon Get-CMFolder { [pscustomobject]@{ ContainerNodeID = 5; Name = 'Pilot rings'; ParentContainerNodeID = 0 } }
-        Mock -ModuleName UpdatePlannerCommon Get-CMDeviceCollection {
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*FROM SMS_Collection*' } {
             [pscustomobject]@{ CollectionID = 'SMS00001'; Name = 'All Systems'; MemberCount = 12 }
             [pscustomobject]@{ CollectionID = 'ABC00010'; Name = 'Ring 0'; MemberCount = 3 }
         }
@@ -267,8 +267,22 @@ Describe 'Get-UpdatePlannerCollection' {
         @($objList.Collections | Where-Object { $_.CollectionID -eq 'SMS00001' })[0].IsBuiltIn | Should -BeTrue
         @($objList.Folders)[0].Name | Should -Be 'Pilot rings'
         Should -Invoke -ModuleName UpdatePlannerCommon Get-CMFolder -Times 1 -Exactly -ParameterFilter { $TypeName -eq 'SMS_Collection_Device' }
-        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -Times 1 -Exactly
+        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -Times 2 -Exactly
         Should -Invoke -ModuleName UpdatePlannerCommon Disconnect-UpSite -Times 1 -Exactly
+    }
+
+    It 'reads the list with one SELECT of plain columns, however many collections the site has (<Count>)' -ForEach @(@{ Count = 2000 }, @{ Count = 20000 }) {
+        $global:Fx = $Count
+        Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
+        Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { }
+        Mock -ModuleName UpdatePlannerCommon Get-CMFolder { }
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*FROM SMS_Collection*' } { 1..$global:Fx | ForEach-Object { [pscustomobject]@{ CollectionID = ('ABC{0:D5}' -f $_); Name = ('C{0}' -f $_); MemberCount = $_ } } }
+        Mock -ModuleName UpdatePlannerCommon Get-CMDeviceCollection { throw 'the per-collection cmdlet must not be used for the list' }
+        $objList = Get-UpdatePlannerCollection -ComputerName 'sms01' -SiteCode 'ABC'
+        @($objList.Collections).Count | Should -Be $Count
+        Should -Invoke -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -Times 1 -Exactly -ParameterFilter { $Query -match '^SELECT CollectionID, Name, MemberCount FROM SMS_Collection WHERE CollectionType = 2$' }
+        Should -Invoke -ModuleName UpdatePlannerCommon Get-CMDeviceCollection -Times 0 -Exactly
     }
 }
 Describe 'Window files' {

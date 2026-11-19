@@ -1346,10 +1346,11 @@ function Get-UpdatePlannerCollection {
     # .DESCRIPTION
     # Opens the site drive and returns the data in the shape that the collection
     # picker of the window needs: collections with a folder ID, and the folder tree.
-    # Collections come from Get-CMDeviceCollection. Folders come from Get-CMFolder
-    # (TypeName SMS_Collection_Device). No cmdlet returns which folder holds a
-    # collection, so that link comes from Invoke-CMWmiQuery on SMS_ObjectContainerItem
-    # (documented fallback).
+    # Collections come from one SELECT of plain columns on SMS_Collection. Get-CMDeviceCollection
+    # makes one provider round trip for each collection (89 s at 2,000 collections on a LAN), so it is
+    # not used for the list. Folders come from Get-CMFolder (TypeName SMS_Collection_Device). No cmdlet
+    # returns which folder holds a collection, so that link comes from Invoke-CMWmiQuery on
+    # SMS_ObjectContainerItem (documented fallback).
     #
     # .PARAMETER ComputerName
     # The computer that runs the SMS Provider.
@@ -1413,7 +1414,7 @@ function Get-UpdatePlannerCollection {
                     })
             }
             $listCollection = New-Object -TypeName 'System.Collections.Generic.List[pscustomobject]'
-            foreach ($objRow in (Get-CMDeviceCollection -ErrorAction Stop)) {
+            foreach ($objRow in (Invoke-UpSiteQuery -Query 'SELECT CollectionID, Name, MemberCount FROM SMS_Collection WHERE CollectionType = 2')) {
                 $strId = [string]$objRow.CollectionID
                 $intFolder = 0
                 if ($hashtableFolderOf.ContainsKey($strId)) {
