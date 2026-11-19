@@ -272,12 +272,11 @@ Describe 'Get-UpdatePlannerCollection' {
     }
 
     It 'reads the list with one SELECT of plain columns, however many collections the site has (<Count>)' -ForEach @(@{ Count = 2000 }, @{ Count = 20000 }) {
-        $global:Fx = $Count
         Mock -ModuleName UpdatePlannerCommon Connect-UpSite { [pscustomobject]@{ SiteCode = 'ABC'; ComputerName = 'sms01'; PreviousLocation = 'C:\'; CreatedDrive = $true } }
         Mock -ModuleName UpdatePlannerCommon Disconnect-UpSite { }
         Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*SMS_ObjectContainerItem*' } { }
         Mock -ModuleName UpdatePlannerCommon Get-CMFolder { }
-        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*FROM SMS_Collection*' } { 1..$global:Fx | ForEach-Object { [pscustomobject]@{ CollectionID = ('ABC{0:D5}' -f $_); Name = ('C{0}' -f $_); MemberCount = $_ } } }
+        Mock -ModuleName UpdatePlannerCommon Invoke-UpSiteQuery -ParameterFilter { $Query -like '*FROM SMS_Collection*' } -MockWith ([scriptblock]::Create(('1..{0} | ForEach-Object {{ [pscustomobject]@{{ CollectionID = ("ABC{{0:D5}}" -f $_); Name = ("C{{0}}" -f $_); MemberCount = $_ }} }}' -f $Count)))
         Mock -ModuleName UpdatePlannerCommon Get-CMDeviceCollection { throw 'the per-collection cmdlet must not be used for the list' }
         $objList = Get-UpdatePlannerCollection -ComputerName 'sms01' -SiteCode 'ABC'
         @($objList.Collections).Count | Should -Be $Count
