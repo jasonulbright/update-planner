@@ -4,6 +4,10 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Loading the collection list no longer takes minutes at a large site. One query reads the whole list; the cmdlet that made one provider call for each collection is gone.
+
 ### Changed
 
 - Use ConfigMgr terms in the window text and the guide.
