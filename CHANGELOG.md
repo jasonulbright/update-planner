@@ -6,12 +6,13 @@ All notable changes to Update Planner are documented in this file.
 
 ## [2026.11.20.0015] - 2026-11-20
 
-## 4 changes: one-query collection list, ConfigMgr wording, safer capture tool
+## 5 changes: one-query collection list, ConfigMgr wording, tooltips, safer capture tool
 
 ### Changed
 
 - Use ConfigMgr terms in the window text and the guide.
 - Define the terms wave and ring in the README and the guide.
+- Add tooltips to buttons and fields.
 
 ### Fixed
 
