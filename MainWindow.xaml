@@ -358,7 +358,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ListBox x:Name="lstWaves" Grid.Column="0" MinHeight="116" MaxHeight="232" FontSize="12"
+                                <ListBox x:Name="lstWaves" Grid.Column="0" MinHeight="116" MaxHeight="232" FontSize="12" ToolTip="Device collections that get the updates, one wave each, in this order. Wave 1 is first."
                                          ItemContainerStyle="{StaticResource ThemedListBoxItemStyle}"
                                          Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                          BorderThickness="1"
@@ -391,20 +391,20 @@
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
                                 <TextBlock Text="Wave 1 Start Date" Style="{StaticResource FieldLabelStyle}"/>
-                                <DatePicker x:Name="dpStartDate" FontSize="12" Height="26"/>
+                                <DatePicker x:Name="dpStartDate" FontSize="12" Height="26" ToolTip="Select the date that wave 1 starts. Each later wave starts after the days between waves."/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,10">
                                 <TextBlock Text="Days Between Waves" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtSpacing" FontSize="12" Padding="6,4,6,4" Height="26" Text="7"/>
+                                <TextBox x:Name="txtSpacing" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the number of days from the start of one wave to the start of the next." Text="7"/>
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
                                 <TextBlock Text="Days to Deadline" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtDeadline" FontSize="12" Padding="6,4,6,4" Height="26" Text="3"/>
+                                <TextBox x:Name="txtDeadline" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the number of days from the start of a wave to its deadline." Text="3"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10">
                                 <TextBlock Text="Lowest Severity" Style="{StaticResource FieldLabelStyle}"/>
-                                <ComboBox x:Name="cboSeverity" FontSize="12" Height="26" ItemContainerStyle="{StaticResource ThemedComboBoxItemStyle}">
+                                <ComboBox x:Name="cboSeverity" FontSize="12" Height="26" ToolTip="Select the lowest severity to plan. Updates below it are skipped. All plans every severity." ItemContainerStyle="{StaticResource ThemedComboBoxItemStyle}">
                                     <ComboBoxItem Content="All" IsSelected="True"/>
                                     <ComboBoxItem Content="Low"/>
                                     <ComboBoxItem Content="Moderate"/>
@@ -414,7 +414,7 @@
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,10">
                                 <TextBlock Text="Most Updates per Wave" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBox x:Name="txtMaxUpdates" FontSize="12" Padding="6,4,6,4" Height="26" Text="1000"/>
+                                <TextBox x:Name="txtMaxUpdates" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the most updates that one wave holds. Updates over this number are skipped." Text="1000"/>
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,10" VerticalAlignment="Bottom">
                                 <CheckBox x:Name="chkWsus" Content="Include WSUS Counts" FontSize="12"
@@ -428,7 +428,7 @@
                     </Grid>
 
                     <TabControl Grid.Row="1" Controls:TabControlHelper.Underlined="TabPanel">
-                        <TabItem x:Name="tabPlanned" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                        <TabItem x:Name="tabPlanned" ToolTip="Show the updates of each wave with the start date and the deadline." Controls:HeaderedControlHelper.HeaderFontSize="13">
                             <TabItem.Header><TextBlock x:Name="txtTabPlanned" Text="Planned Updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridPlan"
                                       Style="{StaticResource ViewDataGrid}"
@@ -447,7 +447,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
-                        <TabItem x:Name="tabSkipped" Controls:HeaderedControlHelper.HeaderFontSize="13">
+                        <TabItem x:Name="tabSkipped" ToolTip="Show the updates that the plan leaves out, with the reason for each." Controls:HeaderedControlHelper.HeaderFontSize="13">
                             <TabItem.Header><TextBlock x:Name="txtTabSkipped" Text="Skipped Updates" Style="{StaticResource TabHeaderText}"/></TabItem.Header>
                             <DataGrid x:Name="gridSkipped"
                                       Style="{StaticResource ViewDataGrid}"
@@ -473,8 +473,8 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,0,8,8">
-                        <RadioButton x:Name="rdoMarkdown" Content="Markdown" IsChecked="True" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                        <RadioButton x:Name="rdoHtml"     Content="HTML Source" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <RadioButton x:Name="rdoMarkdown" ToolTip="Show the report as Markdown text." Content="Markdown" IsChecked="True" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <RadioButton x:Name="rdoHtml" ToolTip="Show the report as HTML source text."     Content="HTML Source" GroupName="ReportFormat" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Center"/>
                         <Button x:Name="btnOpenHtml" Content="Open HTML Report" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="150" Margin="8,0,8,0"
                                 ToolTip="Write the HTML report to the Reports folder and open it in the default browser."/>
                         <Button x:Name="btnCopyReport" Content="Copy" Style="{StaticResource SquareInlineButtonStyle}"
@@ -565,7 +565,7 @@
                                    HorizontalAlignment="Center"
                                    Margin="0,6,0,0"
                                    Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-                        <Button x:Name="btnCancelWork" Content="Cancel" Style="{StaticResource ThemedButtonStyle}"
+                        <Button x:Name="btnCancelWork" Content="Cancel" Style="{StaticResource ThemedButtonStyle}" ToolTip="Stop the running read before its next step."
                                 Width="100" Height="26" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>

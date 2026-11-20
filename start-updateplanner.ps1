@@ -803,8 +803,8 @@ function Show-OptionsDialog {
         </Grid.RowDefinitions>
         <Border Grid.Column="0" Grid.Row="0" Padding="6,12,0,12">
             <StackPanel>
-                <Button x:Name="btnCatConnection" Content="Connection" Style="{StaticResource CategoryRowStyle}"/>
-                <Button x:Name="btnCatAbout"      Content="About"      Style="{StaticResource CategoryRowStyle}"/>
+                <Button x:Name="btnCatConnection" Content="Connection" Style="{StaticResource CategoryRowStyle}" ToolTip="Show the SMS Provider and the site code settings."/>
+                <Button x:Name="btnCatAbout"      Content="About"      Style="{StaticResource CategoryRowStyle}" ToolTip="Show the version and the license of Update Planner."/>
             </StackPanel>
         </Border>
         <Border Grid.Column="1" Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray8}"/>
@@ -812,10 +812,10 @@ function Show-OptionsDialog {
             <StackPanel x:Name="paneConnection" Visibility="Visible">
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Margin="0,4,0,2" Text="SMS Provider FQDN"/>
-                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4" Height="26"
+                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the fully qualified domain name of the SMS Provider computer."
                          Controls:TextBoxHelper.Watermark="For example, sms01.example.com"/>
                 <TextBlock Style="{StaticResource OptLabel}" FontSize="14" FontWeight="Bold" Text="Site Code"/>
-                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4" Height="26"
+                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the three-character site code of the ConfigMgr site."
                          Controls:TextBoxHelper.Watermark="For example, ABC" Width="240" HorizontalAlignment="Left"/>
                 <TextBlock Text="The tool connects with the Windows account that runs it and stores no password. The tool needs the Configuration Manager console on this computer. A domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role. An account with fewer rights is not tested."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
