@@ -4,19 +4,20 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
-### Fixed
+## [2026.11.20.0015] - 2026-11-20
 
-- Loading the collection list no longer takes minutes at a large site. One query reads the whole list; the cmdlet that made one provider call for each collection is gone.
+## 5 changes: one-query collection list, ConfigMgr wording, tooltips, safer capture tool
 
 ### Changed
 
 - Use ConfigMgr terms in the window text and the guide.
 - Define the terms wave and ring in the README and the guide.
-- Add tooltips to 15 controls: the wave list, the plan fields, the report format options, the Cancel button, the two result tabs and the Options dialog.
+- Add tooltips to buttons and fields.
 
 ### Fixed
 
-- The guide capture tool stops only the processes that it started, by process id. It no longer stops PowerShell processes by command-line pattern, which could end the window of another session. A new guard test fails when a tool script stops a process by a pattern.
+- Read the collection list with one query, not one call per collection.
+- Stop only the processes the capture tool started, not other PowerShell windows.
 
 ## [2026.11.18.0014] - 2026-11-18
 
