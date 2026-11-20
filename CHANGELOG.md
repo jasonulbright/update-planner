@@ -12,6 +12,7 @@ All notable changes to Update Planner are documented in this file.
 
 - Use ConfigMgr terms in the window text and the guide.
 - Define the terms wave and ring in the README and the guide.
+- Add tooltips to 15 controls: the wave list, the plan fields, the report format options, the Cancel button, the two result tabs and the Options dialog.
 
 ### Fixed
 
