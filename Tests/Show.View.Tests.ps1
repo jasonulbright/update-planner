@@ -16,6 +16,8 @@ BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     Import-AppModule
     Add-Type -AssemblyName PresentationFramework
+    # WPF controls need an STA thread. Windows PowerShell and PowerShell 7 start in STA; a harness that starts MTA must add -STA.
+    if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { throw 'These tests create WPF controls and need an STA thread. Start the host with -STA.' }
     $script:Ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $script:AppRoot 'start-updateplanner.ps1'), [ref]$null, [ref]$null)
     foreach ($n in 'Show-Plan', 'Show-DeployResult', 'Update-WaveList', 'Get-ReportText', 'Update-ReportText', 'Update-ControlState', 'Update-StatusBarSummary') {
         $def = $script:Ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq $n }, $true)
@@ -126,19 +128,25 @@ Describe 'Show-DeployResult puts the results on the screen' {
         $gridResults = New-Object System.Windows.Controls.DataGrid
     }
 
-    It 'shows one row for each result and counts created and failed in the status text' {
+    It 'shows one row for each result, with the status and the message, and counts created and failed in the status text' {
         $results = @(
-            [pscustomobject]@{ Status = 'Created'; Wave = 'Pilot'; CollectionId = 'ABC00001'; UpdateCount = 2; AssignmentId = '16777217'; Message = 'Created' }
-            [pscustomobject]@{ Status = 'Failed'; Wave = 'Broad'; CollectionId = 'ABC00002'; UpdateCount = 2; AssignmentId = ''; Message = 'The site refused the deployment' })
+            [pscustomobject]@{ Status = 'Created'; Wave = 'Pilot'; CollectionId = 'ABC00001'; UpdateCount = 2; AssignmentId = 16777217; Message = 'Created' }
+            [pscustomobject]@{ Status = 'Failed'; Wave = 'Broad'; CollectionId = 'ABC00002'; UpdateCount = 2; AssignmentId = $null; Message = 'The site refused the deployment' })
         Show-DeployResult -Action 'Apply' -Results $results
         $gridResults.Items.Count | Should -Be 2
+        $gridResults.Items[0].Status | Should -Be 'Created'
+        $gridResults.Items[0].Wave | Should -Be 'Pilot'
+        $gridResults.Items[1].Status | Should -Be 'Failed'
+        $gridResults.Items[1].Message | Should -Be 'The site refused the deployment'
         $script:StatusText | Should -Match '1 created, 1 failed'
         $script:ActionRecords | Should -Contain 'Apply'
     }
 
-    It 'shows the one result of a one-wave run' {
-        Show-DeployResult -Action 'DryRun' -Results ([pscustomobject]@{ Status = 'WhatIf'; Wave = 'Pilot'; CollectionId = 'ABC00001'; UpdateCount = 2; AssignmentId = ''; Message = 'Dry run' })
+    It 'shows the one result of a one-wave dry run as a Dry run row (the module result for -WhatIf is Skipped)' {
+        Show-DeployResult -Action 'DryRun' -Results ([pscustomobject]@{ Status = 'Skipped'; Wave = 'Pilot'; CollectionId = 'ABC00001'; UpdateCount = 2; AssignmentId = $null; Message = 'Not confirmed or WhatIf.' })
         $gridResults.Items.Count | Should -Be 1
+        $gridResults.Items[0].Status | Should -Be 'Dry run'
+        $gridResults.Items[0].Message | Should -Match 'Nothing was created'
     }
 }
 
@@ -159,7 +167,8 @@ Describe 'Update-WaveList puts the wave collections in the list' {
         $script:WaveList = @(1..$Count | ForEach-Object { [pscustomobject]@{ Id = 'ABC0000{0}' -f $_; Name = 'Wave {0}' -f $_ } })
         Update-WaveList
         $lstWaves.Items.Count | Should -Be $Count
-        $lstWaves.Items[0] | Should -Be '1.  Wave 1   (ABC00001)'
+        @($lstWaves.Items) | Should -Be @(1..$Count | ForEach-Object { '{0}.  Wave {0}   (ABC0000{0})' -f $_ })
+        @($global:Prefs['Waves']).Count | Should -Be $Count
     }
 
     It 'lists nothing for an empty wave list' {
