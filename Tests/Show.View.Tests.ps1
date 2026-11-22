@@ -19,6 +19,24 @@ BeforeAll {
     # WPF controls need an STA thread. Windows PowerShell and PowerShell 7 start in STA; a harness that starts MTA must add -STA.
     if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { throw 'These tests create WPF controls and need an STA thread. Start the host with -STA.' }
     $script:Ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $script:AppRoot 'start-updateplanner.ps1'), [ref]$null, [ref]$null)
+
+    # A column binds to a property by name. A renamed or missing property leaves the column blank, with no error.
+    # The check reads the column bindings of the grid from MainWindow.xaml and looks for each name on the first row.
+    [xml]$script:MainXaml = Get-Content -LiteralPath (Join-Path $script:AppRoot 'MainWindow.xaml') -Raw
+    $script:MainXamlNs = New-Object System.Xml.XmlNamespaceManager($script:MainXaml.NameTable)
+    $script:MainXamlNs.AddNamespace('w', 'http://schemas.microsoft.com/winfx/2006/xaml/presentation')
+    $script:MainXamlNs.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    function Assert-GridBinding {
+        param($Grid, [string]$GridName)
+        $node = $script:MainXaml.SelectSingleNode(('//w:DataGrid[@x:Name=''{0}'']' -f $GridName), $script:MainXamlNs)
+        if (-not $node) { throw "grid $GridName not found in MainWindow.xaml" }
+        $columns = $node.SelectSingleNode('*[contains(local-name(), ''Columns'')]')
+        $text = if ($columns) { $columns.OuterXml } else { '' }
+        $paths = @([regex]::Matches($text, '\{Binding\s+(?:Path=)?([A-Za-z_][A-Za-z0-9_]*)(?![A-Za-z0-9_]*=)(?=[,}\s])') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+        $paths.Count | Should -BeGreaterThan 0 -Because "the grid $GridName has bound columns"
+        $Grid.Items.Count | Should -BeGreaterThan 0 -Because "the grid $GridName needs a row to check"
+        foreach ($path in $paths) { $null -ne $Grid.Items[0].PSObject.Properties[$path] | Should -BeTrue -Because "a column of $GridName binds to $path" }
+    }
     foreach ($n in 'Show-Plan', 'Show-DeployResult', 'Update-WaveList', 'Get-ReportText', 'Update-ReportText', 'Update-ControlState', 'Update-StatusBarSummary') {
         $def = $script:Ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq $n }, $true)
         if (-not $def) { throw "function $n not found in the script" }
@@ -88,6 +106,9 @@ Describe 'Show-Plan puts the plan on the screen' {
         @($gridPlan.Items | ForEach-Object Article) | Should -Contain 'KB5001'
         @($gridSkipped.Items | ForEach-Object Article) | Should -Contain 'KB5002'
         @($gridPreview.Items | ForEach-Object Collection) | Should -Contain 'Pilot'
+        Assert-GridBinding -Grid $gridPlan -GridName 'gridPlan'
+        Assert-GridBinding -Grid $gridSkipped -GridName 'gridSkipped'
+        Assert-GridBinding -Grid $gridPreview -GridName 'gridPreview'
     }
 
     It 'says what the plan holds in the summary text, the skipped tab title and the report' {
@@ -140,6 +161,7 @@ Describe 'Show-DeployResult puts the results on the screen' {
         $gridResults.Items[1].Message | Should -Be 'The site refused the deployment'
         $script:StatusText | Should -Match '1 created, 1 failed'
         $script:ActionRecords | Should -Contain 'Apply'
+        Assert-GridBinding -Grid $gridResults -GridName 'gridResults'
     }
 
     It 'shows the one result of a one-wave dry run as a Dry run row (the module result for -WhatIf is Skipped)' {
