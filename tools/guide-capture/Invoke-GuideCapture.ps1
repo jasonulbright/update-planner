@@ -181,6 +181,7 @@ try {
         if ($flag -ne 'finished') { Write-Warning ('{0}: {1}' -f $steps, $flag); $failed.Add(('{0}: {1}' -f $steps, $flag)) }
         $log = Join-Path $out 'run.log'
         if (Test-Path $log) { Get-Content $log | Where-Object { $_ -match 'ERROR' } | ForEach-Object { Write-Warning $_; $failed.Add($_) } }
+        Get-Content $log | Where-Object { $_ -match 'TOOLTIP still shown' } | ForEach-Object { Write-Warning $_ }
     }
     # A failed step stops the capture before any guide image is replaced.
     if ($failed.Count) { throw ("The capture failed. No image was replaced.`n" + ($failed -join "`n")) }
