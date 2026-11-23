@@ -30,7 +30,7 @@ Deployment Helper uses the term ring for one wave of a rollout. In ConfigMgr, th
 | `Rings[].UserNotification`, `OverrideServiceWindow`, `RebootOutsideServiceWindow`, `AllowMeteredConnection`, `DPGroup`, `SuccessThresholdPercent` | Deployment Helper ring fields with the defaults of the Deploy step. |
 | `Rings[].MemberCount`, `MaintenanceWindows`, `StartDate`, `DeadlineDate` | Extra. Information for the review. |
 | `Rings[].Updates[]` | Extra. The planned updates of the wave: `Sequence`, `CIId`, `ArticleId`, `Title`, `Severity`, `SeverityName`, `NeededDevices`. |
-| `Producer`, `CreatedUtc`, `Site` | Extra. The header of the file that **Send to Deployment Helper** writes: `Producer` (`Name` `UpdatePlanner` and `Version`), `CreatedUtc` (`yyyy-MM-ddTHH:mm:ssZ`, the time of the send) and `Site` (`SiteCode`). **Export JSON** does not write them. A reader that needs the age of a file refuses a file with no valid `CreatedUtc`. |
+| `Producer`, `CreatedUtc`, `Site` | Extra. The header of the file that **Send Plan** writes: `Producer` (`Name` `UpdatePlanner` and `Version`), `CreatedUtc` (`yyyy-MM-ddTHH:mm:ssZ`, the time of the send) and `Site` (`SiteCode`). **Export JSON** does not write them. A reader that needs the age of a file refuses a file with no valid `CreatedUtc`. |
 | `UpdatePlanner` | Extra. `PlanId`, `GeneratedAt`, `ComputerName`, `SiteCode`, `Parameters`, `Summary`, `Sync`, `Wsus`, `Skipped[]`. |
 
 ## Rules for Deployment Helper

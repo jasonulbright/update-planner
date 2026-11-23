@@ -28,7 +28,7 @@ None.
 ### Tab order of the Plan page
 
 1. The sidebar: **Plan**, **Report**, **Deploy**, **Options**.
-2. The toolbar: **Build Plan**, **Load Collections**, **Export JSON**, **Export Markdown**, **Export HTML**, **Send to Deployment Helper**. A button that is off is skipped.
+2. The toolbar: **Build Plan**, **Load Collections**, **Export JSON**, **Export Markdown**, **Export HTML**, **Send Plan**. A button that is off is skipped.
 3. The wave list, then **Add...**, **Remove**, **Move Up**, **Move Down**. A button that is off is skipped.
 4. **Wave 1 Start Date**, **Days Between Waves**, **Days to Deadline**, **Lowest Severity**, **Most Updates per Wave**, **Include WSUS Counts**.
 5. The tab strip, the log, then the grid cells.

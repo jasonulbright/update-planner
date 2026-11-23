@@ -61,10 +61,10 @@ The export of a plan does not change the site. The JSON file is a Suite ring pla
 
 ### Send the plan to Deployment Helper
 
-1. Select **Send to Deployment Helper**. The button is at the top right of every page and turns on when a plan exists.
+1. Select **Send Plan**. The button is at the top right of every page and turns on when a plan exists.
 2. The tool writes the plan to the handoff folder of the site: `sites\<SITE>\handoff\ring-plan.json` in the data folder. The log writes "Plan sent to Deployment Helper for site" and the path. The status bar says the same.
 
-![The log after Send to Deployment Helper](../images/report-handoff-sent.png)
+![The log after Send Plan](../images/report-handoff-sent.png)
 
 Deployment Helper offers the plan in its Ring Deployment view with **Import Plan**. You do not copy a file by hand. The file is the Suite ring plan of **Export JSON** with three more fields: `Producer` (this tool and its version), `CreatedUtc` and `Site`. Deployment Helper shows them as the source, the age and the site of the plan, and marks a plan that is older than its stale limit. Each send replaces the file of the site. The folder holds one plan for each site and keeps no history. A send changes nothing on the site, and Deployment Helper deploys nothing until you validate and confirm there. The file holds names, ids, versions and dates only. It holds no credential.
 
@@ -81,7 +81,7 @@ Deployment Helper offers the plan in its Ring Deployment view with **Import Plan
 | **Open HTML Report** | Writes the HTML file to the reports folder of the site and opens it. |
 | **Copy** | Copies the shown text to the clipboard. |
 | **Export JSON**, **Export Markdown**, **Export HTML** | Save the file of that format. |
-| **Send to Deployment Helper** | Write the plan to the handoff folder of the site, where Deployment Helper offers it. |
+| **Send Plan** | Write the plan to the handoff folder of the site, where Deployment Helper offers it. |
 
 ## Limits
 
