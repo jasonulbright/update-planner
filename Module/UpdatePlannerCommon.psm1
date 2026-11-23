@@ -2243,6 +2243,242 @@ function Write-UpdatePlanAudit {
     }
 }
 
+#region Site data (Q-112f)
+
+function Get-UpPreferenceDefault {
+    # .SYNOPSIS
+    # Returns the default preferences of Update Planner as a hashtable.
+    #
+    # .DESCRIPTION
+    # The keys SiteCode, SMSProvider and Waves are site keys: they are saved for one site.
+    # The other keys are global.
+    #
+    # .EXAMPLE
+    # $hashDefault = Get-UpPreferenceDefault
+    #
+    # # $hashDefault.MaxUpdates = '1000'.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [hashtable] The default preferences.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261122.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([hashtable])]
+    param ()
+
+    process {
+        return @{
+            DarkMode = $true; SiteCode = ''; SMSProvider = ''
+            WaveSpacingDays = '7'; DeadlineDays = '3'; Severity = 'All'; MaxUpdates = '1000'
+            IncludeWsus = $false; Waves = @()
+        }
+    }
+}
+
+function Get-UpPreferenceSiteKey {
+    # .SYNOPSIS
+    # Returns the names of the preferences that belong to one site.
+    #
+    # .EXAMPLE
+    # $arrKey = Get-UpPreferenceSiteKey
+    #
+    # # $arrKey = SiteCode, SMSProvider, Waves.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [string[]] The key names.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261122.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([string[]])]
+    param ()
+
+    process {
+        return [string[]]@('SiteCode', 'SMSProvider', 'Waves')
+    }
+}
+
+function Get-UpSitePath {
+    # .SYNOPSIS
+    # Returns the paths of the site stores of Update Planner.
+    #
+    # .DESCRIPTION
+    # With an active site, the reports folder and the action log are below
+    # sites\<SITE>\tools\update-planner. With no site they are the old paths beside the script:
+    # Reports and Logs\update-planner-actions.jsonl. The prefs file stays beside the script
+    # because it holds the global keys. -Create makes the folders that the site paths need.
+    # When a site folder cannot be created, the function throws.
+    #
+    # .PARAMETER Site
+    # The result of Resolve-SuiteToolSite. $null means no site.
+    #
+    # .PARAMETER ToolRoot
+    # The tool folder (the script folder).
+    #
+    # .PARAMETER Create
+    # Create the folders of the site paths.
+    #
+    # .EXAMPLE
+    # $objPath = Get-UpSitePath -Site $script:Site -ToolRoot $PSScriptRoot -Create
+    #
+    # # $objPath.ReportsDir and $objPath.ActionLogPath.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [pscustomobject] Properties: PrefsPath, ReportsDir, ActionLogPath.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261122.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    param (
+        [Parameter(Mandatory = $false)]
+        $Site,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ToolRoot,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$Create
+    )
+
+    process {
+        $strRoot = $ToolRoot.TrimEnd('\', '/')
+        $strOldReports = Join-Path -Path $strRoot -ChildPath 'Reports'
+        $strOldLog = Join-Path -Path (Join-Path -Path $strRoot -ChildPath 'Logs') -ChildPath 'update-planner-actions.jsonl'
+        $strReports = $strOldReports
+        $strLog = $strOldLog
+        if ($Site -and $Site.Active) {
+            # A failure to create a site folder throws. The caller then switches to the old paths for both stores.
+            $strReports = Resolve-SuiteToolPath -Site $Site -Name 'reports' -LegacyPath $strOldReports -Create:$Create -ErrorAction Stop
+            $strLog = Resolve-SuiteToolPath -Site $Site -Name 'update-planner-actions.jsonl' -LegacyPath $strOldLog -File -Create:$Create -ErrorAction Stop
+        }
+        return [pscustomobject]@{
+            PrefsPath     = Join-Path -Path $strRoot -ChildPath 'UpdatePlanner.prefs.json'
+            ReportsDir    = $strReports
+            ActionLogPath = $strLog
+        }
+    }
+}
+
+function Read-UpPreference {
+    # .SYNOPSIS
+    # Reads the preferences: the site keys from the site, the other keys from the prefs file beside the script.
+    #
+    # .DESCRIPTION
+    # With no active site, the launcher values SUITE_CM_SITECODE and SUITE_CM_PROVIDER fill an empty
+    # site code and an empty provider. With a site, the site code is the code of the site, and the
+    # launcher variables are not read.
+    #
+    # .PARAMETER Path
+    # The prefs file beside the script.
+    #
+    # .PARAMETER Site
+    # The result of Resolve-SuiteToolSite. $null means no site.
+    #
+    # .EXAMPLE
+    # $hashPref = Read-UpPreference -Path $strPrefsPath -Site $script:Site
+    #
+    # # $hashPref.Waves holds the wave list of the site.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [hashtable] The preferences.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261122.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path,
+
+        [Parameter(Mandatory = $false)]
+        $Site
+    )
+
+    process {
+        if (-not $Site) { $Site = [pscustomobject]@{ Active = $false } }
+        $hashPref = Read-SuiteToolPrefs -Path $Path -Defaults (Get-UpPreferenceDefault) -Site $Site -SiteKeys (Get-UpPreferenceSiteKey)
+        if (-not $Site.Active) {
+            if (-not $hashPref.SiteCode -and $env:SUITE_CM_SITECODE) { $hashPref.SiteCode = [string]$env:SUITE_CM_SITECODE }
+            if (-not $hashPref.SMSProvider -and $env:SUITE_CM_PROVIDER) { $hashPref.SMSProvider = [string]$env:SUITE_CM_PROVIDER }
+        }
+        return $hashPref
+    }
+}
+
+function Save-UpPreference {
+    # .SYNOPSIS
+    # Saves the preferences: the site keys for the site, the other keys in the prefs file beside the script.
+    #
+    # .PARAMETER Path
+    # The prefs file beside the script.
+    #
+    # .PARAMETER Preference
+    # The preferences to save.
+    #
+    # .PARAMETER Site
+    # The result of Resolve-SuiteToolSite. $null means no site.
+    #
+    # .EXAMPLE
+    # $boolSaved = Save-UpPreference -Path $strPrefsPath -Preference $hashPref -Site $script:Site
+    #
+    # # $boolSaved = $true when every file was written.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [bool] $true when every file was written.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261122.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Preference,
+
+        [Parameter(Mandatory = $false)]
+        $Site
+    )
+
+    process {
+        if (-not $Site) { $Site = [pscustomobject]@{ Active = $false } }
+        return [bool](Save-SuiteToolPrefs -Path $Path -Settings $Preference -Site $Site -SiteKeys (Get-UpPreferenceSiteKey))
+    }
+}
+
+#endregion Site data (Q-112f)
+
 #endregion Window support
 
-Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertFrom-UpdatePlanJson', 'Test-UpConsoleModule', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit'
+Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertFrom-UpdatePlanJson', 'Test-UpConsoleModule', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit', 'Get-UpPreferenceDefault', 'Get-UpPreferenceSiteKey', 'Get-UpSitePath', 'Read-UpPreference', 'Save-UpPreference'

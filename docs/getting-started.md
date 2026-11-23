@@ -27,7 +27,7 @@ The tool connects with the Windows account that runs it. It stores no password a
 ### Install
 
 1. Download `UpdatePlanner-<version>.zip` from the Releases page of the project.
-2. Extract the zip to a working folder. The folder must allow write access for your account, because the tool writes its files next to the script.
+2. Extract the zip to a working folder. The folder must allow write access for your account, because the tool writes its logs and its settings next to the script. It writes the data of each site in `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\update-planner` (see Sites in [Options](core/options.md#sites)).
 3. Open a PowerShell prompt in the folder and start the tool:
 
    ```powershell

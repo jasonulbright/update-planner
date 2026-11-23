@@ -143,7 +143,7 @@ Describe 'Capture scripts' {
 
     It 'produces in its steps every image of the guide' {
         $steps = (Get-ChildItem -LiteralPath $script:CaptureDir -Filter 'steps-*.ps1' | ForEach-Object { [System.IO.File]::ReadAllText($_.FullName) }) -join "`n"
-        $shots = @([regex]::Matches($steps, "\bShot\s+\`$\w+\s+'([a-z0-9-]+)'") | ForEach-Object { $_.Groups[1].Value })
+        $shots = @([regex]::Matches($steps, "\bShot(?:-Strip)?\s+\`$\w+\s+'([a-z0-9-]+)'") | ForEach-Object { $_.Groups[1].Value })
         $shots += @([regex]::Matches($steps, "\bShot\s+\`$dlg\s+\(\`$shot \+ '-selected'\)") | ForEach-Object { 'plan-picker-selected' })
         $shots += @([regex]::Matches($steps, "Add-Wave [^\r\n]*'(plan-[a-z-]+)'") | ForEach-Object { $_.Groups[1].Value })
         # Save-StateShot takes the name of a button and shoots its hover and pressed state.

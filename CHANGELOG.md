@@ -4,6 +4,12 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Keep the wave list, the action log and the reports per site under the data folder.
+- Show the site code read-only in Options when the launcher chose the site.
+- Show a footer note when the launcher chooses another site.
+
 ## [2026.11.20.0015] - 2026-11-20
 
 ## 5 changes: one-query collection list, ConfigMgr wording, tooltips, safer capture tool

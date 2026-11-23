@@ -73,26 +73,33 @@ if (-not $__console.Available) {
 }
 
 $global:PrefsPath = Join-Path $PSScriptRoot 'UpdatePlanner.prefs.json'
+
+# The site (Q-112f): the launcher chooses it. The first start for a site copies the old data of this tool into
+# sites\<SITE>\tools\update-planner and keeps the old files. With no site the tool keeps its old paths.
+$script:Site = Resolve-SuiteToolSite -Tool 'update-planner' -ToolRoot $PSScriptRoot -LegacyPrefsPath $global:PrefsPath
+try { $__sitePaths = Get-UpSitePath -Site $script:Site -ToolRoot $PSScriptRoot -Create }
+catch {
+    # The site folder cannot be created (for example, the data folder is read-only). The tool keeps its old paths.
+    $script:Site = [pscustomobject]@{ Active = $false; Reason = ('The site folder could not be created. This tool uses its old data location for this session. ' + $_.Exception.Message) }
+    $__sitePaths = Get-UpSitePath -Site $script:Site -ToolRoot $PSScriptRoot
+}
+
 function Get-UpPreferences {
-    return Read-SuiteSettings -Path $global:PrefsPath -Defaults @{
-        DarkMode = $true; SiteCode = ''; SMSProvider = ''
-        WaveSpacingDays = '7'; DeadlineDays = '3'; Severity = 'All'; MaxUpdates = '1000'
-        IncludeWsus = $false; Waves = @()
-    }
+    # The site keys (SiteCode, SMSProvider, Waves) come from the site. With no site, the launcher
+    # variables SUITE_CM_SITECODE and SUITE_CM_PROVIDER fill an empty site code and an empty provider.
+    return Read-UpPreference -Path $global:PrefsPath -Site $script:Site
 }
 function Save-UpPreferences {
     param([Parameter(Mandatory)][hashtable]$Prefs)
-    $null = Save-SuiteSettings -Path $global:PrefsPath -Settings $Prefs
+    if (-not (Save-UpPreference -Path $global:PrefsPath -Preference $Prefs -Site $script:Site)) {
+        try { Write-Log -Message 'The preferences were not saved completely.' -Level WARN -Quiet } catch { $null = $_ }
+    }
 }
 $global:Prefs = Get-UpPreferences
 
-# The suite launcher hands its site code and provider to each tool it starts.
-# A value saved in this tool wins; the launcher value fills an empty one.
-if (-not $global:Prefs.SiteCode    -and $env:SUITE_CM_SITECODE) { $global:Prefs.SiteCode    = [string]$env:SUITE_CM_SITECODE }
-if (-not $global:Prefs.SMSProvider -and $env:SUITE_CM_PROVIDER) { $global:Prefs.SMSProvider = [string]$env:SUITE_CM_PROVIDER }
-
 $script:ToolLogPath = Join-Path $__txDir ('UpdatePlanner-{0}.log' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
-$script:ActionLogPath = Join-Path $__txDir 'update-planner-actions.jsonl'
+$script:ActionLogPath = $__sitePaths.ActionLogPath
+$script:ReportsDir = $__sitePaths.ReportsDir
 Initialize-Logging -LogPath $script:ToolLogPath
 
 $xamlPath = Join-Path $PSScriptRoot 'MainWindow.xaml'
@@ -605,7 +612,7 @@ function Save-TextExport {
     $sfd = New-Object Microsoft.Win32.SaveFileDialog
     $sfd.Filter = $Filter
     $sfd.FileName = ('update-plan-{0}.{1}' -f $script:Plan.PlanId, $Extension)
-    $reportsDir = Join-Path $PSScriptRoot 'Reports'
+    $reportsDir = $script:ReportsDir
     if (-not (Test-Path -LiteralPath $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null }
     $sfd.InitialDirectory = $reportsDir
     if ($sfd.ShowDialog() -eq $true) {
@@ -618,7 +625,7 @@ $btnExportMarkdown.Add_Click({ Save-TextExport -Kind 'Markdown' -Extension 'md' 
 $btnExportHtml.Add_Click({     Save-TextExport -Kind 'HTML'     -Extension 'html' -Filter 'HTML files (*.html)|*.html'     -Text (ConvertTo-UpdatePlanHtml -Plan $script:Plan) })
 $btnOpenHtml.Add_Click({
     if (-not $script:Plan) { return }
-    $path = Join-Path (Join-Path $PSScriptRoot 'Reports') ('update-plan-{0}.html' -f $script:Plan.PlanId)
+    $path = Join-Path $script:ReportsDir ('update-plan-{0}.html' -f $script:Plan.PlanId)
     $written = Write-UpdatePlanFile -Path $path -Text (ConvertTo-UpdatePlanHtml -Plan $script:Plan)
     Add-LogLine ('HTML report written: {0}' -f $written)
     Start-Process -FilePath $written
@@ -646,6 +653,8 @@ function Write-ActionRecord {
 
 function Show-DeployResult {
     param([string]$Action, $Results)
+    # A background step with no result hands over $null. Drop it, so that an empty list stays empty.
+    $Results = @($Results | Where-Object { $null -ne $_ })
     $script:LastResults = @($Results)
     $gridResults.ItemsSource = @(ConvertTo-UpdatePlanResultRow -Result @($Results) -DryRun:($Action -eq 'DryRun'))
     Write-ActionRecord -Action $Action -Results $Results
@@ -856,11 +865,16 @@ function Show-OptionsDialog {
     $btnOk          = $dlg.FindName('btnOk')
     $btnCancel      = $dlg.FindName('btnCancel')
     $txtSiteCode.Text    = [string]$global:Prefs.SiteCode
+    if ($script:Site.Active) {
+        # The launcher chooses the site (Q-112f). The field shows it and does not change it.
+        $txtSiteCode.IsReadOnly = $true
+        $txtSiteCode.ToolTip = 'The site is chosen in the AppPackager Suite launcher. Restart this tool after you change it.'
+    }
     $txtSmsProvider.Text = [string]$global:Prefs.SMSProvider
     $btnCatConnection.Add_Click({ $paneConnection.Visibility = [System.Windows.Visibility]::Visible; $paneAbout.Visibility = [System.Windows.Visibility]::Collapsed })
     $btnCatAbout.Add_Click({      $paneConnection.Visibility = [System.Windows.Visibility]::Collapsed; $paneAbout.Visibility = [System.Windows.Visibility]::Visible })
     $btnOk.Add_Click({
-        $newSite     = ([string]$txtSiteCode.Text).Trim()
+        $newSite     = $(if ($script:Site.Active) { [string]$global:Prefs.SiteCode } else { ([string]$txtSiteCode.Text).Trim() })
         $newProvider = ([string]$txtSmsProvider.Text).Trim()
         if ($newSite -and $newSite -notmatch '^[A-Za-z0-9]{3}$') {
             [void](Show-ThemedMessage -Owner $dlg -Title 'Update Planner' -Message 'The site code is three letters or digits.' -Icon Warn)
@@ -919,6 +933,15 @@ $window.Add_Loaded({
     try { [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { if ($script:IsBusy) { return }; Show-OptionsDialog }) }
     catch { Write-Log ('Footer: {0}' -f $_.Exception.Message) -Level ERROR -Quiet; Add-LogLine 'The footer failed. The log file has the details.' }
     Sync-FooterSite
+    $null = Start-SuiteSiteWatch -Window $window -Site $script:Site
+    if ($script:Site.Active) {
+        Write-Log ('Site {0}; data in {1}' -f $script:Site.SiteFolder, $script:Site.ToolFolder) -Quiet
+        Add-LogLine ('Site {0}; data in sites\{0}\tools\update-planner' -f $script:Site.SiteFolder)
+    }
+    elseif ($script:Site.Reason -and $script:Site.Reason -notlike 'No site is chosen*') {
+        Write-Log ('Site: {0}' -f $script:Site.Reason) -Level WARN -Quiet
+        Add-LogLine 'The site data folder is not in use. This session uses the old data location. The log file has the details.'
+    }
     Add-LogLine 'Update Planner ready. Set the SMS Provider in Options, add the wave collections, then select Build Plan.'
 })
 

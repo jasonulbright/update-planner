@@ -31,6 +31,13 @@
         'Write-UpdatePlanFile'
         'Write-UpdatePlanAudit'
         'ConvertTo-UpdatePlanJson'
+
+        # Site data (Q-112f)
+        'Get-UpPreferenceDefault'
+        'Get-UpPreferenceSiteKey'
+        'Get-UpSitePath'
+        'Read-UpPreference'
+        'Save-UpPreference'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
