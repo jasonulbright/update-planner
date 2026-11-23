@@ -29,6 +29,7 @@ In the table, `<site folder>` is the site data folder of the site that the launc
 | `<site folder>\update-planner-actions.jsonl` (old path: `Logs\update-planner-actions.jsonl`) | The action log: one JSON line for each dry run and each deployment of the window. The command-line script does not write it. | **Dry Run** and **Deploy...** in the window |
 | `<site folder>\reports\update-plan-<ID>.html` (old path: `Reports\update-plan-<ID>.html`) | The HTML report. | **Open HTML Report** |
 | `<site folder>\reports\update-plan-<ID>.json`, `.md`, `.html` (old path: `Reports\`) | The exports. | **Export JSON**, **Export Markdown**, **Export HTML**, when you keep the default folder. |
+| `sites\<SITE>\handoff\ring-plan.json` in the data folder `%LOCALAPPDATA%\AppPackagerData` | The plan for Deployment Helper, with the header (`Producer`, `CreatedUtc`, `Site`). One file for each site. Each send replaces it. | **Send to Deployment Helper** |
 | `update-plan.json`, `update-plan.md` | The plan of the command-line script, in the current folder. | `Invoke-UpdatePlanner.ps1` |
 
 A session log starts with the line "=== Log initialized ===".

@@ -121,6 +121,7 @@ The Options dialog clears the plan when you change the provider or the site code
 | **Add...** | Opens the picker. |
 | **Remove**, **Move Up**, **Move Down** | Change the wave list. They turn on when a wave is selected. |
 | **Export JSON**, **Export Markdown**, **Export HTML** | Save the plan. They turn on when a plan exists. See [Report and export](report-and-export.md). |
+| **Send to Deployment Helper** | Write the plan where Deployment Helper offers it. It turns on when a plan exists. See [Report and export](report-and-export.md). |
 
 ### Saved choices
 
