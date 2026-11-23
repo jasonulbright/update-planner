@@ -132,6 +132,7 @@ $btnLoadCollections = $window.FindName('btnLoadCollections')
 $btnExportJson      = $window.FindName('btnExportJson')
 $btnExportMarkdown  = $window.FindName('btnExportMarkdown')
 $btnExportHtml      = $window.FindName('btnExportHtml')
+$btnSendHandoff     = $window.FindName('btnSendHandoff')
 
 $viewPlan   = $window.FindName('viewPlan')
 $viewReport = $window.FindName('viewReport')
@@ -281,6 +282,7 @@ function Update-ControlState {
     $btnExportJson.IsEnabled      = $hasPlan
     $btnExportMarkdown.IsEnabled  = $hasPlan
     $btnExportHtml.IsEnabled      = $hasPlan
+    $btnSendHandoff.IsEnabled     = $hasPlan
     $btnOpenHtml.IsEnabled        = $hasPlan
     $btnCopyReport.IsEnabled      = $hasPlan
     $btnDryRun.IsEnabled          = $idle -and $hasPlan -and $actionsOn
@@ -623,6 +625,19 @@ function Save-TextExport {
 $btnExportJson.Add_Click({     Save-TextExport -Kind 'JSON'     -Extension 'json' -Filter 'JSON files (*.json)|*.json'     -Text (ConvertTo-UpdatePlanJson -Plan $script:Plan) })
 $btnExportMarkdown.Add_Click({ Save-TextExport -Kind 'Markdown' -Extension 'md'   -Filter 'Markdown files (*.md)|*.md'     -Text (ConvertTo-UpdatePlanMarkdown -Plan $script:Plan) })
 $btnExportHtml.Add_Click({     Save-TextExport -Kind 'HTML'     -Extension 'html' -Filter 'HTML files (*.html)|*.html'     -Text (ConvertTo-UpdatePlanHtml -Plan $script:Plan) })
+$btnSendHandoff.Add_Click({
+    if (-not $script:Plan) { Add-LogLine 'Send to Deployment Helper: build a plan first.'; return }
+    $objSend = Send-UpdatePlanHandoff -Plan $script:Plan -ProducerVersion $script:AppVersion -Site $script:Site
+    if ($objSend.Ok) {
+        Add-LogLine ('Plan sent to Deployment Helper for site {0}: {1}' -f $objSend.SiteFolder, $objSend.Path)
+        Set-StatusText ('Plan sent to Deployment Helper for site {0}.' -f $objSend.SiteFolder)
+    }
+    else {
+        Add-LogLine ('Send to Deployment Helper failed: {0}' -f $objSend.Message)
+        Set-StatusText 'The plan was not sent. The log has the details.'
+        [void](Show-ThemedMessage -Owner $window -Title 'Send to Deployment Helper' -Message ('The plan was not sent. {0}' -f $objSend.Message) -Icon Error)
+    }
+})
 $btnOpenHtml.Add_Click({
     if (-not $script:Plan) { return }
     $path = Join-Path $script:ReportsDir ('update-plan-{0}.html' -f $script:Plan.PlanId)

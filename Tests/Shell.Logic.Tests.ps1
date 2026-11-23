@@ -69,7 +69,7 @@ Describe 'Update-StatusBarSummary' {
 
 Describe 'Update-ControlState' {
     BeforeEach {
-        $names = 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml',
+        $names = 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff',
             'btnOpenHtml', 'btnCopyReport', 'btnDryRun', 'btnApply', 'btnRemoveWave', 'btnWaveUp', 'btnWaveDown'
         foreach ($n in $names) { Set-Variable -Name $n -Value ([PSCustomObject]@{ IsEnabled = $null }) }
         $toggleActions = [PSCustomObject]@{ IsOn = $false }
@@ -82,7 +82,7 @@ Describe 'Update-ControlState' {
     It 'enables the setup buttons and nothing that needs a plan when idle with no plan' {
         Update-ControlState
         foreach ($n in 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave') { (Get-Variable -Name $n -ValueOnly).IsEnabled | Should -BeTrue -Because $n }
-        foreach ($n in 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnOpenHtml', 'btnCopyReport', 'btnDryRun', 'btnApply', 'btnRemoveWave', 'btnWaveUp', 'btnWaveDown') {
+        foreach ($n in 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff', 'btnOpenHtml', 'btnCopyReport', 'btnDryRun', 'btnApply', 'btnRemoveWave', 'btnWaveUp', 'btnWaveDown') {
             (Get-Variable -Name $n -ValueOnly).IsEnabled | Should -BeFalse -Because $n
         }
     }
@@ -102,7 +102,7 @@ Describe 'Update-ControlState' {
         $toggleActions.IsOn = $Actions
         $script:IsBusy = $Busy
         Update-ControlState
-        foreach ($n in 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnOpenHtml', 'btnCopyReport') { (Get-Variable -Name $n -ValueOnly).IsEnabled | Should -BeTrue -Because $n }
+        foreach ($n in 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff', 'btnOpenHtml', 'btnCopyReport') { (Get-Variable -Name $n -ValueOnly).IsEnabled | Should -BeTrue -Because $n }
         $btnDryRun.IsEnabled | Should -Be $Expected -Because $Case
         $btnApply.IsEnabled | Should -Be $Expected -Because $Case
     }

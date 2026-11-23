@@ -87,6 +87,7 @@ Section 'exports' {
     Log ('save dialogs left: ' + (Find-All 'Save As').Count)
   }
   Shot $win 'report-exported'
+  Invoke-El (Get-El $win 'btnSendHandoff'); Start-Sleep -Seconds 2; Shot $win 'report-handoff-sent'
 }
 Section 'htmlreport' {
   Invoke-El (Get-El $win 'btnOpenHtml'); Start-Sleep -Seconds 6

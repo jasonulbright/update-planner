@@ -1,5 +1,5 @@
 {
-  "Count": 54,
+  "Count": 55,
   "Images": [
     "deploy-blocked.png",
     "deploy-cancelled.png",
@@ -44,6 +44,7 @@
     "plan-wave-moved-up.png",
     "plan-waves.png",
     "report-exported.png",
+    "report-handoff-sent.png",
     "report-html-browser.png",
     "report-html-source.png",
     "report-light.png",

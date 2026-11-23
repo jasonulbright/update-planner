@@ -773,3 +773,129 @@ Describe 'Plan JSON and the shared ring plan format' {
         (ConvertTo-UpdatePlanJson -Plan $script:objPlan) | Test-Json -Schema $strSchema | Should -BeTrue
     }
 }
+
+Describe 'Handoff of the plan to Deployment Helper' {
+    BeforeAll {
+        $script:objPlan = New-UpdatePlan -State (New-TestState) -StartDate ([datetime]'2026-12-01') -WaveSpacingDays 7 -DeadlineDays 3
+        $script:objPlan.SiteCode = 'AB1'
+        $script:datetimeNow = [datetime]::SpecifyKind([datetime]'2026-11-23 12:00:00', [System.DateTimeKind]::Utc)
+    }
+
+    It 'writes no handoff header when no version is given, so Export JSON stays as it was' {
+        $objDocument = ConvertTo-UpdatePlanJson -Plan $script:objPlan | ConvertFrom-Json
+        $objDocument.PSObject.Properties.Name | Should -Not -Contain 'Producer'
+        $objDocument.PSObject.Properties.Name | Should -Not -Contain 'CreatedUtc'
+        $objDocument.PSObject.Properties.Name | Should -Not -Contain 'Site'
+    }
+
+    It 'writes the header with the producer, the creation time and the site code' {
+        $strText = ConvertTo-UpdatePlanJson -Plan $script:objPlan -ProducerVersion '2026.11.23.0017' -NowUtc $script:datetimeNow
+        $strText | Should -Match '"CreatedUtc":\s*"2026-11-23T12:00:00Z"'
+        $objDocument = $strText | ConvertFrom-Json
+        $objDocument.Producer.Name | Should -Be 'UpdatePlanner'
+        $objDocument.Producer.Version | Should -Be '2026.11.23.0017'
+        $objDocument.Site.SiteCode | Should -Be 'AB1'
+        $objDocument.Format | Should -Be 'SuiteRingPlan'
+        $objDocument.SchemaVersion | Should -Be 1
+    }
+
+    It 'keeps the plan valid against the schema with the header' -Skip:($PSVersionTable.PSVersion.Major -lt 7) {
+        $strSchema = Get-Content -LiteralPath (Join-Path -Path $script:strRepositoryRoot -ChildPath 'docs\schema\ring-plan.schema.json') -Raw
+        try { '{}' | Test-Json -Schema $strSchema -ErrorAction Stop | Out-Null } catch { if ($_.Exception.Message -like '*parse the JSON schema*') { Set-ItResult -Skipped -Because 'This PowerShell version cannot parse the schema.'; return } }
+        (ConvertTo-UpdatePlanJson -Plan $script:objPlan -ProducerVersion '1.0.0') | Test-Json -Schema $strSchema | Should -BeTrue
+    }
+
+    It 'writes the plan to the handoff folder of the site' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h1'
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '2026.11.23.0017' -DataRoot $strRoot
+        $objResult.Ok | Should -BeTrue
+        $objResult.SiteFolder | Should -Be 'AB1'
+        $objResult.Path | Should -Be (Join-Path -Path $strRoot -ChildPath 'sites\AB1\handoff\ring-plan.json')
+        Test-Path -LiteralPath $objResult.Path | Should -BeTrue
+        @(Get-ChildItem -LiteralPath (Split-Path -Path $objResult.Path -Parent) -Force).Count | Should -Be 1
+    }
+
+    It 'writes a file that the reader of the suite accepts, with the source and the age' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h2'
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '2026.11.23.0017' -DataRoot $strRoot
+        $objRead = Read-SuiteHandoff -Path $objResult.Path -ExpectedKind 'SuiteRingPlan' -ActiveSite 'AB1'
+        $objRead.Status | Should -Be 'Ok'
+        $objRead.ProducerName | Should -Be 'UpdatePlanner'
+        $objRead.ProducerVersion | Should -Be '2026.11.23.0017'
+        $objRead.SiteCode | Should -Be 'AB1'
+        $objRead.SiteMismatch | Should -BeFalse
+        $objRead.IsStale | Should -BeFalse
+        @($objRead.Data.Rings).Count | Should -Be @($script:objPlan.Waves).Count
+    }
+
+    It 'carries every field of the planned updates of each wave' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h3'
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -DataRoot $strRoot
+        $objDocument = Get-Content -LiteralPath $objResult.Path -Raw | ConvertFrom-Json
+        $objUpdate = $objDocument.Rings[0].Updates[0]
+        foreach ($strName in 'Sequence', 'CIId', 'ArticleId', 'Title', 'Severity', 'SeverityName', 'NeededDevices') {
+            $objUpdate.PSObject.Properties.Name | Should -Contain $strName
+        }
+    }
+
+    It 'replaces the previous file of the site and leaves no temp file' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h4'
+        $objFirst = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -DataRoot $strRoot
+        $objSecond = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '2.0.0' -DataRoot $strRoot
+        $objSecond.Ok | Should -BeTrue
+        (Get-Content -LiteralPath $objSecond.Path -Raw | ConvertFrom-Json).Producer.Version | Should -Be '2.0.0'
+        @(Get-ChildItem -LiteralPath (Split-Path -Path $objFirst.Path -Parent) -Force).Count | Should -Be 1
+    }
+
+    It 'keeps one folder for each site' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h5'
+        $objOther = $script:objPlan | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        $objOther.SiteCode = 'CD2'
+        $objOne = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -DataRoot $strRoot
+        $objTwo = Send-UpdatePlanHandoff -Plan $objOther -ProducerVersion '1.0.0' -DataRoot $strRoot
+        $objOne.Path | Should -Not -Be $objTwo.Path
+        (Read-SuiteHandoff -Path $objOne.Path).SiteCode | Should -Be 'AB1'
+        (Read-SuiteHandoff -Path $objTwo.Path).SiteCode | Should -Be 'CD2'
+    }
+
+    It 'uses the folder of the active site when it has the code of the plan (a reused site code)' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h6'
+        $objSite = [pscustomobject]@{ Active = $true; SiteFolder = 'AB1~2'; SiteCode = 'AB1' }
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -Site $objSite -DataRoot $strRoot
+        $objResult.Ok | Should -BeTrue
+        $objResult.SiteFolder | Should -Be 'AB1~2'
+        $objResult.Path | Should -Be (Join-Path -Path $strRoot -ChildPath 'sites\AB1~2\handoff\ring-plan.json')
+    }
+
+    It 'ignores the active site when its code is not the code of the plan' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h7'
+        $objSite = [pscustomobject]@{ Active = $true; SiteFolder = 'CD2'; SiteCode = 'CD2' }
+        (Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -Site $objSite -DataRoot $strRoot).SiteFolder | Should -Be 'AB1'
+    }
+
+    It 'writes nothing and says why when the plan has no valid site code' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h8'
+        $objBad = $script:objPlan | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        foreach ($strCode in '', 'A B', 'SMS', 'TOOLONG') {
+            $objBad.SiteCode = $strCode
+            $objResult = Send-UpdatePlanHandoff -Plan $objBad -ProducerVersion '1.0.0' -DataRoot $strRoot
+            $objResult.Ok | Should -BeFalse -Because "code: $strCode"
+            $objResult.Message | Should -Not -BeNullOrEmpty
+        }
+        Test-Path -LiteralPath $strRoot | Should -BeFalse
+    }
+
+    It 'returns a failed result and does not throw when the folder cannot be written' {
+        $strBlock = Join-Path -Path $TestDrive -ChildPath 'h9file'
+        [System.IO.File]::WriteAllText($strBlock, 'x')
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -DataRoot $strBlock
+        $objResult.Ok | Should -BeFalse
+        $objResult.Message | Should -Not -BeNullOrEmpty
+    }
+
+    It 'holds no credential, token or key name in the file' {
+        $strRoot = Join-Path -Path $TestDrive -ChildPath 'h10'
+        $objResult = Send-UpdatePlanHandoff -Plan $script:objPlan -ProducerVersion '1.0.0' -DataRoot $strRoot
+        (Get-Content -LiteralPath $objResult.Path -Raw) | Should -Not -Match '(?i)"[A-Za-z]*(token|secret|password|apikey|credential|webhook)[A-Za-z]*"\s*:'
+    }
+}

@@ -317,7 +317,7 @@ Describe 'Window files' {
 
     It 'declares the export buttons in the order that the window shows them, so that Tab follows the layout' {
         $strXaml = Get-Content -LiteralPath $script:strXamlPath -Raw
-        $arrPosition = foreach ($strName in 'btnBuildPlan', 'btnLoadCollections', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml') {
+        $arrPosition = foreach ($strName in 'btnBuildPlan', 'btnLoadCollections', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff') {
             $strXaml.IndexOf(('x:Name="{0}"' -f $strName))
         }
         $arrPosition | Should -Not -Contain -1
@@ -372,7 +372,7 @@ Describe 'Module surface' {
             'ConvertFrom-UpdatePlanJson', 'ConvertTo-UpdatePlanHtml', 'ConvertTo-UpdatePlanJson', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanRow',
             'ConvertTo-UpdatePlanSkippedRow', 'Export-UpdatePlan', 'Get-UpdatePlanDeploymentPreview', 'Get-UpdatePlannerCollection',
             'Get-UpdatePlannerState', 'Get-UpPreferenceDefault', 'Get-UpPreferenceSiteKey', 'Get-UpSitePath', 'Invoke-UpdatePlan', 'New-UpdatePlan', 'Read-UpPreference', 'Resolve-UpdatePlannerSetting',
-            'Save-UpPreference', 'Test-UpConsoleModule', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
+            'Save-UpPreference', 'Send-UpdatePlanHandoff', 'Test-UpConsoleModule', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
         )
     }
 
