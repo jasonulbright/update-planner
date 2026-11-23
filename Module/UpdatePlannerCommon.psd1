@@ -31,6 +31,7 @@
         'Write-UpdatePlanFile'
         'Write-UpdatePlanAudit'
         'ConvertTo-UpdatePlanJson'
+        'Send-UpdatePlanHandoff'
 
         # Site data (Q-112f)
         'Get-UpPreferenceDefault'

@@ -327,8 +327,11 @@
                                 Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
                                 ToolTip="Save the plan as a Markdown review file."/>
                         <Button x:Name="btnExportHtml" Content="Export HTML"
-                                Style="{StaticResource SquareInlineButtonStyle}" Margin="0"
+                                Style="{StaticResource SquareInlineButtonStyle}"
                                 ToolTip="Save the plan as an HTML report."/>
+                        <Button x:Name="btnSendHandoff" Content="Send to Deployment Helper"
+                                Style="{StaticResource SquareInlineButtonStyle}" MinWidth="190" Margin="0"
+                                ToolTip="Save the plan where Deployment Helper offers it for import. The next send replaces it. The site does not change."/>
                     </StackPanel>
                 </DockPanel>
             </Border>

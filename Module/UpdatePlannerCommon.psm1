@@ -1725,6 +1725,14 @@ function ConvertTo-UpdatePlanJson {
     # .PARAMETER Plan
     # The plan that New-UpdatePlan returns.
     #
+    # .PARAMETER ProducerVersion
+    # The version of Update Planner. When it is set, the text carries the handoff header: Producer
+    # (Name and Version), CreatedUtc and Site (SiteCode). A plan that Export JSON saves has no header.
+    # The header lets Deployment Helper show the source and the age of the plan.
+    #
+    # .PARAMETER NowUtc
+    # The time that the header holds as CreatedUtc. The default is the current time.
+    #
     # .EXAMPLE
     # $strJson = ConvertTo-UpdatePlanJson -Plan $objPlan
     #
@@ -1744,7 +1752,13 @@ function ConvertTo-UpdatePlanJson {
     [OutputType([string])]
     param (
         [Parameter(Mandatory = $true)]
-        [pscustomobject]$Plan
+        [pscustomobject]$Plan,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ProducerVersion = '',
+
+        [Parameter(Mandatory = $false)]
+        [datetime]$NowUtc
     )
 
     process {
@@ -1803,10 +1817,100 @@ function ConvertTo-UpdatePlanJson {
                 Skipped = @($Plan.Skipped)
             }
         }
+        if ($ProducerVersion) {
+            if (-not $PSBoundParameters.ContainsKey('NowUtc')) { $NowUtc = [datetime]::UtcNow }
+            $objDocument['Producer'] = [ordered]@{ Name = 'UpdatePlanner'; Version = $ProducerVersion }
+            $objDocument['CreatedUtc'] = $NowUtc.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", [System.Globalization.CultureInfo]::InvariantCulture)
+            $objDocument['Site'] = [ordered]@{ SiteCode = [string]$Plan.SiteCode }
+        }
         $objDocument | ConvertTo-Json -Depth 8
     }
 }
 
+function Send-UpdatePlanHandoff {
+    # .SYNOPSIS
+    # Writes the plan to the handoff folder of its site, where Deployment Helper offers it for import.
+    #
+    # .DESCRIPTION
+    # The file is sites\<SITE>\handoff\ring-plan.json in the data root of the suite. It is the Suite ring plan
+    # that Export JSON writes, with the handoff header (Producer, CreatedUtc and Site). Each run overwrites
+    # the file of the site. The write goes through a temp file and a swap. The site folder is the active
+    # site when its code is the code of the plan, else the site code of the plan. The function returns
+    # a result and never throws. The plan is not changed and nothing changes on the site.
+    #
+    # .PARAMETER Plan
+    # The plan that New-UpdatePlan returns.
+    #
+    # .PARAMETER ProducerVersion
+    # The version of Update Planner.
+    #
+    # .PARAMETER Site
+    # The result of Resolve-SuiteToolSite, or $null for no site.
+    #
+    # .PARAMETER DataRoot
+    # The data root. The default is the data root of the suite.
+    #
+    # .EXAMPLE
+    # $objResult = Send-UpdatePlanHandoff -Plan $objPlan -ProducerVersion '2026.11.23.0017' -Site $script:Site
+    #
+    # # $objResult.Ok is $true and $objResult.Path is the file that Deployment Helper reads.
+    #
+    # .INPUTS
+    # None. You can't pipe objects to this function.
+    #
+    # .OUTPUTS
+    # [pscustomobject] Properties: Ok, Path, SiteFolder, Message.
+    #
+    # .NOTES
+    # This function does not support positional parameters.
+    #
+    # Version: 1.0.20261123.0
+    [CmdletBinding(PositionalBinding = $false)]
+    [OutputType([pscustomobject])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Writes one handoff file that the user asked for with a button.')]
+    param (
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Plan,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProducerVersion,
+
+        [Parameter(Mandatory = $false)]
+        $Site,
+
+        [Parameter(Mandatory = $false)]
+        [string]$DataRoot = ''
+    )
+
+    process {
+        $objResult = [pscustomobject]@{ Ok = $false; Path = ''; SiteFolder = ''; Message = '' }
+        try {
+            $strPlanSite = ([string]$Plan.SiteCode).Trim().ToUpperInvariant()
+            $strFolder = ''
+            if ($Site -and $Site.Active -and $Site.SiteFolder) {
+                $objParsed = ConvertFrom-SuiteSiteFolderName -Name ([string]$Site.SiteFolder)
+                if ($objParsed -and $objParsed.SiteCode -eq $strPlanSite) { $strFolder = $objParsed.FolderName }
+            }
+            if (-not $strFolder -and (Test-SuiteSiteCode -SiteCode $strPlanSite)) { $strFolder = $strPlanSite }
+            if (-not $strFolder) {
+                $objResult.Message = 'The plan has no valid site code, so no handoff file was written.'
+                return $objResult
+            }
+            $objResult.SiteFolder = $strFolder
+            $strJson = ConvertTo-UpdatePlanJson -Plan $Plan -ProducerVersion $ProducerVersion
+            $hashArgument = @{ SiteCode = $strFolder; Kind = 'ring-plan'; Json = $strJson }
+            if ($DataRoot) { $hashArgument['DataRoot'] = $DataRoot }
+            $objWrite = Write-SuiteHandoff @hashArgument
+            $objResult.Ok = [bool]$objWrite.Ok
+            $objResult.Path = [string]$objWrite.Path
+            $objResult.Message = [string]$objWrite.Message
+        }
+        catch {
+            $objResult.Message = $_.Exception.Message
+        }
+        $objResult
+    }
+}
 function ConvertFrom-UpdatePlanJson {
     # .SYNOPSIS
     # Reads the JSON text of a Suite ring plan into an update plan.
@@ -2481,4 +2585,4 @@ function Save-UpPreference {
 
 #endregion Window support
 
-Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertFrom-UpdatePlanJson', 'Test-UpConsoleModule', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit', 'Get-UpPreferenceDefault', 'Get-UpPreferenceSiteKey', 'Get-UpSitePath', 'Read-UpPreference', 'Save-UpPreference'
+Export-ModuleMember -Function 'Get-UpdatePlannerState', 'New-UpdatePlan', 'Export-UpdatePlan', 'Invoke-UpdatePlan', 'Get-UpdatePlannerCollection', 'Resolve-UpdatePlannerSetting', 'ConvertTo-UpdatePlanRow', 'ConvertTo-UpdatePlanSkippedRow', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanJson', 'ConvertFrom-UpdatePlanJson', 'Test-UpConsoleModule', 'ConvertTo-UpdatePlanHtml', 'Get-UpdatePlanDeploymentPreview', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanFile', 'Write-UpdatePlanAudit', 'Get-UpPreferenceDefault', 'Get-UpPreferenceSiteKey', 'Get-UpSitePath', 'Read-UpPreference', 'Save-UpPreference', 'Send-UpdatePlanHandoff'

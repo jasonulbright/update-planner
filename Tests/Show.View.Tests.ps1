@@ -94,7 +94,7 @@ Describe 'Show-Plan puts the plan on the screen' {
         $txtReport = New-Object System.Windows.Controls.TextBox
         $rdoHtml = [PSCustomObject]@{ IsChecked = $false }
         $toggleActions = [PSCustomObject]@{ IsOn = $false }
-        foreach ($b in 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnOpenHtml',
+        foreach ($b in 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff', 'btnOpenHtml',
             'btnCopyReport', 'btnDryRun', 'btnApply', 'btnRemoveWave', 'btnWaveUp', 'btnWaveDown') { Set-Variable -Name $b -Value ([PSCustomObject]@{ IsEnabled = $false }) }
     }
 
@@ -187,7 +187,7 @@ Describe 'Update-WaveList puts the wave collections in the list' {
         $script:Plan = $null; $script:IsBusy = $false
         $lstWaves = New-Object System.Windows.Controls.ListBox
         $toggleActions = [PSCustomObject]@{ IsOn = $false }
-        foreach ($b in 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnOpenHtml',
+        foreach ($b in 'btnBuildPlan', 'btnOptions', 'btnLoadCollections', 'btnAddWave', 'btnExportJson', 'btnExportMarkdown', 'btnExportHtml', 'btnSendHandoff', 'btnOpenHtml',
             'btnCopyReport', 'btnDryRun', 'btnApply', 'btnRemoveWave', 'btnWaveUp', 'btnWaveDown') { Set-Variable -Name $b -Value ([PSCustomObject]@{ IsEnabled = $false }) }
     }
 
