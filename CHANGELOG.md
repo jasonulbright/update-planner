@@ -4,6 +4,14 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.23.0017] - 2026-11-23
+
+## 1 change: send the plan to Deployment Helper with one button
+
+### Added
+
+- Send the plan to Deployment Helper with **Send Plan**. No file copy by hand.
+
 ## [2026.11.22.0016] - 2026-11-22
 
 ## 4 changes: per-site data, read-only site code, footer note, safer dry run
