@@ -236,6 +236,11 @@ Describe 'Update Planner with no site chosen' {
         @($saved.Waves) | Should -Be @('EF300001|Pilot EF3')
     }
 
+    It 'throws when a site folder cannot be created, so that the caller falls back to the old paths for both stores' {
+        # A folder name with a character that Windows refuses: the folder cannot be created.
+        $broken = [pscustomobject]@{ Active = $true; ToolFolder = (Join-Path $TestDrive 'bad|name') }
+        { Get-UpSitePath -Site $broken -ToolRoot $script:layout2.Tool -Create } | Should -Throw
+    }
     It 'works with a null site like no site' {
         (Get-UpSitePath -Site $null -ToolRoot $script:layout2.Tool).ReportsDir | Should -Be (Join-Path $script:layout2.Tool 'Reports')
         (Read-UpPreference -Path $script:none.Paths.PrefsPath -Site $null).SMSProvider | Should -Be 'ef3-sms.example.com'

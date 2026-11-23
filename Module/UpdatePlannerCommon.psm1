@@ -2318,7 +2318,7 @@ function Get-UpSitePath {
     # sites\<SITE>\tools\update-planner. With no site they are the old paths beside the script:
     # Reports and Logs\update-planner-actions.jsonl. The prefs file stays beside the script
     # because it holds the global keys. -Create makes the folders that the site paths need.
-    # When the site folder cannot be created, the function returns the old paths.
+    # When a site folder cannot be created, the function throws.
     #
     # .PARAMETER Site
     # The result of Resolve-SuiteToolSite. $null means no site.
@@ -2365,14 +2365,9 @@ function Get-UpSitePath {
         $strReports = $strOldReports
         $strLog = $strOldLog
         if ($Site -and $Site.Active) {
-            try {
-                $strReports = Resolve-SuiteToolPath -Site $Site -Name 'reports' -LegacyPath $strOldReports -Create:$Create
-                $strLog = Resolve-SuiteToolPath -Site $Site -Name 'update-planner-actions.jsonl' -LegacyPath $strOldLog -File -Create:$Create
-            }
-            catch {
-                $strReports = $strOldReports
-                $strLog = $strOldLog
-            }
+            # A failure to create a site folder throws. The caller then switches to the old paths for both stores.
+            $strReports = Resolve-SuiteToolPath -Site $Site -Name 'reports' -LegacyPath $strOldReports -Create:$Create -ErrorAction Stop
+            $strLog = Resolve-SuiteToolPath -Site $Site -Name 'update-planner-actions.jsonl' -LegacyPath $strOldLog -File -Create:$Create -ErrorAction Stop
         }
         return [pscustomobject]@{
             PrefsPath     = Join-Path -Path $strRoot -ChildPath 'UpdatePlanner.prefs.json'
