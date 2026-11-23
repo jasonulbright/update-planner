@@ -11,6 +11,8 @@ BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     . "$PSScriptRoot\CMStubs.ps1"
     Import-AppModule
+    # The preference functions read the site of the shell. No site is chosen here: the old prefs file is used.
+    $script:Site = [pscustomobject]@{ Active = $false }
     $script:ShellPath = Join-Path $script:AppRoot 'start-updateplanner.ps1'
     $script:Ast = [System.Management.Automation.Language.Parser]::ParseFile($script:ShellPath, [ref]$null, [ref]$null)
     $wanted = 'Get-UpPreferences', 'Save-UpPreferences', 'Set-StatusText', 'Update-StatusBarSummary', 'Get-SeverityName',

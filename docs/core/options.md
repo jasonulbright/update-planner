@@ -21,7 +21,7 @@ None. The dialog does not connect to the site.
 1. Select **Options** in the sidebar. The button is off while a step runs.
 2. Select **Connection**. The section has the heading **Configuration Manager Connection**.
 3. In **SMS Provider FQDN**, enter a computer name or an FQDN. The characters are letters, digits, dot, hyphen and underscore. The watermark shows `For example, sms01.example.com`.
-4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The watermark shows `For example, ABC`. The site code is required.
+4. In **Site Code**, enter the three letters or digits of the site code, for example `ABC`. The watermark shows `For example, ABC`. The site code is required. When the launcher chose a site, the box shows that site and is read-only (see [Sites](#sites)).
 5. Select **OK**. **OK** is the default button: Enter selects it. Select **Cancel** to discard the change. Press Esc to cancel.
 6. Look at the right end of the footer. It shows the saved site, for example `Site ABC`, a middle dot, and `sms01.example.com`, or `Site not set`. The footer is read-only. Select the site text to open Options. You change the site code and the SMS Provider only in this dialog.
 
@@ -44,12 +44,26 @@ The message boxes of the dialog carry the title **Update Planner**, not the titl
 
 ![The Options dialog in the light theme](../images/options-light.png)
 
+## Sites
+
+The AppPackager Suite launcher chooses the site. Update Planner keeps the data of each site in its own folder: `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\update-planner`, for example `sites\AB1\tools\update-planner`. The folder holds the wave list, the SMS Provider, the action log and the reports of that site. Site CD2 has its own wave list and its own reports. They never show the data of site AB1.
+
+When a site is chosen, the **Site Code** box is read-only. Point at the box to read the tooltip: "The site is chosen in the AppPackager Suite launcher. Restart this tool after you change it." The **SMS Provider FQDN** box stays editable. The tool saves it with the site.
+
+![The read-only Site Code box when the launcher chose a site](../images/options-site.png)
+
+A tool that is open keeps its site until you restart it. When the launcher chooses another site, the footer shows a note that names the new site and the site of this window.
+
+![The footer note after the launcher chose another site](../images/footer-site-note.png)
+
+The first start after an update copies the old data of the tool into the site folder: the SMS Provider and the wave list from `UpdatePlanner.prefs.json`, `Logs\update-planner-actions.jsonl` and the files in `Reports`. The tool keeps the old files. The log shows the line "Site AB1; data in sites\AB1\tools\update-planner".
+
 ## Options and settings of this page
 
 | Control | Default | Effect |
 |---|---|---|
-| **SMS Provider FQDN** | Empty, or the value that the suite launcher hands over | The computer that runs the SMS Provider. Saved when you select **OK**. |
-| **Site Code** | Empty, or the value that the suite launcher hands over | A three-character site code. Required. The tool no longer asks the provider for it. |
+| **SMS Provider FQDN** | The provider of the site, or empty | The computer that runs the SMS Provider. Saved with the site when you select **OK**. |
+| **Site Code** | The site that the launcher chose | A three-character site code. Read-only when the launcher chose a site. With no site chosen, the box is editable, is required, and starts empty or with the value that the suite launcher hands over. |
 
 The text under the boxes says: the tool connects with the Windows account that runs it and stores no password; the tool needs the Configuration Manager console on this computer; a domain admin account that is a local administrator of the SMS Provider computer needs no Configuration Manager role; an account with fewer rights is not tested. This statement was tested on a lab site only. Check the roles and the scopes of the account in your site.
 

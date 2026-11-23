@@ -1,5 +1,5 @@
 {
-  "Count": 52,
+  "Count": 54,
   "Images": [
     "deploy-blocked.png",
     "deploy-cancelled.png",
@@ -10,6 +10,7 @@
     "deploy-light.png",
     "deploy-off.png",
     "deploy-on.png",
+    "footer-site-note.png",
     "light-state-dialog-accent-button-hover.png",
     "light-state-dialog-accent-button-pressed.png",
     "light-state-dialog-button-hover.png",
@@ -23,6 +24,7 @@
     "options-connection.png",
     "options-light.png",
     "options-plan-cleared.png",
+    "options-site.png",
     "plan-building.png",
     "plan-builtin-wsus.png",
     "plan-duplicate-wave.png",

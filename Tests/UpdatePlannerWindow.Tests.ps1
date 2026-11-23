@@ -371,8 +371,8 @@ Describe 'Module surface' {
         $arrExported | Should -Be @(
             'ConvertFrom-UpdatePlanJson', 'ConvertTo-UpdatePlanHtml', 'ConvertTo-UpdatePlanJson', 'ConvertTo-UpdatePlanMarkdown', 'ConvertTo-UpdatePlanResultRow', 'ConvertTo-UpdatePlanRow',
             'ConvertTo-UpdatePlanSkippedRow', 'Export-UpdatePlan', 'Get-UpdatePlanDeploymentPreview', 'Get-UpdatePlannerCollection',
-            'Get-UpdatePlannerState', 'Invoke-UpdatePlan', 'New-UpdatePlan', 'Resolve-UpdatePlannerSetting',
-            'Test-UpConsoleModule', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
+            'Get-UpdatePlannerState', 'Get-UpPreferenceDefault', 'Get-UpPreferenceSiteKey', 'Get-UpSitePath', 'Invoke-UpdatePlan', 'New-UpdatePlan', 'Read-UpPreference', 'Resolve-UpdatePlannerSetting',
+            'Save-UpPreference', 'Test-UpConsoleModule', 'Test-UpdatePlanApplyAllowed', 'Write-UpdatePlanAudit', 'Write-UpdatePlanFile'
         )
     }
 

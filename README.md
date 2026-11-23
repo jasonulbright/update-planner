@@ -24,7 +24,7 @@ The user guide is in [docs/index.md](docs/index.md). It has one page for each pa
 - Export the plan as JSON, Markdown or HTML. The JSON file is a ring plan that Deployment Helper loads (see [docs/reference/plan-format.md](docs/reference/plan-format.md)).
 - Deploy behind an **Enable Actions** switch. A dry run runs the deploy step with `-WhatIf` and creates nothing. **Deploy...** asks for a confirmation that lists every deployment before it creates one.
 - Built-in collections (an ID that starts with `SMS`) are blocked as a deploy target.
-- Every dry run and every deploy writes one record to `Logs\update-planner-actions.jsonl`.
+- Every dry run and every deploy writes one record to the action log of the site (`update-planner-actions.jsonl`).
 - Dark and light themes with a runtime toggle, like the other tools of the AppPackager Suite.
 
 ## Requirements
@@ -57,7 +57,7 @@ Inside the AppPackager Suite, the launcher hands its site code and provider to t
 The shell has a sidebar with three views and an Options dialog:
 
 - **Plan** -- wave collections, dates and settings on top. Two tabs below: *Planned Updates* (one row for each update in each wave) and *Skipped Updates* (the reason for each).
-- **Report** -- the plan as Markdown or HTML Source. **Open HTML Report** writes the page to `Reports\` and opens it in the default browser. **Copy** copies the text.
+- **Report** -- the plan as Markdown or HTML Source. **Open HTML Report** writes the page to the reports folder of the site and opens it in the default browser. **Copy** copies the text.
 - **Deploy** -- the Enable Actions switch, **Dry Run**, **Deploy...**, the deployments that the plan would create, and the result of the last run.
 
 ![Skipped Updates](docs/images/plan-skipped.png)
@@ -96,11 +96,16 @@ The window wraps the same module as the script `Invoke-UpdatePlanner.ps1`. The s
 
 | File | Purpose |
 |------|---------|
-| `UpdatePlanner.prefs.json` | Site code, SMS Provider, the last settings and the wave list |
+| `UpdatePlanner.prefs.json` | The theme and the last settings. With no site chosen, also the site code, the SMS Provider and the wave list. |
 | `UpdatePlanner.windowstate.json` | Window size, position and last-used view |
 | `Logs\UpdatePlanner-*.log` | Per-session tool log |
-| `Logs\update-planner-actions.jsonl` | One record for each dry run and each deploy |
-| `Reports\*` | Plan exports |
+| `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\update-planner\prefs.json` | The SMS Provider and the wave list of the site |
+| `...\update-planner-actions.jsonl` | One record for each dry run and each deploy |
+| `...\reports\*` | Plan exports |
+
+## Sites
+
+The suite launcher chooses the site. Update Planner keeps the SMS Provider, the wave list, the action log and the reports of each site under `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\update-planner`, for example `sites\AB1\tools\update-planner`. A tool that is open keeps its site until you restart it. The first start after an update copies the old data and keeps the old files.
 
 ## Tests
 

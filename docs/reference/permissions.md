@@ -24,7 +24,7 @@ None.
 | Include WSUS Counts | The provider computer (PowerShell remoting) | A right to run `Get-WsusServer` on the provider computer. Without it, the plan builds and the WSUS counts are missing. |
 | Dry Run | None | Creates nothing. It does not open the site drive. |
 | Deploy... | The SMS Provider | The right to create software update groups and deployments (`New-CMSoftwareUpdateGroup`, `New-CMSoftwareUpdateDeployment`). |
-| Reports, exports, logs | This computer | Write access to the folder of the script. |
+| Reports, exports, logs | This computer | Write access to the folder of the script (the tool log) and to `%LOCALAPPDATA%\AppPackagerData` (the data of the site). |
 
 Every read is a cmdlet or a `SELECT`. Building a plan changes nothing on the site.
 

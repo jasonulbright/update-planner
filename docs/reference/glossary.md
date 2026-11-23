@@ -18,7 +18,7 @@ None.
 
 | Term | Meaning |
 |---|---|
-| Action log | The file `Logs\update-planner-actions.jsonl`. It holds one record for each dry run and each deployment. |
+| Action log | The file `update-planner-actions.jsonl` in the site data folder (old path: `Logs\update-planner-actions.jsonl`). It holds one record for each dry run and each deployment. |
 | Built-in collection | A collection whose ID starts with `SMS`, for example All Systems (`SMS00001`). The tool blocks a deployment to it. |
 | Console | The Configuration Manager console. The tool needs it on this computer, because the ConfigurationManager module comes only with it. |
 | Deadline | The date on which the installation becomes mandatory. It is the wave start date plus **Days to Deadline**. |

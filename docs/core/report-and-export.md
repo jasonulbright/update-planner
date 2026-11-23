@@ -4,7 +4,7 @@ The Report page shows the plan as text. The three export buttons save the plan t
 
 ## What it does
 
-The Report page shows the review text of the plan in Markdown, or the source of the HTML report. **Open HTML Report** writes the page to the `Reports` folder and opens it in the default browser. **Export JSON**, **Export Markdown** and **Export HTML** save the plan to a file that you choose.
+The Report page shows the review text of the plan in Markdown, or the source of the HTML report. **Open HTML Report** writes the page to the reports folder of the site and opens it in the default browser. **Export JSON**, **Export Markdown** and **Export HTML** save the plan to a file that you choose.
 
 ## When to use it
 
@@ -41,7 +41,7 @@ The text is the text of the format that is selected.
 ### Open the HTML report
 
 1. Select **Open HTML Report**.
-2. The tool writes `Reports\update-plan-<ID>.html` and opens it in the default browser. The log writes "HTML report written:" and the path.
+2. The tool writes `update-plan-<ID>.html` in the reports folder of the site (`%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\update-planner\reports`, for example `sites\AB1\tools\update-planner\reports`) and opens it in the default browser. The log writes "HTML report written:" and the path.
 
 ![The HTML report in the browser](../images/report-html-browser.png)
 
@@ -50,7 +50,7 @@ The tool overwrites the file of the same plan ID without a question. Save an edi
 ### Export a plan
 
 1. Select **Export JSON**, **Export Markdown** or **Export HTML**. The buttons are at the top right of every page.
-2. In the **Save As** dialog, keep the name `update-plan-<ID>` or enter another. The dialog opens in the `Reports` folder.
+2. In the **Save As** dialog, keep the name `update-plan-<ID>` or enter another. The dialog opens in the reports folder of the site.
 3. Select **Save**. The log writes "Exported JSON:" (or Markdown, or HTML) and the path.
 
 ![The Save As dialog of Export JSON](../images/report-save-dialog.png)
@@ -69,7 +69,7 @@ The export of a plan does not change the site. The JSON file is a Suite ring pla
 |---|---|
 | **Markdown** | Shows the review text. This is the default. |
 | **HTML Source** | Shows the source of the HTML report. |
-| **Open HTML Report** | Writes the HTML file to `Reports` and opens it. |
+| **Open HTML Report** | Writes the HTML file to the reports folder of the site and opens it. |
 | **Copy** | Copies the shown text to the clipboard. |
 | **Export JSON**, **Export Markdown**, **Export HTML** | Save the file of that format. |
 

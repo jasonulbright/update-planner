@@ -193,6 +193,27 @@ Section 'persist' {
   Log ('app still running: ' + [int]($script:AppProcs['start-updateplanner.ps1'] -and -not $script:AppProcs['start-updateplanner.ps1'].HasExited))
   $win = Start-App 'start-updateplanner.ps1' 'Update Planner'; Shot $win 'start-reopen-saved-state'
 }
+Section 'site' {
+  # The launcher chooses the site. Start again with a chosen site (own data root below the guide root, set in main.ps1), show the
+  # read-only Site Code box with its tooltip, then let the launcher choose another site and show the footer note.
+  Stop-App 'start-updateplanner.ps1'; Start-Sleep -Seconds 3
+  $env:APP_PACKAGER_SITE = $Capture.SiteCode
+  $win = Start-App 'start-updateplanner.ps1' 'Update Planner'
+  Maximize-Win $win
+  $win = Find-Top 'Update Planner' 10
+  Invoke-El (Get-El $win 'btnOptions'); $d = Find-Last 'Options' 10
+  $box = Get-El $d 'txtSiteCode'
+  $r = $box.Current.BoundingRectangle; [void][NativeUi]::SetCursorPos([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2)); Start-Sleep -Milliseconds 300
+  [NativeUi]::mouse_event(1, 2, 2, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 300; [NativeUi]::mouse_event(1, -2, -2, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 2500
+  Shot $d 'options-site' -Hover
+  Invoke-El (Get-El $d 'btnCancel'); Start-Sleep -Seconds 1
+  Import-Module (Join-Path $appDir 'Lib\SuiteCommon\SuiteCommon.psd1') -DisableNameChecking
+  [void](Set-SuiteActiveSite -SiteCode 'CD2' -DataRoot (Get-SuiteDataRoot))
+  Start-Sleep -Seconds 8
+  Shot-Strip $win 'footer-site-note' 40
+  Stop-App 'start-updateplanner.ps1'; Start-Sleep -Seconds 2
+  Remove-Item -LiteralPath Env:APP_PACKAGER_SITE -ErrorAction SilentlyContinue
+}
 # The browser windows that the app opened are its child processes. Stop those by process id; a browser that was already running stays.
 Stop-AppChildren 'start-updateplanner.ps1'
 Stop-App 'start-updateplanner.ps1'
