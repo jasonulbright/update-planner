@@ -4,11 +4,19 @@ All notable changes to Update Planner are documented in this file.
 
 ## [Unreleased]
 
+## [2026.11.22.0016] - 2026-11-22
+
+## 4 changes: per-site data, read-only site code, footer note, safer dry run
+
 ### Changed
 
 - Keep the wave list, the action log and the reports per site under the data folder.
 - Show the site code read-only in Options when the launcher chose the site.
 - Show a footer note when the launcher chooses another site.
+
+### Fixed
+
+- Stop the window from failing on a dry run that plans no deployments.
 
 ## [2026.11.20.0015] - 2026-11-20
 
