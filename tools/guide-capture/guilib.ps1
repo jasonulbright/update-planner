@@ -124,28 +124,31 @@ function Dump-Tree($Scope, [string]$Name) {
 }
 # The capture stops only the processes that it started, by process id (vault: testing-policy, "Process rules on a lab VM").
 # Each run records its processes in a ledger in its own run folder. No process is ever stopped by a command-line pattern.
+. (Join-Path $PSScriptRoot 'ProcessJob.ps1')
 $script:RunLedger = Join-Path $PSScriptRoot 'run.pids'
 $script:AppProcs = @{}
+$script:AppRuns = @{}
 function Register-RunProcess($Process, [string]$Key) {
     $script:AppProcs[$Key] = $Process
     ('{0}|{1}' -f $Process.Id, $Process.StartTime.Ticks) | Add-Content -LiteralPath $script:RunLedger
 }
+function Start-AppProcess([string]$Script) {
+    # The app runs in a job of its own (ProcessJob.ps1). Everything that the app starts joins that job.
+    $run = Start-JobProcess -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', ('"{0}"' -f (Join-Path $appDir $Script)))
+    $script:AppRuns[$Script] = $run
+    Register-RunProcess $run.Process $Script
+    $script:proc = $run.Process
+}
 function Start-App([string]$Script, [string]$Title) {
     [void][NativeUi]::SetCursorPos(1900, 1060)
-    $script:proc = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', (Join-Path $appDir $Script)) -PassThru
-    Register-RunProcess $script:proc $Script
+    Start-AppProcess $Script
     $w = Find-Top $Title 60; Start-Sleep -Seconds 3; Find-Top $Title 10
 }
 function Stop-App([string]$Script) {
-    # Stop only the process that Start-App started for this script, by its process id.
-    $p = $script:AppProcs[$Script]
-    if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
-}
-function Stop-AppChildren([string]$Script) {
-    # Stop only the child processes of the app that Start-App started, by process id.
-    $p = $script:AppProcs[$Script]
-    if (-not $p) { return }
-    foreach ($c in @(Get-CimInstance Win32_Process -Filter ('ParentProcessId=' + [int]$p.Id))) { Stop-Process -Id $c.ProcessId -Force -ErrorAction SilentlyContinue }
+    # Stops the members of the job of the app: the app and what it started, such as a browser window for a report. No process is looked up
+    # by its parent id: Windows uses process ids again. A browser that was already running is not a member and stays.
+    $run = $script:AppRuns[$Script]
+    if ($run) { Stop-JobProcess -Run $run }
 }
 function Section([string]$Name, [scriptblock]$Body) { Log ('== ' + $Name); try { & $Body } catch { Log ('ERROR in ' + $Name + ': ' + $_.Exception.Message + ' @ ' + $_.InvocationInfo.ScriptLineNumber) } }
 function Find-All([string]$Name) {

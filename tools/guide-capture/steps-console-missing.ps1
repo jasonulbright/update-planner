@@ -5,7 +5,7 @@ $t = Get-Content -LiteralPath $f -Raw
 $t = $t -replace '(?s)(function Resolve-ConfigurationManagerModulePath \{)', '$1 return $null;'
 Set-Content -LiteralPath $f -Value $t -Encoding UTF8
 Remove-Item Env:SMS_ADMIN_UI_PATH -ErrorAction SilentlyContinue
-Start-Process powershell.exe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', (Join-Path $appDir 'start-updateplanner.ps1'))
+Start-AppProcess 'start-updateplanner.ps1'
 # The start script shows a plain message box with the app name as its title, before any window.
 $m = Find-Top 'Update Planner' 40
 Start-Sleep -Seconds 1

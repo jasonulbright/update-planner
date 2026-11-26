@@ -30,6 +30,7 @@ Window tests: `Window.Tests.ps1` and the other `*.Window.Tests.ps1` files open w
 | Documents and images | `Documentation.Tests.ps1`, `Readme.Images.Guard.Tests.ps1`, `GuideImages.Guard.Tests.ps1` | Index and links, every README image is a guide image, every guide image was produced by a capture run |
 | View data | `Show.View.Tests.ps1` | The rows that reach the controls, counted on real WPF controls that are not shown: a plan that the module builds from site data in `Show-Plan` (plan, skipped and preview grids, summary text, report, buttons), the results grid of `Show-DeployResult` and the wave list |
 | Capture tool | `GuideCapture.Tests.ps1` | The capture scripts parse, carry no secret and take the lab lock |
+| Capture processes | `ProcessJob.Tests.ps1` | A stop of the app ends its job. A process that records the app as its parent and is not in the job stays alive |
 
 ## Not covered, and why
 

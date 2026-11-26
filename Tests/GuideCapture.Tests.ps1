@@ -15,8 +15,8 @@ BeforeAll {
 }
 
 Describe 'Capture scripts' {
-    It 'has the five capture scripts' {
-        foreach ($n in 'Invoke-GuideCapture.ps1', 'guilib.ps1', 'main.ps1', 'steps-guide.ps1', 'steps-console-missing.ps1') {
+    It 'has the six capture scripts' {
+        foreach ($n in 'Invoke-GuideCapture.ps1', 'ProcessJob.ps1', 'guilib.ps1', 'main.ps1', 'steps-guide.ps1', 'steps-console-missing.ps1') {
             Test-Path -LiteralPath (Join-Path $script:CaptureDir $n) | Should -BeTrue -Because $n
         }
     }

@@ -157,6 +157,7 @@ try {
         }
         Copy-Item (Join-Path $here 'guilib.ps1') (Join-Path $root 'ui\guilib.ps1') -ToSession $session -Force
         Copy-Item (Join-Path $here 'main.ps1') (Join-Path $root 'ui\main.ps1') -ToSession $session -Force
+        Copy-Item (Join-Path $here 'ProcessJob.ps1') (Join-Path $root 'ui\ProcessJob.ps1') -ToSession $session -Force
         Copy-Item (Join-Path $here $steps) (Join-Path $root 'ui\steps.ps1') -ToSession $session -Force
         Invoke-Command $session {
             param($r, $user, $json, $task)

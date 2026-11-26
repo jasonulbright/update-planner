@@ -215,6 +215,5 @@ Section 'site' {
   Stop-App 'start-updateplanner.ps1'; Start-Sleep -Seconds 2
   Remove-Item -LiteralPath Env:APP_PACKAGER_SITE -ErrorAction SilentlyContinue
 }
-# The browser windows that the app opened are its child processes. Stop those by process id; a browser that was already running stays.
-Stop-AppChildren 'start-updateplanner.ps1'
+# Stop-App ends the job of the app, with the browser windows that the app opened. A browser that was already running stays.
 Stop-App 'start-updateplanner.ps1'
