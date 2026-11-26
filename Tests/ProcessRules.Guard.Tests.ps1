@@ -29,7 +29,8 @@ Describe 'The tools stop only their own processes' {
     }
 
     It 'never matches a process by its command line' {
-        Get-Hits 'CommandLine' | Should -BeNullOrEmpty
+        # The property of a process, not the parameter of the same name in the job helper.
+        Get-Hits '(?i)\.CommandLine\b|\bCommandLine\s+-(like|match|eq|ne|contains)\b' | Should -BeNullOrEmpty
     }
 
     It 'stops a process only with Stop-Process -Id' {
@@ -41,9 +42,17 @@ Describe 'The tools stop only their own processes' {
         Get-Hits 'Where-Object[^\r\n]*Stop-Process' | Should -BeNullOrEmpty
     }
 
-    It 'reads Win32_Process only to find the children of a process by its id' {
-        $bad = @($script:Lines | Where-Object { $_.Text -match 'Win32_Process' -and $_.Text -notmatch 'ParentProcessId' } | ForEach-Object { $_.Where })
-        $bad | Should -BeNullOrEmpty
+    It 'never finds a process by its parent id' {
+        # Windows uses process ids again, so a parent id can name a process that the tool did not start.
+        Get-Hits 'Win32_Process|ParentProcessId|\.Parent\.Id\b' | Should -BeNullOrEmpty
+    }
+
+    It 'starts the app in a job and copies the job helper to the lab workstation' {
+        $lib = Get-Content -LiteralPath (Join-Path $script:ToolDir 'guide-capture\guilib.ps1') -Raw
+        $lib | Should -Match 'Start-JobProcess'
+        $lib | Should -Match 'Stop-JobProcess'
+        $lib | Should -Not -Match 'Stop-Process|Start-Process'
+        (Get-Content -LiteralPath (Join-Path $script:ToolDir 'guide-capture\Invoke-GuideCapture.ps1') -Raw) | Should -Match 'ui\\ProcessJob\.ps1'
     }
 }
 
@@ -55,7 +64,7 @@ Describe 'The capture records the processes that it starts' {
         (Get-Content -LiteralPath (Join-Path $script:ToolDir 'guide-capture\main.ps1') -Raw) | Should -Match 'run\.pids'
         $lib = Get-Content -LiteralPath (Join-Path $script:ToolDir 'guide-capture\guilib.ps1') -Raw
         $lib | Should -Match 'function Register-RunProcess'
-        $lib | Should -Match 'Register-RunProcess \$script:proc \$Script'
+        $lib | Should -Match 'Register-RunProcess \$run\.Process \$Script'
     }
 
     It 'stops a recorded process only when its start time still matches' {
